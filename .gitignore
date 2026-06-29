@@ -216,3 +216,6 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# context-checker botunun izole Claude config dizini
+.bot-claude-home/

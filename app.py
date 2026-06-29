@@ -1,5 +1,5 @@
 """
-context-checker — Slack mesajlari eksik alan denetcisi
+context-checker — surum/ortam denetcisi (version check) + bug details formatlayici
 """
 
 from __future__ import annotations
@@ -26,23 +26,118 @@ logger = logging.getLogger("context-checker")
 QA_CHANNEL_IDS = {
     c.strip() for c in os.environ["QA_CHANNEL_ID"].split(",") if c.strip()
 }
+
+# --- Claude motoru (ortak) ---
 # launchd altında PATH minimaldir; `which claude` çıktısını CLAUDE_BIN'e koy.
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
-CLAUDE_MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
-CLAUDE_TIMEOUT = int(os.environ.get("CLAUDE_TIMEOUT", "60"))
+
+# --- Özellik 1: version check (eksik sürüm/ortam denetçisi) ---
+# Model tag'i kullanılır ("haiku"): yeni sürüm çıkınca .env güncellemeye gerek yok.
+CLAUDE_HAIKU_MODEL = os.environ.get("CLAUDE_HAIKU_MODEL", "haiku")
+VERSION_CHECK_TIMEOUT = int(os.environ.get("VERSION_CHECK_TIMEOUT", "60"))
+VERSION_CHECK_EFFORT = os.environ.get("VERSION_CHECK_EFFORT", "low")
+
+# --- Özellik 2: bug details (thread → güçlü model → modal) ---
+CLAUDE_OPUS_MODEL = os.environ.get("CLAUDE_OPUS_MODEL", "opus")
+BUG_DETAILS_TIMEOUT = int(os.environ.get("BUG_DETAILS_TIMEOUT", "180"))
+BUG_DETAILS_EFFORT = os.environ.get("BUG_DETAILS_EFFORT", "medium")
+
+# Reasoning ("effort") seviyesi. Ortamda CLAUDE_EFFORT=high olabilir; bu, basit
+# sınıflandırmayı bile çok yavaşlatır (Haiku'da 26 sn görüldü). version check
+# düşük effort ile çalışmalı; bug details sentezi biraz reasoning'den faydalanır.
+# Geçerli seviyeler: low, medium, high, xhigh, max.
+
+# Bot'un `claude` çağrıları, kullanıcının global Claude Code config'inden İZOLE
+# çalışmalı: aksi halde her çağrıda global CLAUDE.md + settings + hook'lar
+# (örn. mempalace Stop/PreCompact hook'u) yüklenir; bu hem ~7sn spawn maliyeti
+# hem de hook gecikmesi ekler ve timeout'a yol açar. Ayrı/boş bir config dizini
+# ~10x daha hızlıdır. Auth `.env`'deki CLAUDE_CODE_OAUTH_TOKEN'dan gelir, bu
+# dizinden bağımsızdır.
+BOT_CLAUDE_HOME = os.environ.get(
+    "BOT_CLAUDE_HOME",
+    os.path.join(os.path.dirname(os.path.abspath(__file__)), ".bot-claude-home"),
+)
+os.makedirs(BOT_CLAUDE_HOME, exist_ok=True)
 
 app = App(token=os.environ["SLACK_BOT_TOKEN"])
 
 # Aynı mesaja iki kez yanıt vermemek için (süreç ömrü boyunca) basit bir kayıt.
 _replied: set[str] = set()
+# Kullanıcı adı önbelleği (users.info çağrısını azaltmak için).
+_user_names: dict[str, str] = {}
 
-# Sistem promptu kolay düzenlenebilsin diye ayrı bir dosyada tutulur.
-_PROMPT_PATH = os.path.join(
-    os.path.dirname(os.path.abspath(__file__)), "system_prompt.md"
-)
-with open(_PROMPT_PATH, encoding="utf-8") as _f:
-    SYSTEM_PROMPT = _f.read()
 
+def _load_prompt(filename: str) -> str:
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), filename)
+    with open(path, encoding="utf-8") as f:
+        return f.read()
+
+
+# Promptlar ayrı .md dosyalarında tutulur (koda dokunmadan düzenlenebilsin diye).
+VERSION_CHECK_PROMPT = _load_prompt("version_check_prompt.md")
+BUG_DETAILS_PROMPT = _load_prompt("bug_details_prompt.md")
+
+# Alt-süreç SAF bir motor olmalı: hiçbir MCP sunucusu (Slack dahil) ve hiçbir
+# dahili araç çalıştıramasın. Aksi halde agentic `claude`, gelen mesajı bir
+# "görev" sanıp Slack MCP ile kanala kendi mesajını atabilir ya da kullanıcı
+# metnindeki prompt-injection ile araç çalıştırabilir.
+_DISALLOWED_TOOLS = [
+    "Bash", "Edit", "Write", "Read", "Glob", "Grep",
+    "WebFetch", "WebSearch", "Task", "NotebookEdit",
+]
+
+
+def _run_claude(
+    system_prompt: str, user_text: str, model: str, timeout: int, effort: str
+) -> str | None:
+    """`claude` CLI'ı kilitli (MCP/araç yok) çalıştır; ham yanıt metnini döndür."""
+    proc = subprocess.run(
+        [
+            CLAUDE_BIN,
+            "--print",
+            "--output-format", "json",
+            "--model", model,
+            "--effort", effort,               # düşük effort = hızlı (gereksiz düşünme yok)
+            "--strict-mcp-config",            # hiçbir MCP sunucusu yükleme
+            "--no-session-persistence",       # oturum dosyası yazma (hızlı)
+            "--system-prompt", system_prompt,
+            # variadic; arg yutmamak için EN SONDA dursun:
+            "--disallowed-tools", *_DISALLOWED_TOOLS,
+        ],
+        input=user_text,                      # kullanıcı metni stdin'den (arg yutma/injection yok)
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+        env={
+            **os.environ,
+            # İzole config dizini → global CLAUDE.md/settings/hook'lar yüklenmez.
+            "CLAUDE_CONFIG_DIR": BOT_CLAUDE_HOME,
+            # Miras alınan CLAUDE_EFFORT=high'i ez (flag'e ek güvence).
+            "CLAUDE_EFFORT": effort,
+        },
+    )
+    if proc.returncode != 0:
+        logger.error("claude CLI hata kodu %s: %s", proc.returncode, proc.stderr.strip())
+        return None
+    # --output-format json: stdout bir zarf nesnesidir; asıl metin "result"ta.
+    envelope = json.loads(proc.stdout)
+    # Süre kırılımı: total = framework+spawn+model, api = sadece model çağrısı.
+    logger.info(
+        "claude(%s): total=%sms api=%sms turns=%s",
+        model,
+        envelope.get("duration_ms"),
+        envelope.get("duration_api_ms"),
+        envelope.get("num_turns"),
+    )
+    if envelope.get("is_error"):
+        logger.error("claude sonucu hata: %s", envelope.get("result"))
+        return None
+    return envelope["result"]
+
+
+# ---------------------------------------------------------------------------
+# Özellik 1: version check (yeni mesaj → sürüm/ortam eksikse thread'e soru)
+# ---------------------------------------------------------------------------
 
 def _extract_json(text: str) -> dict:
     """Modelin metin yanıtından JSON nesnesini çıkar (kod bloğu olsa bile)."""
@@ -60,44 +155,15 @@ def _extract_json(text: str) -> dict:
         raise
 
 
-# Alt-süreç SAF bir sınıflandırıcı olmalı: hiçbir MCP sunucusu (Slack dahil) ve
-# hiçbir dahili araç çalıştıramasın. Aksi halde agentic `claude`, gelen mesajı
-# bir "görev" sanıp Slack MCP ile kanala kendi mesajını atabilir (thread'siz) ya
-# da kullanıcı metnindeki prompt-injection ile araç çalıştırabilir.
-_DISALLOWED_TOOLS = [
-    "Bash", "Edit", "Write", "Read", "Glob", "Grep",
-    "WebFetch", "WebSearch", "Task", "NotebookEdit",
-]
-
-
-def assess(text: str) -> dict | None:
-    """Mesaji `claude` CLI üzerinden değerlendir; sonuç dict'ini döndür."""
-    proc = subprocess.run(
-        [
-            CLAUDE_BIN,
-            "--print",
-            "--output-format", "json",
-            "--model", CLAUDE_MODEL,
-            "--strict-mcp-config",            # hiçbir MCP sunucusu yükleme
-            "--system-prompt", SYSTEM_PROMPT,
-            # variadic; arg yutmamak için EN SONDA dursun:
-            "--disallowed-tools", *_DISALLOWED_TOOLS,
-        ],
-        input=text,                           # kullanıcı metni stdin'den (arg yutma/injection yok)
-        capture_output=True,
-        text=True,
-        timeout=CLAUDE_TIMEOUT,
+def check_version(text: str) -> dict | None:
+    """Mesajı değerlendir; {is_bug_report, missing, question} dict'ini döndür."""
+    raw = _run_claude(
+        VERSION_CHECK_PROMPT, text, CLAUDE_HAIKU_MODEL,
+        VERSION_CHECK_TIMEOUT, VERSION_CHECK_EFFORT,
     )
-    if proc.returncode != 0:
-        logger.error("claude CLI hata kodu %s: %s", proc.returncode, proc.stderr.strip())
+    if raw is None:
         return None
-
-    # --output-format json: stdout bir zarf nesnesidir; asıl metin "result"ta.
-    envelope = json.loads(proc.stdout)
-    if envelope.get("is_error"):
-        logger.error("claude sonucu hata: %s", envelope.get("result"))
-        return None
-    return _extract_json(envelope["result"])
+    return _extract_json(raw)
 
 
 @app.event("message")
@@ -125,9 +191,9 @@ def handle_message(event, client):
         return
 
     try:
-        result = assess(text)
+        result = check_version(text)
     except Exception:
-        logger.exception("Değerlendirme başarısız (ts=%s)", ts)
+        logger.exception("Version check başarısız (ts=%s)", ts)
         return
 
     if not result or not result.get("is_bug_report"):
@@ -150,6 +216,108 @@ def handle_message(event, client):
     )
     _replied.add(ts)
     logger.info("Eksik alan soruldu %s (ts=%s)", missing, ts)
+
+
+# ---------------------------------------------------------------------------
+# Özellik 2: "Bug Details" mesaj kısayolu (thread → Opus → özel modal)
+# ---------------------------------------------------------------------------
+
+def _display_name(client, uid: str | None) -> str:
+    """Kullanıcı ID'sini okunabilir ada çevir (önbellekli, users:read gerekir)."""
+    if not uid:
+        return "bilinmeyen"
+    if uid in _user_names:
+        return _user_names[uid]
+    name = uid
+    try:
+        prof = client.users_info(user=uid)["user"]
+        p = prof.get("profile", {})
+        name = p.get("display_name") or p.get("real_name") or prof.get("name") or uid
+    except Exception:
+        pass
+    _user_names[uid] = name
+    return name
+
+
+def _build_transcript(client, messages: list[dict]) -> str:
+    """Thread mesajlarını 'Ad: metin' satırlarına çevir (bot mesajları hariç)."""
+    lines = []
+    for m in messages:
+        if m.get("bot_id"):
+            continue  # bot mesajlarını (kendi sorularımız dahil) atla
+        text = (m.get("text") or "").strip()
+        if not text:
+            continue
+        lines.append(f"{_display_name(client, m.get('user'))}: {text}")
+    return "\n".join(lines)
+
+
+def _modal(blocks: list[dict]) -> dict:
+    return {
+        "type": "modal",
+        "title": {"type": "plain_text", "text": "Bug Details"},
+        "close": {"type": "plain_text", "text": "Kapat"},
+        "blocks": blocks,
+    }
+
+
+def _loading_view() -> dict:
+    return _modal([{
+        "type": "section",
+        "text": {
+            "type": "mrkdwn",
+            "text": ":hourglass_flowing_sand: *Hazırlanıyor…*\nThread okunuyor ve Opus ile formatlanıyor.",
+        },
+    }])
+
+
+def _result_view(body: str) -> dict:
+    # Slack section text bloğu ~3000 karakterle sınırlı; uzun çıktıyı böl.
+    text = body.strip() or "(boş yanıt)"
+    chunks = [text[i : i + 2900] for i in range(0, len(text), 2900)][:45]
+    blocks = [
+        {"type": "section", "text": {"type": "mrkdwn", "text": c}} for c in chunks
+    ]
+    return _modal(blocks)
+
+
+@app.shortcut("bug_details")
+def handle_bug_details(ack, shortcut, client):
+    ack()  # 3 sn içinde; ardından trigger_id ile hemen modal aç.
+
+    channel = shortcut["channel"]["id"]
+    message = shortcut["message"]
+    thread_ts = message.get("thread_ts") or message["ts"]
+    trigger_id = shortcut["trigger_id"]
+
+    # Önce yükleniyor modal'ını aç (trigger_id 3 sn geçerli).
+    try:
+        opened = client.views_open(trigger_id=trigger_id, view=_loading_view())
+        view_id = opened["view"]["id"]
+    except Exception:
+        logger.exception("Modal açılamadı")
+        return
+
+    # Thread'i oku → Opus ile formatla → modal'ı güncelle (view_id, süre sınırı yok).
+    try:
+        replies = client.conversations_replies(channel=channel, ts=thread_ts, limit=200)
+        transcript = _build_transcript(client, replies.get("messages", []))
+        if not transcript:
+            result = "Thread'de işlenecek metin bulunamadı."
+        else:
+            result = _run_claude(
+                BUG_DETAILS_PROMPT, transcript, CLAUDE_OPUS_MODEL,
+                BUG_DETAILS_TIMEOUT, BUG_DETAILS_EFFORT,
+            ) or "Opus yanıtı alınamadı (loga bak)."
+    except Exception:
+        logger.exception("Bug details üretimi başarısız (thread_ts=%s)", thread_ts)
+        result = "Bir hata oluştu, task üretilemedi. (Detay için loga bak.)"
+
+    try:
+        client.views_update(view_id=view_id, view=_result_view(result))
+    except Exception:
+        logger.exception("Modal güncellenemedi")
+    logger.info("Bug details üretildi (thread_ts=%s)", thread_ts)
 
 
 if __name__ == "__main__":

@@ -8,9 +8,15 @@ thread'e tek bir soru atar.
 1. **Ortam** — bug Canlı/yayında mı yoksa özel bir build'de mi görüldü?
 2. **Build numarası** — özel build ise (Canlı ise gerekmez).
 
-**Mimari:** Slack **Socket Mode** (public endpoint yok) → her üst-seviye mesaj
-yerel **`claude` CLI** (Claude Code, Max aboneliği) üzerinden **Haiku** ile
-değerlendirilir → eksikse threaded reply. **Anthropic API anahtarı gerekmez.**
+**İkinci özellik — Bug Task kısayolu:** Bir bug thread'indeki herhangi bir
+mesajın **"..."** menüsünden **Bug Details** kısayolu çalıştırılır → bot thread'in
+tamamını okur → **Claude Opus** + ayrı bir prompt ([bug_details_prompt.md](bug_details_prompt.md),
+sizin Asana bug task formatınız) ile formatlar → sonucu **sadece tıklayan kişiye**
+görünen bir **modal**'da gösterir.
+
+**Mimari:** Slack **Socket Mode** (public endpoint yok) → yerel **`claude` CLI**
+(Claude Code, Max aboneliği) motoru. Denetçi **Haiku**, Bug Task **Opus** kullanır.
+Her iki çağrı da MCP'siz/araçsız kilitli çalışır. **Anthropic API anahtarı gerekmez.**
 
 ---
 
@@ -23,12 +29,19 @@ değerlendirilir → eksikse threaded reply. **Anthropic API anahtarı gerekmez.
 2. **OAuth & Permissions** → *Bot Token Scopes* (izlenen kanallar public):
    - `channels:history`
    - `chat:write`
+   - `users:read`  *(Bug Task kısayolunda thread yazarlarının adlarını çözmek için)*
 3. **Event Subscriptions** → *Enable Events* → *Subscribe to bot events*:
    - `message.channels`
-4. **Install App** → workspace'e kur → *Bot User OAuth Token* `xoxb-...` →
-   `SLACK_BOT_TOKEN`.
-5. Botu kanala ekle: `#qa-polygunarena` içinde `/invite @<bot-adı>`.
-6. **Kanal ID'si:** kanal adına sağ tık → *View channel details* → en altta
+4. **Interactivity & Shortcuts** → *Interactivity*'yi **aç** (Socket Mode olduğu
+   için Request URL gerekmez) → *Shortcuts* → **Create New Shortcut**:
+   - Tür: **On messages** (mesaj kısayolu)
+   - Name: `Bug Details`
+   - Short description: `Thread'den Asana bug task üret`
+   - **Callback ID: `bug_details`**  *(kodla birebir aynı olmalı)*
+5. **Install App** (veya scope/shortcut ekledikten sonra **Reinstall**) →
+   *Bot User OAuth Token* `xoxb-...` → `SLACK_BOT_TOKEN`.
+6. Botu kanala ekle: `#qa-polygunarena` içinde `/invite @<bot-adı>`.
+7. **Kanal ID'si:** kanal adına sağ tık → *View channel details* → en altta
    `C...` → `QA_CHANNEL_ID`.
 
 > **Kapsam:** `message.channels` workspace genelinde tanımlıdır ama Slack bu
