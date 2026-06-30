@@ -1,22 +1,18 @@
 # context-checker
 
-Belirli Slack kanalına düşen bug raporlarını denetleyen Slack botu.
-Bir mesaj bug raporu ise ve zorunlu alanlar eksikse, kişiyi etiketleyip aynı
-thread'e tek bir soru atar.
+QA Slack kanallarındaki bug raporlarını kolaylaştıran bir bot. İki özelliği var.
 
-**Zorunlu alanlar**
-1. **Ortam** — bug Canlı/yayında mı yoksa özel bir build'de mi görüldü?
-2. **Build numarası** — özel build ise (Canlı ise gerekmez).
+**1. Sürüm denetçisi (version check).** Bir mesaj bug raporuysa ve ortam/sürüm
+bilgisi eksikse, kişiyi etiketleyip aynı thread'e kısa bir soru atar.
+- **Ortam:** bug yayında/canlıda mı, closed beta'da mı, yoksa özel bir build'de mi?
+- **Sürüm:** closed beta veya özel build ise sürüm/build no gerekir (yayın ise gerekmez).
 
-**İkinci özellik — Bug Task kısayolu:** Bir bug thread'indeki herhangi bir
-mesajın **"..."** menüsünden **Bug Details** kısayolu çalıştırılır → bot thread'in
-tamamını okur → **Claude Opus** + ayrı bir prompt ([bug_details_prompt.md](bug_details_prompt.md),
-sizin Asana bug task formatınız) ile formatlar → sonucu **sadece tıklayan kişiye**
-görünen bir **modal**'da gösterir.
+**2. Bug Details kısayolu.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
+**Bug Details** çalıştırılır → bot thread'in tamamını okur → Claude Opus ile Asana'ya hazır bir bug task üretir → sonucu **sadece tıklayan kişiye** görünen bir **modal**'da gösterir.
 
-**Mimari:** Slack **Socket Mode** (public endpoint yok) → yerel **`claude` CLI**
-(Claude Code, Max aboneliği) motoru. Denetçi **Haiku**, Bug Task **Opus** kullanır.
-Her iki çağrı da MCP'siz/araçsız kilitli çalışır. **Anthropic API anahtarı gerekmez.**
+**Mimari.** Slack **Socket Mode** (public endpoint yok) + yerel **`claude` CLI**
+(Max aboneliği) motoru. Version check **Haiku**, Bug Details **Opus** kullanır; her
+iki çağrı da MCP'siz/araçsız izole çalışır. **Anthropic API anahtarı gerekmez.**
 
 ---
 
