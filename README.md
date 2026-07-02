@@ -1,20 +1,36 @@
-# context-checker
+# Reflex
 
-QA Slack kanallarındaki bug raporlarını kolaylaştıran bir bot. İki özelliği var.
+Slack kanallarındaki bug ve release süreçlerini kolaylaştıran bir bot. Dört özelliği var.
 
-**1. Sürüm denetçisi (version check).** Bir mesaj bug raporuysa ve ortam/sürüm
-bilgisi eksikse, kişiyi etiketleyip aynı thread'e kısa bir soru atar.
+**1. Bug Details.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
+**Bug Details** kısayolu çalıştırılır → bot thread'in tamamını okur → Claude Opus ile
+Asana'ya hazır bir bug task text'i üretir → sonucu **sadece tıklayan kişiye** görünen bir
+**modal**'da gösterir.
+
+**2. Bug Watcher.** Her sabah 09:00'da (Europe/Istanbul) çalışan bir routine. İzlenen
+kanalların son 24 saatteki mesajlarını ve thread'lerini tarar; ilgilenilmemiş bug
+raporlarını bulur, Asana'da task açılmış mı diye cross-check yapar ve gerekirse
+thread'e hatırlatma yazar ya da "ben bakarım" deyip dönmeyen kişiyi etiketler.
+
+**3. Release History.** Günde üç kez çalışan bir routine. `#pa-releasehistory` ve
+`#cs-releasehistory` kanallarındaki release postlarını okuyup her oyunun release
+history tablosunu (`Release History/` altındaki markdown dosyaları) güncel tutar.
+
+**4. Version Check.** Bir mesaj bug raporuysa ve ortam/sürüm bilgisi eksikse,
+kişiyi etiketleyip aynı thread'e kısa bir soru atar.
 - **Ortam:** bug yayında/canlıda mı, closed beta'da mı, yoksa özel bir build'de mi?
 - **Sürüm:** closed beta veya özel build ise sürüm/build no gerekir (yayın ise gerekmez).
 
-**2. Bug Details kısayolu.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
-**Bug Details** çalıştırılır → bot thread'in tamamını okur → Claude Opus ile Asana'ya hazır bir bug task üretir → sonucu **sadece tıklayan kişiye** görünen bir **modal**'da gösterir.
-
-**Mimari.** Slack **Socket Mode** (public endpoint yok) + yerel **`claude` CLI**
-(Max aboneliği) motoru. Version check **Haiku**, Bug Details **Opus** kullanır; her
-iki çağrı da MCP'siz/araçsız izole çalışır. **Anthropic API anahtarı gerekmez.**
+**Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
+yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version check
+**Haiku**, Bug Details **Opus** kullanır; her iki çağrı da MCP'siz/araçsız izole
+çalışır. **Anthropic API anahtarı gerekmez.** Bug Watcher ve Release History ise
+Slack/Asana MCP connector'larıyla çalışan zamanlanmış Claude Routine'leridir; davranışları
+kendi klasörlerindeki prompt dosyalarından yönetilir.
 
 ---
+
+# Kurulum
 
 ## 1. Slack App kurulumu (bir kez)
 
