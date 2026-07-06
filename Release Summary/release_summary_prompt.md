@@ -6,8 +6,8 @@ güncel tutmak. İki kanal ayrı ayrı, aynı mantıkla işlenir.
 
 ## Hedef dosyalar (kanal → dosya eşlemesi)
 
-1. `#pa-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release History/pa_release_summary.md`
-2. `#cs-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release History/cs_release_summary.md`
+1. `#pa-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release Summary/pa_release_summary.md`
+2. `#cs-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release Summary/cs_release_summary.md`
 
 Her kanalı kendi dosyasına yaz. Tabloyu **bu dosyaların içinde** güncelle. Dosya değiştiyse ayrıca:
 - Mempalace shared memory'e aynala (aşağıdaki "Mempalace shared memory aynalama" bölümü).
@@ -189,7 +189,7 @@ Kurallar:
 Bir md dosyasında **bu çalıştırmada değişiklik yaptıysan**, o dosyanın canvas'ını güncelle:
 
 1. Güncellenmiş md dosyasının **son halini oku**.
-2. İçerikten **en üstteki H1 satırını (`# History Table`) çıkar**; geri kalan her şeyi
+2. İçerikten **en üstteki H1 satırını (`# Release Summary`) çıkar**; geri kalan her şeyi
    ("Son güncelleme" blockquote'u + tablo) olduğu gibi al.
 3. `slack_update_canvas` çağır: `canvas_id` = yukarıdaki id, `action=replace`,
    **`section_id` VERME**, `content` = 2. adımdaki içerik. Bu bilinçli bir **tam canvas
