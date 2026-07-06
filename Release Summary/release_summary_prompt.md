@@ -73,7 +73,7 @@ Slack postları artık değişmez; bu yüzden hepsini tek tek kontrol etmek gere
 5. **Yeni sürüm ekle:** Tabloda hiç olmayan yeni bir sürüm çıkmışsa, en üste (en yeni en
    üstte) yeni bir satır ekle.
 6. **Yeni force olduğunda:** forcelanan sürüm yeni "sınır" olur. Bundan önce Prod'a açılmış
-   ve o an 🟢 Yayın olan tüm satırların Durum'unu ⚫ (artık yayında değil) yap; forcelanan
+   ve o an 🟢 Yayın olan tüm satırların Durum'unu 🔵 (artık yayında değil) yap; forcelanan
    sürümün kendisini `🟢👊🏻 Yayın (son force)` yap. (Bu, sınırdan eski satırlara dokunmanın tek
    istisnasıdır.)
 7. Dosyanın en üstündeki **"Son güncelleme"** tarih-saatini güncelle.
@@ -135,17 +135,17 @@ kendisi ya da ondan yeni bir sürüm olması).
   - Forcelanmış ve hâlâ yayındaysa (yani son force): `🟢👊🏻 Yayın (son force)`.
   - Forcelanmamış ama hâlâ yayındaysa güncel rollout: `🟢 Yayın (🤖 %100, 🍎 %100)` ya da
     `🟢 Yayın (🤖 %50, 🍎 roll out)` gibi.
-- **⚫ Artık yayında değil** — Prod'a açılmıştı ama sonraki bir sürüm forcelandığı için artık
+- **🔵 Artık yayında değil** — Prod'a açılmıştı ama sonraki bir sürüm forcelandığı için artık
   yayında değil. Açıklayıcı metinle:
   - Hiç forcelanmamış ve şu an yayında değilse, en son ulaştığı durum + `→` + forcelayan sürüm.
     Rollout yüzdesinin yanına "açılmıştı" yazma, yüzde yeterli:
-    `⚫ 🤖 %100, 🍎 %100 → v1.3008 forcelandı` veya
-    `⚫ 🤖 %10, 🍎 review istenmişti → v1.3008 forcelandı`.
+    `🔵 🤖 %100, 🍎 %100 → v1.3008 forcelandı` veya
+    `🔵 🤖 %10, 🍎 review istenmişti → v1.3008 forcelandı`.
   - Eskiden kendisi forcelanmış ama şimdi yayında değilse (sonraki bir force geldi):
-    `⚫👊🏻 Forcelanmıştı → v1.3008 forcelandı`.
+    `🔵👊🏻 Forcelanmıştı → v1.3008 forcelandı`.
 
 **👊🏻 kuralı:** Bir sürüm forcelandıysa (kendi `Force:` satırı dolu), Durum'daki emojinin hemen
-yanına 👊🏻 ekle (ör. `🟢👊🏻 …`, `⚫👊🏻 …`). Forcelanmamış sürümlerde 👊🏻 olmaz.
+yanına 👊🏻 ekle (ör. `🟢👊🏻 …`, `🔵👊🏻 …`). Forcelanmamış sürümlerde 👊🏻 olmaz.
 
 ## Mempalace shared memory aynalama (mempalace-shared)
 
@@ -157,12 +157,17 @@ eşlemesi, ikisi de `wing_shared` wing'inde):
 | `pa_release_summary.md` | `pa-release-summary` |
 | `cs_release_summary.md` | `cs-release-summary` |
 
-Bir md dosyasında **bu çalıştırmada değişiklik yaptıysan**, dosyayı bitirdikten sonra o dosyanın
-kopyasını shared memory'e aynala:
+**Ne zaman aynala:** (a) bu çalıştırmada md dosyasını değiştirdiysen, YA DA (b) md'yi
+değiştirmediysen bile drawer içeriğindeki `Son güncelleme` tarih-saat değeri md'dekinden
+farklıysa. ((b), md'nin rutin dışında elle güncellendiği anlamına gelir — format/kural
+değişiklikleri kopyalara böyle yayılır. Bunun için her çalıştırmada drawer içeriğini okuyup
+değeri karşılaştır.) İki koşul da yoksa o dosya için aynalama yapma.
 
-1. Güncellenmiş md dosyasının **son halini oku**.
-2. `mempalace_list_drawers` (wing=`wing_shared`, room=yukarıdaki room) ile room'daki drawer'ı bul.
-   Room'da **tam 1 drawer** olmalı.
+Aynalama adımları:
+
+1. md dosyasının **son halini oku**.
+2. `mempalace_list_drawers` (wing=`wing_shared`, room=yukarıdaki room) ile room'daki drawer'ı bul
+   (room'da **tam 1 drawer** olmalı); içeriği için `mempalace_get_drawer` kullan.
 3. `mempalace_update_drawer` ile o drawer'ın `content`'ini şu birleşimle değiştir (full replace —
    satır satır düzenleme YAPMA):
    - **En üste sunum notu** (birebir aşağıdaki blok; `<OYUN>` yerine `PA` ya da `CS` yaz):
@@ -186,7 +191,7 @@ Kurallar:
   varsa hiçbir şey oluşturma/silme; aynalamayı atla ve durumu çıktında raporla.
 - Yalnızca `mempalace-shared` sunucusunu kullan (yerel `mempalace`'e dokunma) ve yalnızca bu iki
   room'a yaz.
-- md dosyasında değişiklik yoksa o dosya için aynalama da yapma (gereksiz update olmasın).
+- "Ne zaman aynala" koşullarının ikisi de yoksa `update_drawer` çağırma (gereksiz yazma olmasın).
 - `mempalace-shared` erişilemezse aynalamayı atla ve raporla; md güncellemesi yine de geçerlidir,
   geri alma.
 
@@ -199,14 +204,29 @@ Kurallar:
 | `pa_release_summary.md` | `F0BEWEFM201` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEWEFM201 |
 | `cs_release_summary.md` | `F0BEN9NU53M` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEN9NU53M |
 
-Bir md dosyasında **bu çalıştırmada değişiklik yaptıysan**, o dosyanın canvas'ını güncelle:
+**Ne zaman aynala:** mempalace bölümündeki kuralın aynısı — (a) bu çalıştırmada md'yi
+değiştirdiysen, YA DA (b) canvas içeriğindeki (`slack_read_canvas`) `Son güncelleme` tarih-saat
+değeri md'dekinden farklıysa (satır biçimi canvas'ta değişmiş olabilir; satıra değil tarih-saat
+değerine bak). İki koşul da yoksa canvas'a dokunma.
 
-1. Güncellenmiş md dosyasının **son halini oku**.
+Aynalama adımları:
+
+1. md dosyasının **son halini oku**.
 2. İçerikten **en üstteki H1 satırını çıkar** (dosyanın ilk satırı, ör.
    `# Polygun Arena (PA) Release Summary`); geri kalan her şeyi ("Son güncelleme"
    blockquote'u + tablo) olduğu gibi al.
-3. `slack_update_canvas` çağır: `canvas_id` = yukarıdaki id, `action=replace`,
-   **`section_id` VERME**, `content` = 2. adımdaki içerik. Bu bilinçli bir **tam canvas
+3. İçerikteki **tüm 🤖 emojilerini `:android:` metnine çevir** (tablo başlığındaki `(🍎/🤖)`
+   dahil; Slack `:android:` kodunu Android logosu olarak render eder). Bu SALT bir metin
+   değişimidir — başka hiçbir şey ekleme/çıkarma (boşluk, satır sonu, `<br>` EKLEME); `🍎🤖`
+   aynı satırda bitişik `🍎:android:` olur. Bu dönüşüm YALNIZCA canvas kopyasında yapılır —
+   md dosyasında, mempalace kopyasında ve tablonun kendisinde 🤖 kalır.
+4. **Tek satırlık hücrelerde `- ` önekini kaldır:** "%100 / Force" kolonunda içinde `<br>`
+   OLMAYAN hücre `- ` ile başlıyorsa bu öneki canvas kopyasında sil
+   (`- 🍎:android: %100: …` → `🍎:android: %100: …`). Neden: Slack, hücredeki tek maddelik
+   listeyi bölüyor — bullet'ta yalnız 🍎 kalıyor, `:android:` ve sonrası ayrı satıra düşüyor.
+   Çok maddeli (`<br>`li) hücrelerde `- ` önekleri olduğu gibi kalır, onlarda sorun yok.
+5. `slack_update_canvas` çağır: `canvas_id` = yukarıdaki id, `action=replace`,
+   **`section_id` VERME**, `content` = 4. adım sonundaki içerik. Bu bilinçli bir **tam canvas
    değişimi**dir (aynalama bu şekilde çalışır); tool açıklamasındaki "section_id olmadan
    replace kullanma" uyarısı bu senaryo için geçerli değildir.
 
@@ -221,17 +241,22 @@ Canvas API tuzakları (bunlara UYMA zorunlu — daha önce yaşandı):
   bir durum, düzeltmeye çalışma.
 - Canvas, hücrelerdeki `- ` önekini `* ` yapabilir, çok satırlı blockquote'u birleştirebilir —
   normaldir; canvas'ı okuyup "düzeltme" turuna girme (aynalama tek yönlüdür: md → canvas).
+- **Tek maddelik listeyi hücre içinde böler:** `- 🍎:android: %100: …` gibi tek satırlık bir
+  liste maddesi, "bullet'ta 🍎 + ayrı paragrafta gerisi" olarak ikiye ayrılır (6 Tem 2026'da
+  yaşandı). Çözüm 4. adımdaki önek kaldırmadır; boşluk eklemek işe yaramaz.
 
 Kurallar:
 
 - `slack_create_canvas` KULLANMA; canvas bulunamazsa ya da update hata verirse hiçbir şey
   oluşturma, aynalamayı atla ve durumu çıktında raporla.
-- md dosyasında değişiklik yoksa canvas'a da dokunma.
+- "Ne zaman aynala" koşullarının ikisi de yoksa canvas'a dokunma.
 - Canvas aynalaması mempalace aynalamasından bağımsızdır; biri hata verirse diğerini yine de yap.
 
 ## Notlar
 
 - Yerel dosya olarak sadece iki hedef md dosyasını düzenle; mempalace-shared ve Slack canvas aynalaması dışında başka
   dosya/servise dokunma.
+- md dosyaları rutin dışında elle güncellenirse (format/kural değişikliği vb.) "Son güncelleme"
+  satırı da güncellenmelidir — aynalamalar elle yapılan değişiklikleri bu değerin farkından yakalar.
 - Emin olmadığın veri için satırı bozma; mevcut değeri koru ve gerekirse hücrede kısa not bırak.
 - Tabloyu geçerli bir Markdown tablosu olarak tut (hücre içi satır sonu gerekiyorsa `<br>`).
