@@ -6,8 +6,8 @@ güncel tutmak. İki kanal ayrı ayrı, aynı mantıkla işlenir.
 
 ## Hedef dosyalar (kanal → dosya eşlemesi)
 
-1. `#pa-releasehistory` → `reflex/Release History/pa_release_summary.md`
-2. `#cs-releasehistory` → `reflex/Release History/cs_release_summary.md`
+1. `#pa-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release History/pa_release_summary.md`
+2. `#cs-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release History/cs_release_summary.md`
 
 Her kanalı kendi dosyasına yaz. Tabloyu **bu dosyaların içinde** güncelle. Dosya değiştiyse ayrıca:
 - Mempalace shared memory'e aynala (aşağıdaki "Mempalace shared memory aynalama" bölümü).
