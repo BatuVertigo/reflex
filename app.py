@@ -74,7 +74,7 @@ def _load_prompt(filename: str) -> str:
 
 
 # Promptlar ayrı .md dosyalarında tutulur (koda dokunmadan düzenlenebilsin diye).
-# Her özellik kendi klasöründe (örn. "Bug Watcher", "Release History" ile aynı düzen).
+# Her özellik kendi klasöründe (örn. "Bug Watcher", "Release Summary" ile aynı düzen).
 VERSION_CHECK_PROMPT = _load_prompt("Version Check/version_check_prompt.md")
 BUG_DETAILS_PROMPT = _load_prompt("Bug Details/bug_details_prompt.md")
 
