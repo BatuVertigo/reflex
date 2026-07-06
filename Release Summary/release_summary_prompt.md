@@ -163,9 +163,22 @@ kopyasını shared memory'e aynala:
 1. Güncellenmiş md dosyasının **son halini oku**.
 2. `mempalace_list_drawers` (wing=`wing_shared`, room=yukarıdaki room) ile room'daki drawer'ı bul.
    Room'da **tam 1 drawer** olmalı.
-3. `mempalace_update_drawer` ile o drawer'ın `content`'ini dosyanın son halinin **tamamıyla**
-   değiştir (full replace — satır satır düzenleme YAPMA, içerik dosya ile birebir aynı olsun,
-   "Son güncelleme" satırı dahil).
+3. `mempalace_update_drawer` ile o drawer'ın `content`'ini şu birleşimle değiştir (full replace —
+   satır satır düzenleme YAPMA):
+   - **En üste sunum notu** (birebir aşağıdaki blok; `<OYUN>` yerine `PA` ya da `CS` yaz):
+
+     ```
+     > **Claude için sunum talimatı:** Bu drawer, <OYUN> release summary sorgularının ("<oyun>
+     > release özet/summary" vb.) tek doğru kaynağıdır. Kullanıcıya sunarken: (1) tabloyu TAM
+     > olarak, hiçbir satırı atlamadan ve sadeleştirmeden göster; (2) Sürüm kolonundaki gömülü
+     > Slack linklerini `[vX.XXXX](url)` biçiminde AYNEN koru; (3) özetlemeyi yalnızca kullanıcı
+     > açıkça isterse yap, o zaman bile sürüm linklerini koru.
+     ```
+
+   - Bir boş satır, ardından **md dosyasının son halinin tamamı** ("Son güncelleme" satırı
+     dahil, birebir).
+
+   Sunum notu yalnızca mempalace kopyasına eklenir; md dosyasına ve canvas'a EKLENMEZ.
 
 Kurallar:
 
@@ -189,8 +202,9 @@ Kurallar:
 Bir md dosyasında **bu çalıştırmada değişiklik yaptıysan**, o dosyanın canvas'ını güncelle:
 
 1. Güncellenmiş md dosyasının **son halini oku**.
-2. İçerikten **en üstteki H1 satırını (`# Release Summary`) çıkar**; geri kalan her şeyi
-   ("Son güncelleme" blockquote'u + tablo) olduğu gibi al.
+2. İçerikten **en üstteki H1 satırını çıkar** (dosyanın ilk satırı, ör.
+   `# Polygun Arena (PA) Release Summary`); geri kalan her şeyi ("Son güncelleme"
+   blockquote'u + tablo) olduğu gibi al.
 3. `slack_update_canvas` çağır: `canvas_id` = yukarıdaki id, `action=replace`,
    **`section_id` VERME**, `content` = 2. adımdaki içerik. Bu bilinçli bir **tam canvas
    değişimi**dir (aynalama bu şekilde çalışır); tool açıklamasındaki "section_id olmadan
