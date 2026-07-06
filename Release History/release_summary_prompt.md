@@ -154,8 +154,8 @@ eşlemesi, ikisi de `wing_shared` wing'inde):
 
 | Dosya | Room |
 |-------|------|
-| `pa_release_history_table.md` | `pa-release-summary` |
-| `cs_release_history_table.md` | `cs-release-summary` |
+| `pa_release_summary.md` | `pa-release-summary` |
+| `cs_release_summary.md` | `cs-release-summary` |
 
 Bir md dosyasında **bu çalıştırmada değişiklik yaptıysan**, dosyayı bitirdikten sonra o dosyanın
 kopyasını shared memory'e aynala:
@@ -183,8 +183,8 @@ Kurallar:
 
 | Dosya | canvas_id | Canvas linki |
 |-------|-----------|--------------|
-| `pa_release_history_table.md` | `F0BEWEFM201` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEWEFM201 |
-| `cs_release_history_table.md` | `F0BEN9NU53M` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEN9NU53M |
+| `pa_release_summary.md` | `F0BEWEFM201` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEWEFM201 |
+| `cs_release_summary.md` | `F0BEN9NU53M` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEN9NU53M |
 
 Bir md dosyasında **bu çalıştırmada değişiklik yaptıysan**, o dosyanın canvas'ını güncelle:
 
