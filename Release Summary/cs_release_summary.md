@@ -1,11 +1,12 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 6 Temmuz 2026 20:02
+> **Son güncelleme:** 7 Temmuz 2026 20:07
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v14.7504](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782390946958219)** | 596 / 208578 | — | 🧪 CB %100, OB %100 — Prod'a açılmadı (crash nedeniyle, 14.7505 bekleniyor) |
+| **[v14.7506](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783426317303549)** | 653 / 208604 | — | 🧪 CB %100 yayınlandı, 🍎 review'da — Prod'a açılmadı |
+| **[v14.7504](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782390946958219)** | 596 / 208578 | — | 🧪 CB %100, OB %100 — Prod'a açılmadı (Vulkan crash nedeniyle, 14.7506 ile devam) |
 | **[v14.7502](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782338970807229)** | 594 / 208576 | — | 🧪 Sadece closed-beta |
 | **[v14.7501](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782149649851749)** | 593 / 208575 | — | 🧪 Sadece closed-beta |
 | **[v14.7008](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1781101366026649)** | 584 / 208568 | - 🤖 %100: 10 Haz 18:38<br>- 🍎 %100: 10 Haz 21:51<br>- 🍎🤖 Force: 11 Haz 09:54 | 🟢👊🏻 Yayın (son force) |
