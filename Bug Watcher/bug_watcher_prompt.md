@@ -12,7 +12,7 @@
   1. **Backlog gözden geçirme** (§6) — bir önceki raporun backlog listesindeki thread'leri yeniden değerlendir.
   2. **Yeni thread taraması** — §1'deki kanalların son 24 saatteki ana mesajlarını incele (aşağıdaki "Geriye bakış").
   3. **Gün sonu raporu** (§7) — backlog'un güncel halini #reflex kanalına raporla.
-- **Geriye bakış:** Kanala **son 24 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku.
+- **Geriye bakış:** Kanala **son 48 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku.
 - **Deneme modu (dry-run):** `true`
   - `true` olduğunda ajan tüm analizi yapar ama Slack'e **hiçbir yanıt yazmaz** —
     sadece ne yapacağını raporlar. Test ederken bunu `true` yapabilirsin.
@@ -36,6 +36,13 @@
 
 > İstediğiniz kanalları yeni satır olarak ekleyebilirsiniz.
 > Ajan her kanalın son 24 saatteki ana mesajlarını ve thread yanıtlarını okur.
+
+### 1a. Ekip usergroup ID'leri
+
+| Ekip | Usergroup ID | Etiket formatı |
+|---|---|---|
+| `@pa-product` (Polygun Arena) | `S09ADDKDVND` | `<!subteam^S09ADDKDVND>` |
+| `@cs-product` (Critical Strike) | `S09ADDHBTC1` | `<!subteam^S09ADDHBTC1>` |
 
 ### 1b. Ekip üyeleri (kim hangi ekipte)
 
@@ -158,10 +165,11 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
 - İleride bakılacağına dair bir şey söylenmiş:
   - "Unutulmaması adına task açmaya gerek varsa açabilir miyiz @etiket?"
 
-> `@etiket` yerine ilgili oyunun ekibini, §1'deki **usergroup ID** formatıyla etiketle:
+> `@etiket` yerine ilgili oyunun ekibini, §1a'daki **usergroup ID** formatıyla etiketle:
 > Channel → `<!channel>`,
-> Polygun Arena → `<!subteam^S...>` (pa-product), Critical Strike → `<!subteam^S...>`
-> (cs-product). Belirli bir kişiye dönüyorsan (§3) onun `<@U...>` ID'sini kullan.
+> Polygun Arena → `<!subteam^S09ADDKDVND>` (pa-product),
+> Critical Strike → `<!subteam^S09ADDHBTC1>` (cs-product).
+> Belirli bir kişiye dönüyorsan (§3 veya §5b) onun `<@U...>` ID'sini kullan.
 
 ### 5b. Ekibi etiketlemeden önceki son kontrol: acaba tek bir kişi mi?
 
@@ -169,31 +177,40 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
 yazmadan önce **dur ve şu ek kontrolü yap**. (§3'e girip zaten belirli bir kişiyi
 etiketliyorsan bu bölüm çalışmaz — sadece "ekip etiketlenecek" durumları içindir.)
 
-1. Thread'in **tüm yanıtlarını** yeniden oku.
-2. Yanıt yazanları §1b'deki **ilgili ekibin üye listesiyle** eşleştir — yani sadece
-   o kanalın ekibindeki kişileri dikkate al (PA kanalı → pa-product, CS kanalı →
-   cs-product). Ekip dışından biri konuşmuşsa onu bu kontrolde sayma.
-3. Şunu sor: **Bu bug'la ilgilenenin o ekipten tek bir kişi olduğu bariz mi?**
+**Adım 1 — Aday havuzunu çıkar.** Thread'e katılmış herkesi listele. Buna
+**ana mesajı (bug'ı) atan kişi de dahildir** — thread'de hiç yanıt olmasa bile
+ana mesajın yazarı her zaman bir adaydır. Sonra bu listeyi §1b'deki **ilgili
+ekibin üye listesiyle** kesiştir (PA kanalı → pa-product, CS kanalı → cs-product).
+Ekip dışındakileri havuzdan çıkar.
 
-**Kişiyi etiketle** (ekip yerine), aşağıdakilerden en az biri **açıkça** varsa:
-- Ekipten **bir kişi** thread'de daha çok konuşmuş ve bug'ı daha çok sahiplenmiş gibi
-  görünüyor (soru sormuş, repro istemiş, detay istemiş, "bakıyorum/bende" demiş).
-- Ekipten birden fazla kişi konuşmuş ama **biri açıkça sahiplenmiş**: konuyu o
-  yürütmüş, diğerleri ona yönlendirmiş ("<@X> bakabilir", "bu <@X>'in alanı",
-  "sanırım <@X> ilgilenmişti") ya da son sözü/kararı o vermiş.
-- Bug açıkça o kişinin bilinen sorumluluk alanına giriyor ve thread'de bunu
-  destekleyen bir iz var.
+> Aday havuzu = { ana mesajın yazarı } ∪ { thread'e yanıt yazanlar }, **kesişim**
+> ilgili ekibin üye listesi.
 
-**Ekibi etiketle** (yani orijinal karar aynen kalsın), şunlardan biri varsa:
-- Ekipten **hiç kimse** thread'de konuşmamış.
-- Ekipten birden fazla kişi konuşmuş ve **hiçbiri belirgin şekilde sahiplenmemiş**.
-- **Kararsızsan.** Şüphe varsa **her zaman ekibi etiketle** — yanlış kişiyi
-  etiketlemek, ekibi etiketlemekten daha kötüdür.
+**Adım 2 — Havuzun büyüklüğüne göre karar ver:**
 
-Kişiyi etiketlemeye karar verirsen §5'teki cümleyi aynen kullan, sadece `@etiket`
-yerine o kişinin `<@U...>` ID'sini koy. Örn:
-- "Bu bug için task açılmasına gerek varsa açabilir miyiz <@U086CLB5JUX>?"
-- "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve hala fixlenmemiş gözüküyor. Kontrol edebilir misin <@U086CLB5JUX>?"
+| Havuzda kaç kişi var | Karar |
+|---|---|
+| **0 kişi** (ekipten kimse thread'e değmemiş) | **Ekibi** etiketle. |
+| **1 kişi** | **O kişiyi** etiketle. Ek sahiplenme sinyali aramana gerek yok — bug'ı o raporlamışsa ya da ekipten tek konuşan oysa doğal muhatap odur. |
+| **2+ kişi** | İçlerinden **biri daha çok ilgilendiyse** onu etiketle; **hiçbiri belirgin şekilde ilgilenmemişse ekibi** etiketle. |
+
+**"Açıkça ilgilenmiş" ne demek** (2+ kişi durumunda):
+- Konuyu o yürütmüş: soru sormuş, repro istemiş, detay istemiş, "bakıyorum / bende /
+  ben bakarım" demiş.
+- Diğerleri ona yönlendirmiş: "<@X> bakabilir", "bu <@X>'in alanı",
+  "sanırım <@X> ilgilenmişti".
+- Son sözü / kararı o vermiş.
+- Bug açıkça onun bilinen sorumluluk alanına giriyor ve thread'de bunu destekleyen
+  bir iz var.
+
+**Kararsızsan ekibi etiketle.** 2+ kişi varken şüphe hâlinde **her zaman ekip** —
+yanlış kişiyi etiketlemek, ekibi etiketlemekten daha kötüdür. (Bu tie-break yalnızca
+2+ kişilik havuz içindir; **tek kişilik havuzda tereddüt etme, o kişiyi etiketle**.)
+
+**Adım 3 — Cümleyi kur.** §5'teki cümleyi aynen kullan, sadece `@etiket` yerine o
+kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"):
+- "Bu bug için task açılmasına gerek varsa açabilir miyiz <@U0AG2C15XB7>?"
+- "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve hala fixlenmemiş gözüküyor. Kontrol edebilir misin <@U0AG2C15XB7>?"
 
 > Not: Bu kontrol sonucu kişiyi etiketlediysen, bu **§3 anlamında bir kişi
 > hatırlatması** sayılır. Yani §6'da o kişiden yanıt gelmezse bir sonraki run'da
@@ -247,7 +264,7 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
   başlatır. Bu yüzden başlık ve format **sabittir**, değiştirme:
 
 ```
-🐛 Bug Watcher Backlog — <GG.AA.YYYY>
+🐛 Bug Watcher Raporu — <GG.AA.YYYY>
 
 📋 Backlog (yarınki run'da yeniden kontrol edilecek):
 1. <thread permalink> — <kanal adı> — <bug'ın tek satırlık özeti>
