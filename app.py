@@ -1,5 +1,5 @@
 """
-context-checker — surum/ortam denetcisi (version check) + bug details formatlayici
+reflex — surum/ortam denetcisi (version check) + bug details formatlayici
 """
 
 from __future__ import annotations
@@ -19,7 +19,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
-logger = logging.getLogger("context-checker")
+logger = logging.getLogger("reflex")
 
 # .env'de virgülle ayrılmış bir veya birden fazla kanal ID'si olabilir.
 # Bot yalnızca bu kanallarda davranır (yanlış bir kanala eklense bile susar).
@@ -364,7 +364,7 @@ def handle_bug_details(ack, shortcut, client):
 
 if __name__ == "__main__":
     logger.info(
-        "context-checker başlıyor (Socket Mode, motor=claude CLI) — izlenen kanal: %d",
+        "reflex başlıyor (Socket Mode, motor=claude CLI) — izlenen kanal: %d",
         len(QA_CHANNEL_IDS),
     )
     SocketModeHandler(app, os.environ["SLACK_APP_TOKEN"]).start()

@@ -84,14 +84,14 @@ CLAUDE_CODE_OAUTH_TOKEN=sk-ant-oat-... \
 ## 3. Lokal kurulum
 
 ```bash
-cd "context-checker"
+cd reflex
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 
 # .env'in yoksa .env.example'dan oluştur, sonra içini doldur.
 
-python app.py              # "context-checker başlıyor..."
+python app.py              # "reflex başlıyor..."
 ```
 
 Kanala eksik bilgili bir test mesajı at (örn. "şu ekranda crash oluyor") → bot
