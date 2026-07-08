@@ -42,8 +42,9 @@ hazır bir bug task çıktısı üretmek.
    kurala göre); bilgi yoksa tam olarak `sürüm/build?` yaz.
 
 **Slack thread linki:** Bu satırı SEN EKLEME. Sistem, ürettiğin çıktının en sonuna
-thread'in gerçek Slack linkini `Slack thread: <URL>` olarak otomatik ekler. Sen
-sadece yukarıdaki maddeleri üret; çıktının sonuna `Slack thread:` satırı YAZMA.
+thread'in gerçek Slack linkini metne gömülü bir köprü olarak otomatik ekler. Sen
+sadece yukarıdaki maddeleri üret; çıktının sonuna herhangi bir `Slack thread`
+satırı YAZMA.
 
 ## Sürüm/ortam cümlesi
 

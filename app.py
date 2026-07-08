@@ -262,21 +262,34 @@ def _thread_permalink(client, channel: str, thread_ts: str) -> str | None:
         return None
 
 
+def _is_slack_link_line(line: str) -> bool:
+    """Sonda duran (bizim ya da modelin yazdığı) bir 'Slack thread' link satırı mı?"""
+    s = line.strip().lower()
+    return (
+        s.startswith(("slack thread:", "[slack thread]"))          # düz metin / markdown
+        or (s.startswith("<http") and s.endswith("|slack thread>"))  # Slack mrkdwn
+    )
+
+
 def _with_slack_link(result: str, permalink: str | None) -> str:
-    """Modelin (varsa placeholder) 'Slack thread:' satırını at, gerçek linki ekle.
+    """Modelin (varsa placeholder) 'Slack thread' satırını at, gerçek linki ekle.
 
     Link'i model üretmez; burada deterministik olarak eklenir — böylece URL asla
-    kırpılmaz/bozulmaz. Model yine de bir 'Slack thread:' satırı yazdıysa temizlenir.
+    kırpılmaz/bozulmaz. Model yine de bir 'Slack thread' satırı yazdıysa temizlenir.
+
+    Slack mrkdwn `<url|metin>` sözdizimi kullanılır: modal'da gerçek bir köprü
+    olarak render olur, kopyalanınca Asana'ya gömülü link olarak yapışır.
+    Markdown `[metin](url)` Slack'te render OLMAZ; düz metin gider.
     """
     lines = result.rstrip().splitlines()
-    while lines and lines[-1].strip().lower().startswith("slack thread:"):
+    while lines and _is_slack_link_line(lines[-1]):
         lines.pop()
     while lines and not lines[-1].strip():   # sondaki boş satırları da temizle
         lines.pop()
     body = "\n".join(lines)
     if not permalink:
         return body
-    return f"{body}\n\nSlack thread: {permalink}"
+    return f"{body}\n\n<{permalink}|Slack thread>"
 
 
 def _modal(blocks: list[dict]) -> dict:
