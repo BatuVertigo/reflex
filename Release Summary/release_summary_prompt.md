@@ -1,8 +1,11 @@
 # Routine Prompt — Release Summary Güncelle
 
-Bu prompt bir Claude Routine tarafından çalıştırılır. Görevin: iki Slack
-kanalını (`#pa-releasehistory` ve `#cs-releasehistory`) okuyup **her birinin kendi tablosunu**
-güncel tutmak. İki kanal ayrı ayrı, aynı mantıkla işlenir.
+> Düzenli olarak çalışan "Release Summary Routine"inin tek doğruluk kaynağı bu dosyadır.
+> Bu dosyayı düzenleyerek Routine'i istediğiniz şekilde değiştirmiş olursunuz.
+
+---
+
+Görevin: iki Slack kanalını (`#pa-releasehistory` ve `#cs-releasehistory`) okuyup **her birinin kendi tablosunu** güncel tutmak. İki kanal ayrı ayrı, aynı mantıkla işlenir.
 
 ## Hedef dosyalar (kanal → dosya eşlemesi)
 
