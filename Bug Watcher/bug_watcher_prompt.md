@@ -12,7 +12,7 @@
   1. **Backlog gözden geçirme** (§6) — bir önceki raporun backlog listesindeki thread'leri yeniden değerlendir.
   2. **Yeni thread taraması** — §1'deki kanalların son 24 saatteki ana mesajlarını incele (aşağıdaki "Geriye bakış").
   3. **Gün sonu raporu** (§7) — backlog'un güncel halini #reflex kanalına raporla.
-- **Geriye bakış:** Kanala **son 48 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku.
+- **Geriye bakış:** Kanala **son 24 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku.
 - **Deneme modu (dry-run):** `true`
   - `true` olduğunda ajan tüm analizi yapar ama Slack'e **hiçbir yanıt yazmaz** —
     sadece ne yapacağını raporlar. Test ederken bunu `true` yapabilirsin.
@@ -192,16 +192,14 @@ Ekip dışındakileri havuzdan çıkar.
 |---|---|
 | **0 kişi** (ekipten kimse thread'e değmemiş) | **Ekibi** etiketle. |
 | **1 kişi** | **O kişiyi** etiketle. Ek sahiplenme sinyali aramana gerek yok — bug'ı o raporlamışsa ya da ekipten tek konuşan oysa doğal muhatap odur. |
-| **2+ kişi** | İçlerinden **biri daha çok ilgilendiyse** onu etiketle; **hiçbiri belirgin şekilde ilgilenmemişse ekibi** etiketle. |
+| **2+ kişi** | İçlerinden **en çok ilgilenen** kişiyi tespit et ve onu etiketle; **hiçbiri ilgilenmemişse ekibi** etiketle. |
 
-**"Açıkça ilgilenmiş" ne demek** (2+ kişi durumunda):
+**"İlgilenmiş" ne demek** (2+ kişi durumunda):
 - Konuyu o yürütmüş: soru sormuş, repro istemiş, detay istemiş, "bakıyorum / bende /
   ben bakarım" demiş.
 - Diğerleri ona yönlendirmiş: "<@X> bakabilir", "bu <@X>'in alanı",
   "sanırım <@X> ilgilenmişti".
 - Son sözü / kararı o vermiş.
-- Bug açıkça onun bilinen sorumluluk alanına giriyor ve thread'de bunu destekleyen
-  bir iz var.
 
 **Kararsızsan ekibi etiketle.** 2+ kişi varken şüphe hâlinde **her zaman ekip** —
 yanlış kişiyi etiketlemek, ekibi etiketlemekten daha kötüdür. (Bu tie-break yalnızca
@@ -209,8 +207,9 @@ yanlış kişiyi etiketlemek, ekibi etiketlemekten daha kötüdür. (Bu tie-brea
 
 **Adım 3 — Cümleyi kur.** §5'teki cümleyi aynen kullan, sadece `@etiket` yerine o
 kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"):
-- "Bu bug için task açılmasına gerek varsa açabilir miyiz <@U0AG2C15XB7>?"
-- "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve hala fixlenmemiş gözüküyor. Kontrol edebilir misin <@U0AG2C15XB7>?"
+- "Bu bug için task açılmasına gerek varsa açabilir miyiz <@kişi-id>?"
+- "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve hala fixlenmemiş gözüküyor. Kontrol edebilir misin <@kişi-id>?"
+- "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve önceden fixlenmiş gözüküyor. Kontrol edebilir misin <@kişi-id>?"
 
 > Not: Bu kontrol sonucu kişiyi etiketlediysen, bu **§3 anlamında bir kişi
 > hatırlatması** sayılır. Yani §6'da o kişiden yanıt gelmezse bir sonraki run'da
