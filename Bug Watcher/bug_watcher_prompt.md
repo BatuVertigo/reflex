@@ -120,8 +120,17 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
 
 ## 4. Asana cross-check
 
-- **Kural:** İlgili Slack kanalının oyunu (§1'deki listede var) Polygun Arena ise adı `PA` ile **başlayan** Asana projelerini, Critical Strike ise `CS` ile **başlayan** Asana projelerini dikkate al.
-  (örn. `PA v1.370 - Main Menu Changes` veya `CS v14.8 - Gangster Paradise` gibi).
+- **Kapsam kuralı (ZORUNLU — önce oku, bir filtredir, tavsiye değil):** Bir bug'ı
+  YALNIZCA ilgili oyunun kapsam içindeki Asana projelerindeki tasklarla eşleştir.
+  Kapsam, ilgili Slack kanalının oyununa (§1) göre belirlenir:
+  - **Polygun Arena** kanalı → adı **`PA` ile başlayan** projeler
+    (örn. `PA v1.370 - Main Menu Changes`).
+  - **Critical Strike** kanalı → adı **`CS` ile başlayan** projeler
+    (örn. `CS v14.8 - Gangster Paradise`).
+  Adı bu önekle **başlamayan** hiçbir proje kapsamda değildir. Özellikle eski
+  `Version X.Y ...` isimli release projeleri (örn. `Version 12.2 - DONE`) **kapsam
+  DIŞIDIR** — bunlardan gelen hiçbir task, ne kadar benzese de eşleşme olarak
+  sunulamaz.
 - **Asana'da task tipi:** Açılan her task bir **type** taşır — **Task** veya **Approval**.
   Bir bug Asana'ya girildiğinde **Approval** olarak açılır ve fix durumu bu approval'ın
   **state**'inden okunur: `rejected`, `changes requested` veya `approved`. Bir bug'ın benzerlerinin altında toplandığı **parent toplayıcı** ise normal **Task** tipindedir;
@@ -136,12 +145,24 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
      yani fixlenmiş → §5.3.
   4. Bu buga benzer bugların toplandığı bir **parent toplayıcı Task** var mı (isim +
      içerik eşleşmesi) → §5.4.
-- **Arama yöntemi (önemli):** Cross-check yaparken **`search_objects`'e güvenme** —
-  o yalnızca task **ismiyle** eşleşir ve gerçek eşleşmeleri kaçırır. Bunun yerine
-  tam metin arayan **`search_tasks`** kullan (task ismi + açıklama + yorumları tarar).
-  Anahtar kelimeleri **hem Türkçe hem İngilizce** dene (örn. `mor`/`purple`,
-  `arka plan`/`background`, `pop-up`/`popup`), çünkü task içerikleri karışık dilde
-  olabilir. Birden fazla sorgu varyasyonuyla ara; ilk boş sonuçta pes etme.
+- **Arama yöntemi (önemli — kapsamı arama anında zorla):**
+  1. **Önce kapsamdaki projeleri çıkar.** İlgili önekle (`PA` / `CS`) **başlayan**
+     projeleri bul (proje arayıp adı bu önekle **başlayanları** süz) ve bunların
+     **GID'lerini** topla. Bu, izin verilen proje kümesidir. Küme boşsa cross-check
+     sonucu "eşleşme yok" kabul edilir.
+  2. **Aramayı bu kümeyle sınırla.** `search_tasks`'i **`projects_any`**
+     parametresine bu GID'leri (virgülle ayrılmış) vererek çağır — böylece sonuçlar
+     yapısal olarak yalnızca kapsamdaki projelerden gelir. `search_objects`'e
+     **güvenme** (yalnızca task ismiyle eşleşir, gerçek eşleşmeleri kaçırır); tam
+     metin arayan **`search_tasks`** kullan (task ismi + açıklama + yorumları tarar).
+     Approval/Task tipini gerekirse `resource_subtype` ile daralt.
+  3. Anahtar kelimeleri **hem Türkçe hem İngilizce** dene (örn. `mor`/`purple`,
+     `arka plan`/`background`, `pop-up`/`popup`), çünkü task içerikleri karışık dilde
+     olabilir. Birden fazla sorgu varyasyonuyla ara; ilk boş sonuçta pes etme.
+  4. **Sunmadan önce son doğrulama (belt-and-suspenders).** Bir taskı eşleşme olarak
+     kullanmadan önce, taskın ait olduğu projelerin adlarını oku (`opt_fields`'e
+     `projects.name` ekle) ve **en az bir** projesinin adının gereken önekle
+     (`PA`/`CS`) başladığını doğrula. Başlamıyorsa o taskı **at — asla sunma.**
 - Buradaki cross-check'ten bazı Asana taskları elde edilirse onlardan en son yanıtı oluştururken bahset.
 
 ---
@@ -263,15 +284,15 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
   başlatır. Bu yüzden başlık ve format **sabittir**, değiştirme:
 
 ```
-🐛 Bug Watcher Raporu — <GG.AA.YYYY>
+🐛 **Bug Watcher Raporu** — <GG.AA.YYYY>
 
 📋 Backlog (yarınki run'da yeniden kontrol edilecek):
-1. <thread permalink> — <kanal adı> — <bug'ın tek satırlık özeti>
-   Bugünkü aksiyon: <kişiye hatırlatma <@U...> | ekibe hatırlatma | ekibe tekrar hatırlatma (n. kez)> — backlog'da <n>. gün
+1. [<bug'ın tek satırlık özeti>](<thread permalink>) — [<kanal adı>](<kanal linki>) — 
+   _Bugünkü aksiyon: <kişiye hatırlatma | ekibe hatırlatma | ekibe tekrar hatırlatma (n. kez)> — backlog'da <n>. gün_
 2. ...
 
 ✅ Backlog'dan çıkanlar:
-- <thread permalink> — <çıkma sebebi: ✅/❌/✏️ emojisi geldi | Asana linki atıldı | onaylayan yanıt geldi | task açıldı>
+- [<bug'ın tek satırlık özeti>](<thread permalink>) — <çıkma sebebi: ✅/❌/✏️ emojisi geldi | Asana linki atıldı | onaylayan yanıt geldi | task açıldı>
 
 📊 Özet: bugün <x> yeni thread incelendi, <y> yeni hatırlatma yapıldı, backlog'a <z> thread eklendi, <w> thread çıktı.
 ```
