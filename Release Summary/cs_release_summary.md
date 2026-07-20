@@ -1,17 +1,18 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 20 Temmuz 2026 12:00
+> **Son güncelleme:** 20 Temmuz 2026 20:05
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
+| **[v14.8002](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784563150145829)** | 666 / 208617 | — | 🧪 Prod'a açılmadı (🍎 OB review'da, 🤖 internal test bekleniyor) |
 | **[v14.8001](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783718146706839)** | — / 208615 | — | 🧪 Sadece closed-beta (Gangster Paradise sezon build'i) |
-| **[v14.7507](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783712413650309)** | 665 / — | - 🍎 %100: 12 Tem 23:12 | 🟢 Yayın (🍎 %100) |
-| **[v14.7506](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783426317303549)** | 653 / 208604 | - 🤖 %100: 9 Tem 20:34 | 🟢 Yayın (🤖 %100, 🍎 → v14.7507) |
+| **[v14.7507](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783712413650309)** | 665 / — | - 🍎 %100: 12 Tem 23:12<br>- 🍎 Force: 20 Tem 14:32 | 🟢👊🏻 Yayın (son force, 🍎) |
+| **[v14.7506](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783426317303549)** | 653 / 208604 | - 🤖 %100: 9 Tem 20:34<br>- 🤖 Force: 20 Tem 14:32 | 🟢👊🏻 Yayın (son force, 🤖) |
 | **[v14.7504](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782390946958219)** | 596 / 208578 | — | 🧪 CB %100, OB %100 — Prod'a açılmadı (Vulkan crash nedeniyle, 14.7506 ile devam) |
 | **[v14.7502](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782338970807229)** | 594 / 208576 | — | 🧪 Sadece closed-beta |
 | **[v14.7501](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782149649851749)** | 593 / 208575 | — | 🧪 Sadece closed-beta |
-| **[v14.7008](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1781101366026649)** | 584 / 208568 | - 🤖 %100: 10 Haz 18:38<br>- 🍎 %100: 10 Haz 21:51<br>- 🍎🤖 Force: 11 Haz 09:54 | 🟢👊🏻 Yayın (son force) |
+| **[v14.7008](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1781101366026649)** | 584 / 208568 | - 🤖 %100: 10 Haz 18:38<br>- 🍎 %100: 10 Haz 21:51<br>- 🍎🤖 Force: 11 Haz 09:54 | 🔵👊🏻 Forcelanmıştı → v14.7506 / v14.7507 forcelandı |
 | **[v14.7007](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1781015038576959)** | 583 / 208567 | - 🍎🤖 %100: 10 Haz 13:04 | 🔵 🤖 %100, 🍎 %100 (force iptal edildi) → v14.7008 forcelandı |
 | **[v14.7006](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1780674327890439)** | 582 / 208566 | - 🍎🤖 %100: 9 Haz 19:26 | 🔵 🤖 %100, 🍎 %100 (force iptal edildi) → v14.7008 forcelandı |
 | **[v14.7005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1780582682287829)** | 565 / 208563 | — | 🧪 Sadece closed-beta |
