@@ -157,7 +157,7 @@ def _extract_json(text: str) -> dict:
 
 
 def check_version(text: str) -> dict | None:
-    """Mesajı değerlendir; {is_bug_report, missing, question} dict'ini döndür."""
+    """Mesajı değerlendir; {is_critical_bug, missing, question} dict'ini döndür."""
     raw = _run_claude(
         VERSION_CHECK_PROMPT, text, CLAUDE_HAIKU_MODEL,
         VERSION_CHECK_TIMEOUT, VERSION_CHECK_EFFORT,
@@ -197,7 +197,7 @@ def handle_message(event, client):
         logger.exception("Version check başarısız (ts=%s)", ts)
         return
 
-    if not result or not result.get("is_bug_report"):
+    if not result or not result.get("is_critical_bug"):
         return
 
     missing = result.get("missing") or []
