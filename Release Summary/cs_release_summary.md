@@ -1,11 +1,13 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 9 Temmuz 2026 17:59
+> **Son güncelleme:** 20 Temmuz 2026 12:00
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v14.7506](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783426317303549)** | 653 / 208604 | — | 🟢 Yayın (🤖 Prod %50, OB %100; 🍎 Prod %1) |
+| **[v14.8001](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783718146706839)** | — / 208615 | — | 🧪 Sadece closed-beta (Gangster Paradise sezon build'i) |
+| **[v14.7507](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783712413650309)** | 665 / — | - 🍎 %100: 12 Tem 23:12 | 🟢 Yayın (🍎 %100) |
+| **[v14.7506](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783426317303549)** | 653 / 208604 | - 🤖 %100: 9 Tem 20:34 | 🟢 Yayın (🤖 %100, 🍎 → v14.7507) |
 | **[v14.7504](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782390946958219)** | 596 / 208578 | — | 🧪 CB %100, OB %100 — Prod'a açılmadı (Vulkan crash nedeniyle, 14.7506 ile devam) |
 | **[v14.7502](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782338970807229)** | 594 / 208576 | — | 🧪 Sadece closed-beta |
 | **[v14.7501](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1782149649851749)** | 593 / 208575 | — | 🧪 Sadece closed-beta |

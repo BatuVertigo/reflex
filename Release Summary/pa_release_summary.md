@@ -1,15 +1,17 @@
 # Polygun Arena (PA) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 9 Temmuz 2026 19:07
+> **Son güncelleme:** 12 Temmuz 2026 23:00
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v1.3701](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1783594908950799)** | 559 / 873 | - 🍎🤖 %100: 9 Tem 19:03 | 🟢 Yayın (🤖 %100, 🍎 %100) |
+| **[v1.3703](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1783629942713189)** | 562 / 875 | - 🍎🤖 %100: 10 Tem 17:42<br>- 🍎🤖 Force: 12 Tem 16:43 | 🟢👊🏻 Yayın (son force) |
+| **[v1.3702](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1783620045243999)** | 561 / 874 | — | 🧪 Release process yok |
+| **[v1.3701](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1783594908950799)** | 559 / 873 | - 🍎🤖 %100: 9 Tem 19:03 | 🔵 🤖 %100, 🍎 %100 → v1.3703 forcelandı |
 | **[v1.3700](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1783582071266739)** | 556 / 869 | — | 🧪 Release process yok |
-| **[v1.3509](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1783268015197309)** | 552 / 862 | - 🍎🤖 %100: 6 Tem 20:27 | 🟢 Yayın (🤖 %100, 🍎 %100) |
+| **[v1.3509](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1783268015197309)** | 552 / 862 | - 🍎🤖 %100: 6 Tem 20:27 | 🔵 🤖 %100, 🍎 %100 → v1.3703 forcelandı |
 | **[v1.3508](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1782992239536479)** | 551 / 861 | — | 🧪 Review'a atıldı, Prod'a açılmadı |
-| **[v1.3507](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1782901893478599)** | 545 / 855 | - 🍎🤖 %100: 1 Tem 17:10<br>- 🍎🤖 Force: 1 Tem 20:05 | 🟢👊🏻 Yayın (son force) |
+| **[v1.3507](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1782901893478599)** | 545 / 855 | - 🍎🤖 %100: 1 Tem 17:10<br>- 🍎🤖 Force: 1 Tem 20:05 | 🔵👊🏻 Forcelanmıştı → v1.3703 forcelandı |
 | **[v1.3506](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1782801962649789)** | 542 / 851 | - 🍎🤖 %100: 1 Tem 11:57 | 🔵 🤖 %100, 🍎 %100 → v1.3507 forcelandı |
 | **[v1.3504](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1782758762639939)** | 541 / 850 | — | 🔵 🤖 %5, 🍎 review'daydı → v1.3507 forcelandı |
 | **[v1.3503](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1782745682707719)** | 540 / 849 | — | 🧪 Release process yok |
