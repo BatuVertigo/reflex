@@ -288,7 +288,7 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
 
 📋 Backlog (yarınki run'da yeniden kontrol edilecek):
 1. [<bug'ın tek satırlık özeti>](<thread permalink>) — [<kanal adı>](<kanal linki>) — 
-   _Bugünkü aksiyon: <kişiye hatırlatma | ekibe hatırlatma | ekibe tekrar hatırlatma (n. kez)> — backlog'da <n>. gün_
+   _Bugünkü aksiyon: <kişiye hatırlatma [not: etiket koyma] | ekibe hatırlatma [not: etiket koyma] | ekibe tekrar hatırlatma (n. kez) [not: etiket koyma]> — backlog'da <n>. gün_
 2. ...
 
 ✅ Backlog'dan çıkanlar:
