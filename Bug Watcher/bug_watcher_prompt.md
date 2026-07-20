@@ -13,17 +13,69 @@
   2. **Yeni thread taraması** — §1'deki kanalların son 24 saatteki ana mesajlarını incele (aşağıdaki "Geriye bakış").
   3. **Gün sonu raporu** (§7) — backlog'un güncel halini #reflex kanalına raporla.
 - **Geriye bakış:** Kanala **son 24 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku.
-- **Deneme modu (dry-run):** `true`
+- **Deneme modu (dry-run):** `false`
   - `true` olduğunda ajan tüm analizi yapar ama Slack'e **hiçbir yanıt yazmaz** —
     sadece ne yapacağını raporlar. Test ederken bunu `true` yapabilirsin.
 - **Araçlar:** Bu Routine, bağlı **Slack MCP** (mesaj/thread/reaction okuma, kullanıcı
-  çözümleme, mesaj atma) ve **Asana MCP** (proje/task arama) connector'ları üzerinden
-  çalışır. Asana'ya **hiçbir şey yazmaz/oluşturmaz** — Asana yalnızca okuma içindir.
+  çözümleme) ve **Asana MCP** (proje/task arama) connector'larını **yalnızca okuma**
+  için kullanır. Asana'ya **hiçbir şey yazmaz/oluşturmaz**. Slack'e mesaj **gönderme**
+  connector ile YAPILMAZ (connector kullanıcı adına atar) — tüm gönderimler §0a'daki
+  yöntemle, **Reflex app kimliğiyle** yapılır.
 - **Yanıt yeri:** Tüm yanıtlar ilgili bug mesajının **kendi thread'ine yanıt** olarak
   yazılır; bug kanallarına yeni (top-level) mesaj atılmaz.
   **Tek istisna:** gün sonu backlog raporu (§7), rapor kanalı **#reflex**'e top-level
   mesaj olarak atılır.
 - **Dil:** Botun tüm Slack çıktıları **Türkçe**.
+
+---
+
+## 0a. Mesaj gönderme yöntemi (Reflex app kimliği)
+
+Slack'e yazılan **her mesaj** (thread yanıtları + §7 raporu) **Reflex Slack app'inin
+bot token'ı** ile `chat.postMessage` üzerinden gönderilir; böylece mesajlar Slack'te
+**Reflex** adına görünür. Slack MCP connector'ının mesaj atma araçları
+(`slack_send_message` vb.) **asla kullanılmaz** — onlar kullanıcı adına atar.
+
+**Token:** `/Users/vertigo/Desktop/Code/Reflex/reflex/.env` içindeki
+`SLACK_BOT_TOKEN`. Token'ı **asla** ekrana, loga veya run çıktısına yazma; yalnızca
+`Authorization` header'ında kullan.
+
+**Gönderim adımları:**
+
+1. Mesaj içeriğini geçici bir JSON dosyasına yaz — dosyayı oturumun scratchpad/temp
+   dizinine koy, repo içine yazma (tırnak/Türkçe karakter kaçış hatalarını önlemek
+   için payload her zaman dosyadan verilir):
+
+   ```json
+   {"channel": "<kanal ID>", "thread_ts": "<ana mesajın ts değeri>", "text": "<mesaj>"}
+   ```
+
+   - **Thread yanıtı:** `thread_ts` = yanıtlanan ana (top-level) mesajın `ts` değeri.
+   - **Gün sonu raporu (§7):** `channel` = `C0BFP48BMBK` (#reflex), `thread_ts` alanı
+     payload'a **konmaz** (top-level mesaj).
+   - Etiket formatları metinde aynen kullanılır: `<@U...>`, `<!subteam^S...>`.
+   - `text` alanı Slack **mrkdwn** formatında yazılır — bu dosyadaki şablon ve örnek
+     cümlelerdeki markdown, gönderim sırasında çevrilir:
+     - Link: `<https://...|görünen metin>` (markdown `[metin](url)` DEĞİL).
+     - Kalın: `*metin*` (çift yıldız `**metin**` DEĞİL).
+
+2. Gönder:
+
+   ```bash
+   source /Users/vertigo/Desktop/Code/Reflex/reflex/.env
+   curl -s -X POST https://slack.com/api/chat.postMessage \
+     -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
+     -H "Content-type: application/json; charset=utf-8" \
+     -d @<payload dosyası>
+   ```
+
+3. Yanıttaki `"ok"` alanını kontrol et. `"ok": false` ise:
+   - Hatayı (`error` alanı) run çıktısında raporla ve o mesajı gönderilmemiş say.
+   - **Connector'ın mesaj atma araçlarına GERİ DÜŞME** — hiçbir koşulda mesaj
+     kullanıcı adına atılmaz. Gönderilemeyen mesaj rapor/çıktıda belirtilir.
+
+**Dry-run kapısı değişmez:** dry-run `true` iken bu curl çağrıları dahil Slack'e
+**hiçbir yazma yapılmaz**; yalnızca gönderilecek payload'lar run çıktısında gösterilir.
 
 ---
 
@@ -93,6 +145,8 @@ Aşağıdakilerden **herhangi biri** varsa bug'ı atla:
 - ✅ onay emojisi = bug çözüldü ya da sorun olmadığına karar verildi.
 - ❌ çarpı emojisi = bug ignore edilmeye karar verildi.
 - ✏️ kalem emojisi = bug Asana'ya geçirilmiş.
+  (Bu üç emoji yalnızca **ana mesaja reaction** olarak konmuşsa sayılır; thread
+  yanıtlarındaki reaction'lar ve mesaj metninde geçen emojiler sayılmaz.)
 - Ana mesajda veya thread yanıtlarında ilgili bug için Asana linki atılmış.
 - Biri onaylayan bir yanıt yazmış: "düzeltildi", "task açıldı", "Asana taski açıldı", "hallettim", "bunu ignore edeceğiz", "bu bug değil", "bunu çözdük" gibi.
 
@@ -130,10 +184,15 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
   Adı bu önekle **başlamayan** hiçbir proje kapsamda değildir. Özellikle eski
   `Version X.Y ...` isimli release projeleri (örn. `Version 12.2 - DONE`) **kapsam
   DIŞIDIR** — bunlardan gelen hiçbir task, ne kadar benzese de eşleşme olarak
-  sunulamaz.
+  sunulamaz. Önek kontrolünü proje adının **baş/son boşlukları kırpılmış (trim)**
+  haline uygula — örn. ` PA v1.010 - Arctic Siege` kapsam İÇİdir. Adında
+  `Template` geçen projeler (örn. `PA Version Template`) release projesi
+  değildir — **kapsam DIŞIDIR**.
 - **Asana'da task tipi:** Açılan her task bir **type** taşır — **Task** veya **Approval**.
   Bir bug Asana'ya girildiğinde **Approval** olarak açılır ve fix durumu bu approval'ın
-  **state**'inden okunur: `rejected`, `changes requested` veya `approved`. Bir bug'ın benzerlerinin altında toplandığı **parent toplayıcı** ise normal **Task** tipindedir;
+  **state**'inden okunur: `rejected`, `changes requested` veya `approved`. Fix durumunu
+  **yalnızca bu state belirler** — `completed: true` approval'ın sonuçlandığını gösterir,
+  fixlendiğini değil (`rejected` + `completed: true` → hâlâ fixlenmemiş, §5.1). Bir bug'ın benzerlerinin altında toplandığı **parent toplayıcı** ise normal **Task** tipindedir;
   bunu task'ın **ismi** ile bizim bug'ın içeriğini karşılaştırarak
   (anlamsal benzerlik) tespit et.
 - **Eşleştirme mantığı:**
@@ -145,6 +204,11 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
      yani fixlenmiş → §5.3.
   4. Bu buga benzer bugların toplandığı bir **parent toplayıcı Task** var mı (isim +
      içerik eşleşmesi) → §5.4.
+  - **Benzerlik eşiği:** Bir taskı 1–3 kapsamında "bu bug" saymak için **aynı
+    semptom + aynı ekran/sistem** gerekir. Bitişik-ama-farklı semptomlu tasklar
+    (örn. aynı ekranda ama başka bir öğeyi anlatan "TDM icon and Map icon
+    overlaps") eşleşme olarak sunulMAZ; en fazla 4 (parent toplayıcı) adayı
+    olarak değerlendirilir.
 - **Arama yöntemi (önemli — kapsamı arama anında zorla):**
   1. **Önce kapsamdaki projeleri çıkar.** İlgili önekle (`PA` / `CS`) **başlayan**
      projeleri bul (proje arayıp adı bu önekle **başlayanları** süz) ve bunların
@@ -163,6 +227,11 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
      kullanmadan önce, taskın ait olduğu projelerin adlarını oku (`opt_fields`'e
      `projects.name` ekle) ve **en az bir** projesinin adının gereken önekle
      (`PA`/`CS`) başladığını doğrula. Başlamıyorsa o taskı **at — asla sunma.**
+     **Subtask istisnası:** subtask'larda `projects` çoğu zaman `[]` döner — bu
+     tek başına eleme sebebi DEĞİLDİR. `projects` boşsa `parent` zincirini yukarı
+     yürü ve ilk projesi olan atanın projelerine aynı önek kontrolünü uygula.
+     Zincirden de proje çıkmazsa, sonuç zaten `projects_any` ile kapsam
+     projelerinden geldiği için taskı **geçerli say** (yapısal kısıta güven).
 - Buradaki cross-check'ten bazı Asana taskları elde edilirse onlardan en son yanıtı oluştururken bahset.
 
 ---
@@ -185,6 +254,10 @@ diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyo
   - "Bu konuyu netleştirip task açılmasına gerek varsa açabilir miyiz @etiket?"
 - İleride bakılacağına dair bir şey söylenmiş:
   - "Unutulmaması adına task açmaya gerek varsa açabilir miyiz @etiket?"
+
+> **Öncelik:** Asana cross-check (§4) sonuç döndüyse, senaryo "Konu tartışılmış"
+> olsa bile Asana'lı cümleleri (1–4) kullan; "Konu tartışılmış" cümleleri
+> yalnızca cross-check boş döndüğünde geçerlidir.
 
 > `@etiket` yerine ilgili oyunun ekibini, §1a'daki **usergroup ID** formatıyla etiketle:
 > Channel → `<!channel>`,
@@ -235,7 +308,9 @@ kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"
 > Not: Bu kontrol sonucu kişiyi etiketlediysen, bu **§3 anlamında bir kişi
 > hatırlatması** sayılır. Yani §6'da o kişiden yanıt gelmezse bir sonraki run'da
 > **ekibi** etiketleyerek hatırlatılır. Raporda (§7) "bugünkü aksiyon" alanına
-> `kişiye hatırlatma <@U...>` yaz.
+> kişiyi **düz metin isim + ID ile** yaz — örn.
+> `kişiye hatırlatma (Akif İnce, U0AG2C15XB7)`; `<@U...>` etiket formatı
+> raporda KULLANILMAZ (§7 notu).
 
 ---
 
@@ -243,11 +318,12 @@ kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"
 
 Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu işle:
 
-1. **Backlog'u bul:** Rapor kanalı **#reflex** (`C0BFP48BMBK`) içinde Bug Watcher'ın
-   attığı **en son** günlük raporu bul (rapor mesajları her zaman
-   `🐛 Bug Watcher Raporu` başlığıyla başlar). Bu mesajdaki "Backlog" listesi,
-   bugünkü gözden geçirmenin girdisidir. Rapor hiç yoksa (ilk çalıştırma) bu
-   bölümü atla.
+1. **Backlog'u bul:** Rapor kanalı **#reflex** (`C0BFP48BMBK`) içinde,
+   **yalnızca Reflex bot'unun attığı** (bot/app yazarlı — kullanıcı adına atılmış
+   eski test raporlarını yok say) ve `🐛 Bug Watcher Raporu` başlığıyla başlayan
+   mesajlar arasından **en yeni `ts` değerlisini** al. Bu mesajdaki "Backlog"
+   listesi, bugünkü gözden geçirmenin girdisidir. Bot yazarlı rapor hiç yoksa
+   (ilk çalıştırma) bu bölümü atla.
 2. **Her backlog thread'ini tek tek yeniden değerlendir** — §2, §3, §4, §5 ve §5b
    adımlarını aynen yeni bir thread'miş gibi uygula ve şuna karar ver:
    *aksiyon almaya gerek var mı? backlog'da tutmaya gerek var mı?*
@@ -288,7 +364,7 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
 
 📋 Backlog (yarınki run'da yeniden kontrol edilecek):
 1. [<bug'ın tek satırlık özeti>](<thread permalink>) — [<kanal adı>](<kanal linki>) — 
-   _Bugünkü aksiyon: <kişiye hatırlatma [not: etiket koyma] | ekibe hatırlatma [not: etiket koyma] | ekibe tekrar hatırlatma (n. kez) [not: etiket koyma]> — backlog'da <n>. gün_
+   _Bugünkü aksiyon: <kişiye hatırlatma (<isim>, <U...>) | ekibe hatırlatma | ekibe tekrar hatırlatma (<n>. kez)> — backlog'da <n>. gün_
 2. ...
 
 ✅ Backlog'dan çıkanlar:
@@ -297,6 +373,10 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
 📊 Özet: bugün <x> yeni thread incelendi, <y> yeni hatırlatma yapıldı, backlog'a <z> thread eklendi, <w> thread çıktı.
 ```
 
+- **Raporda etiket kullanılmaz:** `<@U...>` / `<!subteam^...>` formatları rapora
+  yazılmaz (#reflex'te bildirim düşürür). Kişi hatırlatması **düz metin
+  isim + ID** ile kaydedilir — örn. `kişiye hatırlatma (Akif İnce, U0AG2C15XB7)`;
+  §6 ertesi run bu ID'yi kullanır.
 - **Backlog'a ne girer:** Bu run içinde hakkında **hatırlatma/etiketleme yaptığın
   her thread** — hem yeni taramadan gelenler hem §6'dan devam edenler. (§2a'daki
   "bug mu emin olamadım" soruları dahil: onlar da yanıt bekler.)
