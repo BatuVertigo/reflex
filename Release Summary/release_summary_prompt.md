@@ -228,20 +228,24 @@ Aynalama adımları:
    (`- 🍎:android: %100: …` → `🍎:android: %100: …`). Neden: Slack, hücredeki tek maddelik
    listeyi bölüyor — bullet'ta yalnız 🍎 kalıyor, `:android:` ve sonrası ayrı satıra düşüyor.
    Çok maddeli (`<br>`li) hücrelerde `- ` önekleri olduğu gibi kalır, onlarda sorun yok.
-5. `slack_update_canvas` çağır: `canvas_id` = yukarıdaki id, `action=replace`,
-   **`section_id` VERME**, `content` = 4. adım sonundaki içerik. Bu bilinçli bir **tam canvas
-   değişimi**dir (aynalama bu şekilde çalışır); tool açıklamasındaki "section_id olmadan
-   replace kullanma" uyarısı bu senaryo için geçerli değildir.
+5. `slack_read_canvas` ile güncel `section_id_mapping`'i al (H1 / blockquote / tablo).
+   Id'ler her update'te değişir; bayat id kullanma.
+6. **Tek** `slack_update_canvas` çağrısı; tüm op'lar aynı `sections` dizisinde:
+   - blockquote section'ı `replace` → yeni "Son güncelleme" (tek satır, `\n` koyma).
+   - tablo section'ına yeni tabloyu `append`, sonra **aynı** section'ı `delete`.
+   H1'e dokunma.
 
 Canvas API tuzakları (bunlara UYMA zorunlu — daha önce yaşandı):
 
-- **H1'i content'e YAZMA.** Section_id'siz full replace canvas'ın kendi başlığını korur;
-  content'e H1 koyarsan başlık ikilenir.
-- **Tablo section_id'si ile `replace` YAPMA.** Tabloyu yerinde değiştirmez: eski tablonun
-  hücrelerini boşaltıp yenisini ayrı section olarak ekler → canvas'ta boş tablo iskeleti kalır.
-  Bu yüzden satır/hücre bazlı canvas düzenlemesi deneme; her zaman yukarıdaki full replace.
-- Full replace'te elle ayarlanmış **kolon genişlikleri sıfırlanır** — bilinen ve kabul edilmiş
-  bir durum, düzeltmeye çalışma.
+- **`section_id` olmadan `replace` çalışmıyor** (`missing_required_field:section_id`); tek yol
+  yukarıdaki section bazlı batch.
+- **Her update çağrısı H1 ile blockquote arasına görünmez bir boş satır ekliyor.** `read_canvas`
+  bunu göstermez, API'den silinemez; elle temizleniyor — kabul edilmiş durum. Sen düzeltmeye
+  çalışma: koşu başına 1 çağrı, hata alırsan tekrar deneme.
+- **H1'i content'e YAZMA** — başlık ikilenir.
+- **Tablo section'ını `replace` ETME:** hücreleri boşaltıp yeniyi ayrı section olarak ekler,
+  canvas'ta boş tablo iskeleti kalır. Her zaman `append`+`delete`.
+- Update sonrası elle ayarlanmış **kolon genişlikleri sıfırlanır** — normal, düzeltme.
 - Canvas, hücrelerdeki `- ` önekini `* ` yapabilir, çok satırlı blockquote'u birleştirebilir —
   normaldir; canvas'ı okuyup "düzeltme" turuna girme (aynalama tek yönlüdür: md → canvas).
 - **Tek maddelik listeyi hücre içinde böler:** `- 🍎:android: %100: …` gibi tek satırlık bir
