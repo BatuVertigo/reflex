@@ -1,11 +1,11 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 20 Temmuz 2026 20:05
+> **Son güncelleme:** 21 Temmuz 2026 08:05
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v14.8002](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784563150145829)** | 666 / 208617 | — | 🧪 Prod'a açılmadı (🍎 OB review'da, 🤖 internal test bekleniyor) |
+| **[v14.8002](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784563150145829)** | 666 / 208617 | — | 🧪 Prod'a açılmadı (🍎 OB review'da, 🤖 CB review'da) |
 | **[v14.8001](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783718146706839)** | — / 208615 | — | 🧪 Sadece closed-beta (Gangster Paradise sezon build'i) |
 | **[v14.7507](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783712413650309)** | 665 / — | - 🍎 %100: 12 Tem 23:12<br>- 🍎 Force: 20 Tem 14:32 | 🟢👊🏻 Yayın (son force, 🍎) |
 | **[v14.7506](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1783426317303549)** | 653 / 208604 | - 🤖 %100: 9 Tem 20:34<br>- 🤖 Force: 20 Tem 14:32 | 🟢👊🏻 Yayın (son force, 🤖) |
