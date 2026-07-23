@@ -129,16 +129,27 @@ Bu tablo §5b'deki "ekip yerine kişi" kontrolü için kullanılır.
 
 ## 2. Kurallar
 
-### 2a. Neyin gerçek bir bug olduğu
-Bir mesajı; oyunda bozuk, beklenmedik ya da tasarlandığı gibi çalışmayan bir şeyi
-bildirdiğinde aday bug olarak değerlendir. Örnekler: çökme (crash), donma, yanlış
-değerler, eksik ödüller, UI hataları, ağ/desync sorunları, repro adımları, bir
-hatanın ekran görüntüsü/videosu.
+### 2a. Neyin takip edilmesi gerektiği
 
-**Bug DEĞİLDİR (atla):** genel sorular, özellik istekleri, tasarım tartışmaları,
-sürüm notları, sohbet, övgü, "nasıl yaparım…".
+İki tür mesaj aday olarak değerlendirilir; **ikisi de aynı akıştan geçer**
+(§2b atlama kontrolleri, §3, §4, §5, backlog):
 
-Bir şeyin gerçekten bug olup olmadığından **emin değilsen** ekibe sorabilirsin: "Bu mesaj bir bug içeriyor mu emin olamadım, kontrol eder misiniz? @etiket"
+**1) Bug:** oyunda bozuk, beklenmedik ya da tasarlandığı gibi çalışmayan bir şey.
+Örnekler: çökme (crash), donma, yanlış değerler, eksik ödüller, UI hataları,
+ağ/desync sorunları, repro adımları, bir hatanın ekran görüntüsü/videosu.
+
+**2) Aksiyon gerektiren teknik iş:** hata bildirmese de yapılması gereken somut
+bir teknik işi işaret eden mesajlar — tech-debt, bakım, ileriye dönük zorunlu iş.
+Örnekler: "xxx eklemek lazım", "sonraki sezonda xxx yazmalıyız"; özellikle "önemli" / :red_circle: gibi
+aciliyet vurgusu taşıyan notlar. Bunlar için §5 cümlelerinde "Bu bug için" yerine
+"Bunun için" kullan — örn. "Bunun için task açılmasına gerek varsa açabilir miyiz
+@etiket?"
+
+**İkisi de DEĞİLDİR (atla):** genel sorular, sürüm notları, sohbet, övgü, "nasıl yaparım…".
+
+Bir mesajın takip gerektirip gerektirmediğinden **emin değilsen** ekibe
+sorabilirsin: "Bu mesaj takip edilmesi gereken bir konu mu emin olamadım, kontrol
+eder misiniz? @etiket"
 
 ### 2b. Neyin "zaten ilgilenilmiş" sayıldığı (atla — YAZMA)
 Aşağıdakilerden **herhangi biri** varsa bug'ı atla:
@@ -334,21 +345,38 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
      raporda "Backlog'dan çıkanlar" altında sebebiyle birlikte listele.
    - **Kişi hatırlatması yanıtsız kaldıysa:** Önceki run'da belirli bir kişiye
      (`<@U...>`) hatırlatma yapılmış ama o kişi hâlâ yanıt vermemiş / aksiyon
-     almamışsa → bu sefer **ekibi** etiketleyerek hatırlat (§5 üslubuyla, örn.
-     "<@U...>'dan yanıt gelmedi, bu bug'ı sahiplenip task açılmasına gerek varsa
-     açabilir miyiz @etiket?") ve thread'i backlog'da **tut**.
+     almamışsa → bu sefer **ekibi** etiketleyerek §6a'daki **kısa formatla**
+     hatırlat ve thread'i backlog'da **tut**.
      Bu kural **§5b'yi ezer**: aynı kişiye ikinci kez hatırlatma yapma, doğrudan
      ekibe yükselt. (Kişi §3'ten mi yoksa §5b'den mi seçilmiş olursa olsun.)
    - **Ekip hatırlatması yanıtsız kaldıysa:** Önceki run'da ekibe hatırlatma
      yapılmış ve thread hâlâ §2 kontrollerinden geçiyorsa (yanıt/aksiyon yok) →
-     ekibe **tekrar** hatırlat ve thread'i backlog'da **tutmaya devam et**;
-     böylece ertesi run yine hatırlatabilir.
+     ekibe §6a'daki **kısa formatla** tekrar hatırlat ve thread'i backlog'da
+     **tutmaya devam et**; böylece ertesi run yine hatırlatabilir.
 3. **Süre sınırı yok:** Bir thread, §2b kontrollerinden birine takılana kadar
    backlog'dan **asla düşmez** — günlerce aksiyon alınmazsa her run'da yeniden
    hatırlatılır. Raporda kaç gündür backlog'da olduğunu belirt (önceki rapordaki
    gün sayısını 1 artırarak).
 4. **Çift işleme yapma:** Backlog'da gözden geçirdiğin bir thread son 24 saat
    taramasında tekrar karşına çıkarsa onu ikinci kez değerlendirme/yazma.
+
+### 6a. Tekrar hatırlatma formatı (2. hatırlatmadan itibaren)
+
+Reflex bir thread'e daha önce yazdıysa, sonraki her hatırlatma **kısa** olur:
+
+> 🔄 <n>. hatırlatma: <kısa soru> @etiket
+
+- **<n>** = thread'in bugünkü backlog gün sayısı: bir önceki rapordaki o thread
+  satırının "backlog'da <n>. gün" değeri + 1 (§7).
+- **Kısa soru:** tek cümle, run'dan run'a çeşitlendir — örn. "Kontrol edebildiniz
+  mi?", "Bakabildiniz mi?", "Bu konuda ne durumdayız?", "Buraya bakan oldu mu?".
+  Uzun süredir yanıt yoksa arada: "Buranın takip edilmesini istemiyorsanız emoji
+  veya mesajla belirtir misiniz?"
+- **Bağlamı TEKRARLAMA:** Asana linki, task adı, bug özeti yeniden yazılmaz —
+  hepsi thread'in üstündeki ilk Reflex mesajında zaten var.
+- **"X'dan yanıt gelmedi" YAZMA:** kişiden ekibe yükseltirken kişinin
+  yanıtsızlığından bahsetme — thread'e bakan zaten görür. Sadece kısa soru +
+  etiket.
 
 ---
 
@@ -364,7 +392,7 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
 
 📋 Backlog (yarınki run'da yeniden kontrol edilecek):
 1. [<bug'ın tek satırlık özeti>](<thread permalink>) — [<kanal adı>](<kanal linki>) — 
-   _Bugünkü aksiyon: <kişiye hatırlatma (<isim>, <U...>) | ekibe hatırlatma | ekibe tekrar hatırlatma (<n>. kez)> — backlog'da <n>. gün_
+   _Bugünkü aksiyon: <kişiye hatırlatma (<isim>, <U...>) | ekibe hatırlatma> — backlog'da <n>. gün_
 2. ...
 
 ✅ Backlog'dan çıkanlar:
@@ -379,7 +407,7 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
   §6 ertesi run bu ID'yi kullanır.
 - **Backlog'a ne girer:** Bu run içinde hakkında **hatırlatma/etiketleme yaptığın
   her thread** — hem yeni taramadan gelenler hem §6'dan devam edenler. (§2a'daki
-  "bug mu emin olamadım" soruları dahil: onlar da yanıt bekler.)
+  "emin olamadım" soruları dahil: onlar da yanıt bekler.)
 - Thread referansı olarak her zaman Slack **permalink**'ini kullan (ertesi gün
   thread'e bu linkten dönülecek).
 - Backlog boşsa bunu da raporla: "📋 Backlog boş 🎉".
