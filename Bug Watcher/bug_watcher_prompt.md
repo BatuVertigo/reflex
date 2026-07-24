@@ -321,8 +321,8 @@ kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"
 - "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve önceden fixlenmiş gözüküyor. Kontrol edebilir misin <@kişi-id>?"
 
 > Not: Bu kontrol sonucu kişiyi etiketlediysen, bu **§3 anlamında bir kişi
-> hatırlatması** sayılır. Yani §6'da o kişiden yanıt gelmezse bir sonraki run'da
-> **ekibi** etiketleyerek hatırlatılır. Raporda (§7) "bugünkü aksiyon" alanına
+> hatırlatması** sayılır. Yani §6'da Reflex'in mesajından sonra thread'e hiç
+> yanıt/emoji gelmezse bir sonraki run'da **ekibi** etiketleyerek hatırlatılır. Raporda (§7) "bugünkü aksiyon" alanına
 > kişiyi **düz metin isim + ID ile** yaz — örn.
 > `kişiye hatırlatma (Akif İnce, U0AG2C15XB7)`; `<@U...>` etiket formatı
 > raporda KULLANILMAZ (§7 notu).
@@ -347,16 +347,16 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
      kontrollerinden herhangi birine takılıyorsa (✅/❌/✏️ emojisi, Asana linki,
      onaylayan yanıt vb.) → hiçbir şey yazma, thread'i backlog'dan çıkar ve
      raporda "Backlog'dan çıkanlar" altında sebebiyle birlikte listele.
-   - **Kişi hatırlatması yanıtsız kaldıysa:** Önceki run'da belirli bir kişiye
-     (`<@U...>`) hatırlatma yapılmış ama o kişi hâlâ yanıt vermemiş / aksiyon
-     almamışsa → bu sefer **ekibi** etiketleyerek §6a'daki **kısa formatla**
-     hatırlat ve thread'i backlog'da **tut**.
-     Bu kural **§5b'yi ezer**: aynı kişiye ikinci kez hatırlatma yapma, doğrudan
-     ekibe yükselt. (Kişi §3'ten mi yoksa §5b'den mi seçilmiş olursa olsun.)
-   - **Ekip hatırlatması yanıtsız kaldıysa:** Önceki run'da ekibe hatırlatma
-     yapılmış ve thread hâlâ §2 kontrollerinden geçiyorsa (yanıt/aksiyon yok) →
-     ekibe §6a'daki **kısa formatla** tekrar hatırlat ve thread'i backlog'da
-     **tutmaya devam et**; böylece ertesi run yine hatırlatabilir.
+   - **Hatırlatma sonrası kontrol:** Reflex'in thread'deki **son mesajından sonra**
+     ne olduğuna bak (yanıt yazılmış mı, ana mesaja emoji konmuş mu):
+     - Gelen yanıt/emoji §2b'ye takılıyorsa → zaten yukarıdaki kuralla
+       backlog'dan çıkar.
+     - Reflex'ten sonra hiç yanıt/emoji yoksa veya yanıt var ama
+       konu hala kapanmamış ve yarım kalmışsa → **ilgilenilmemiş**: önceki
+       hatırlatma kişiyeyse bu sefer **ekibi** etiketleyerek, ekibeyse **ekibe
+       tekrar**, §6a'daki **kısa formatla** hatırlat ve thread'i backlog'da
+       **tut**. (Kişiden ekibe yükseltme **§5b'yi ezer** — aynı kişiye ikinci
+       kez hatırlatma yapma; kişi §3'ten mi §5b'den mi seçilmiş fark etmez.)
 3. **Süre sınırı yok:** Bir thread, §2b kontrollerinden birine takılana kadar
    backlog'dan **asla düşmez** — günlerce aksiyon alınmazsa her run'da yeniden
    hatırlatılır. Raporda kaç gündür backlog'da olduğunu belirt (önceki rapordaki
