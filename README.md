@@ -1,28 +1,21 @@
 # Reflex
 
-Slack kanallarındaki bug ve release süreçlerini kolaylaştıran bir bot. Dört özelliği var.
+Slack kanallarında Product ekibinin işini kolaylaştıran bir bot. Dört özelliği var.
 
-**1. Bug Details.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
+**1. Bug Watcher.** Her sabah çalışan bir routine. İzlenen kanalların son 24 saatteki thread'lerini tarar; ilgilenilmemiş bug raporlarını ve aksiyon gerektiren teknik işleri bulur, Asana'da task açılmış mı diye cross-check yapar ve gerekirse thread'e ilgili kişiye ya da ekibe yönelik hatırlatma yazar. Yanıt gelmeyen thread'leri backlog'unda tutar, her run'ın başında yeniden değerlendirip gerekirse tekrar hatırlatır; run sonunda backlog'un güncel durumunu `#reflex` kanalına raporlar.
+
+**2. Release Summary.** Her gün belirli aralıklarla çalışan bir routine. `#pa-releasehistory` ve `#cs-releasehistory` kanallarındaki release postlarını okuyup her oyunun release
+history tablosunu güncel tutar.
+
+**3. Bug Details.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
 **Bug Details** kısayolu çalıştırılır → bot thread'in tamamını okur → Claude Opus ile
-Asana'ya hazır bir bug task text'i üretir → sonucu **sadece tıklayan kişiye** görünen bir
-**modal**'da gösterir.
+Asana'ya geçirmeye hazır formata uygun bir text üretir → sonucu **sadece tıklayan kişiye** görünen bir **modal**'da gösterir. Kişi kopyalayıp Asana'ya yapıştırabilir.
 
-**2. Bug Watcher.** Her sabah 09:00'da (Europe/Istanbul) çalışan bir routine. İzlenen
-kanalların son 24 saatteki mesajlarını ve thread'lerini tarar; ilgilenilmemiş bug
-raporlarını bulur, Asana'da task açılmış mı diye cross-check yapar ve gerekirse
-thread'e hatırlatma yazar ya da "ben bakarım" deyip dönmeyen kişiyi etiketler.
-
-**3. Release Summary.** Günde üç kez çalışan bir routine. `#pa-releasehistory` ve
-`#cs-releasehistory` kanallarındaki release postlarını okuyup her oyunun release
-history tablosunu (`Release Summary/` altındaki markdown dosyaları) güncel tutar.
-
-**4. Version Check.** Bir mesaj bug raporuysa ve ortam/sürüm bilgisi eksikse,
-kişiyi etiketleyip aynı thread'e kısa bir soru atar.
-- **Ortam:** bug yayında/canlıda mı, closed beta'da mı, yoksa özel bir build'de mi?
-- **Sürüm:** closed beta veya özel build ise sürüm/build no gerekir (yayın ise gerekmez).
+**4. Version Check.** CRITICAL bir bug raporunun ve ortam/sürüm bilgisi eksikse,
+kişiyi etiketleyip aynı thread'e kısa bir soru atar: "Bu bug yayında var mı? Eğer yoksa sürüm bilgisi veya build numarası paylaşabilir misin?" gibi.
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
-yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version check
+yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
 **Haiku**, Bug Details **Opus** kullanır; her iki çağrı da MCP'siz/araçsız izole
 çalışır. **Anthropic API anahtarı gerekmez.** Bug Watcher ve Release Summary ise
 Slack/Asana MCP connector'larıyla çalışan zamanlanmış Claude Routine'leridir; davranışları
@@ -41,7 +34,7 @@ kendi klasörlerindeki prompt dosyalarından yönetilir.
 2. **OAuth & Permissions** → *Bot Token Scopes* (izlenen kanallar public):
    - `channels:history`
    - `chat:write`
-   - `users:read`  *(Bug Task kısayolunda thread yazarlarının adlarını çözmek için)*
+   - `users:read`  *(Bug Details kısayolunda thread yazarlarının adlarını çözmek için)*
 3. **Event Subscriptions** → *Enable Events* → *Subscribe to bot events*:
    - `message.channels`
 4. **Interactivity & Shortcuts** → *Interactivity*'yi **aç** (Socket Mode olduğu
@@ -52,14 +45,16 @@ kendi klasörlerindeki prompt dosyalarından yönetilir.
    - **Callback ID: `bug_details`**  *(kodla birebir aynı olmalı)*
 5. **Install App** (veya scope/shortcut ekledikten sonra **Reinstall**) →
    *Bot User OAuth Token* `xoxb-...` → `SLACK_BOT_TOKEN`.
-6. Botu kanala ekle: `#qa-polygunarena` içinde `/invite @<bot-adı>`.
-7. **Kanal ID'si:** kanal adına sağ tık → *View channel details* → en altta
-   `C...` → `QA_CHANNEL_ID`.
+6. Botu izlenecek her kanala ekle: kanal içinde `/invite @<bot-adı>`
+   (örn. `#qa-polygunarena`).
+7. **Kanal ID'leri:** kanal adına sağ tık → *View channel details* → en altta
+   `C...` → `QA_CHANNEL_ID`. Birden fazla kanal izlenecekse ID'leri virgülle
+   ayırarak yaz: `QA_CHANNEL_ID=C0AAA,C0BBB`.
 
 > **Kapsam:** `message.channels` workspace genelinde tanımlıdır ama Slack bu
 > eventleri yalnızca botun **üye olduğu** kanallar için gönderir. Botu sadece
 > izlemek istediğin kanal(lar)a `/invite` et. Ayrıca kod `QA_CHANNEL_ID`
-> dışındaki her kanalı yok sayar (ikinci kilit).
+> listesinde olmayan her kanalı yok sayar (ikinci kilit).
 
 ## 2. Claude Code motorunu hazırla (Max — API key yok)
 

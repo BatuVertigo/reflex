@@ -31,13 +31,13 @@ QA_CHANNEL_IDS = {
 # launchd altında PATH minimaldir; `which claude` çıktısını CLAUDE_BIN'e koy.
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
 
-# --- Özellik 1: version check (eksik sürüm/ortam denetçisi) ---
+# --- Version Check ---
 # Model tag'i kullanılır ("haiku"): yeni sürüm çıkınca .env güncellemeye gerek yok.
 CLAUDE_HAIKU_MODEL = os.environ.get("CLAUDE_HAIKU_MODEL", "haiku")
 VERSION_CHECK_TIMEOUT = int(os.environ.get("VERSION_CHECK_TIMEOUT", "60"))
 VERSION_CHECK_EFFORT = os.environ.get("VERSION_CHECK_EFFORT", "low")
 
-# --- Özellik 2: bug details (thread → güçlü model → modal) ---
+# --- Bug Details ---
 CLAUDE_OPUS_MODEL = os.environ.get("CLAUDE_OPUS_MODEL", "opus")
 BUG_DETAILS_TIMEOUT = int(os.environ.get("BUG_DETAILS_TIMEOUT", "180"))
 BUG_DETAILS_EFFORT = os.environ.get("BUG_DETAILS_EFFORT", "medium")
@@ -137,7 +137,7 @@ def _run_claude(
 
 
 # ---------------------------------------------------------------------------
-# Özellik 1: version check (yeni mesaj → sürüm/ortam eksikse thread'e soru)
+# Version Check
 # ---------------------------------------------------------------------------
 
 def _extract_json(text: str) -> dict:
@@ -220,7 +220,7 @@ def handle_message(event, client):
 
 
 # ---------------------------------------------------------------------------
-# Özellik 2: "Bug Details" mesaj kısayolu (thread → Opus → özel modal)
+# Bug Details
 # ---------------------------------------------------------------------------
 
 def _display_name(client, uid: str | None) -> str:
