@@ -174,10 +174,13 @@ Thread'in son yanıtlarında belirli bir x kişisi:
 2. "Bunu kontrol edeceğim."
 3. "Bunun taskını açacağım."
 
-diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyorsa, x kişisini etiketleyerek:
-1. "Deneyebildin mi @x?"
-2. "Kontrol edebildin mi @x?"
-3. "Taskı açabildin mi @x?"
+diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyorsa,
+bu kişi **ekip dışından biriyse**, x kişisini ve yanına ekipten bir muhatap da etiketle:
+thread'e katılmış ekip üyelerinden ilgilenen biri varsa (§5b'deki "ilgilenmiş" ölçütleri)
+**onu**, hiçbiri yoksa ekibin **usergroup** etiketini. Örn:
+1. "Deneyebildin mi <@U7PFS9BB5>? <@U0AG2C15XB7>"
+2. "Kontrol edebildin mi <@U7PFS9BB5>? <!subteam^S09ADDKDVND>"
+3. "Taskı açabildin mi <@U7PFS9BB5>? <@U0AG2C15XB7>"
 
 şeklinde kişi bazlı hatırlatma yap ve bu bug'ı geç.
 
