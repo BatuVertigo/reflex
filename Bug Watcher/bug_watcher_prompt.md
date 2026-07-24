@@ -167,7 +167,7 @@ Aşağıdakilerden **herhangi biri** varsa bug'ı atla:
 
 ---
 
-## 3. Birinden yanıt bekleniyor mu?
+## 3. Ekip dışı birinden yanıt bekleniyor mu?
 
 Thread'in son yanıtlarında belirli bir x kişisi:
 1. "Bunu deneyeceğim."
@@ -182,12 +182,15 @@ thread'e katılmış ekip üyelerinden ilgilenen biri varsa (§5b'deki "ilgilenm
 2. "Kontrol edebildin mi <@U7PFS9BB5>? <!subteam^S09ADDKDVND>"
 3. "Taskı açabildin mi <@U7PFS9BB5>? <@U0AG2C15XB7>"
 
-şeklinde kişi bazlı hatırlatma yap ve bu bug'ı geç.
+şeklinde hatırlatma yap ve bu bug'ı geç.
 
 > Güvenilir etiketleme için kişiyi adıyla değil **Slack üye ID'siyle** etiketle,
 > formatı `<@U...>`. Kişi §1b tablosunda varsa oradaki ID'yi kullan; yoksa
-> "Ben bakarım / deneyeceğim / taskını açacağım" diyen kişinin ID'sini **o an
-> Slack'ten canlı çöz** (mesajın yazarından / kullanıcı arama ile).
+> "Ben bakarım / deneyeceğim / taskını açacağım" diyen kişinin ID'sini
+> **o an Slack'ten canlı çöz** (mesajın yazarından / kullanıcı arama ile).
+
+> Raporda (§7) "bugünkü aksiyon" alanına `kişiye hatırlatma` yaz;
+> isim, ID veya `<@U...>` etiket formatı raporda KULLANILMAZ (§7 notu).
 ---
 
 ## 4. Asana cross-check
