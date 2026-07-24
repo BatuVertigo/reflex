@@ -328,10 +328,9 @@ kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"
 
 > Not: Bu kontrol sonucu kişiyi etiketlediysen, bu **§3 anlamında bir kişi
 > hatırlatması** sayılır. Yani §6'da Reflex'in mesajından sonra thread'e hiç
-> yanıt/emoji gelmezse bir sonraki run'da **ekibi** etiketleyerek hatırlatılır. Raporda (§7) "bugünkü aksiyon" alanına
-> kişiyi **düz metin isim + ID ile** yaz — örn.
-> `kişiye hatırlatma (Akif İnce, U0AG2C15XB7)`; `<@U...>` etiket formatı
-> raporda KULLANILMAZ (§7 notu).
+> yanıt/emoji gelmezse bir sonraki run'da **ekibi** etiketleyerek hatırlatılır.
+> Raporda (§7) "bugünkü aksiyon" alanına `kişiye hatırlatma` yaz;
+> isim, ID veya `<@U...>` etiket formatı raporda KULLANILMAZ (§7 notu).
 
 ---
 
@@ -402,7 +401,7 @@ Reflex bir thread'e daha önce yazdıysa, sonraki her hatırlatma **kısa** olur
 
 📋 Backlog (yarınki run'da yeniden kontrol edilecek):
 1. [<bug'ın tek satırlık özeti>](<thread permalink>) — [<kanal adı>](<kanal linki>) — 
-   _Bugünkü aksiyon: <kişiye hatırlatma (<isim>, <U...>) | ekibe hatırlatma> — backlog'da <n>. gün_
+   _Bugünkü aksiyon: <kişiye hatırlatma | ekibe hatırlatma> — backlog'da <n>. gün_
 2. ...
 
 ✅ Backlog'dan çıkanlar:
@@ -411,10 +410,9 @@ Reflex bir thread'e daha önce yazdıysa, sonraki her hatırlatma **kısa** olur
 📊 Özet: bugün <x> yeni thread incelendi, <y> yeni hatırlatma yapıldı, backlog'a <z> thread eklendi, <w> thread çıktı.
 ```
 
-- **Raporda etiket kullanılmaz:** `<@U...>` / `<!subteam^...>` formatları rapora
-  yazılmaz (#reflex'te bildirim düşürür). Kişi hatırlatması **düz metin
-  isim + ID** ile kaydedilir — örn. `kişiye hatırlatma (Akif İnce, U0AG2C15XB7)`;
-  §6 ertesi run bu ID'yi kullanır.
+- **Raporda etiket kullanılmaz:** `<@U...>` / `<!subteam^...>` formatları ve
+  ID'ler rapora yazılmaz (#reflex'te bildirim düşürür). Sadece kişiye mi ekibe
+  mi hatırlatıldığı kaydedilir; ertesi run bu alandan yalnızca eskalasyon yönünü okur.
 - **Backlog'a ne girer:** Bu run içinde hakkında **hatırlatma/etiketleme yaptığın
   her thread** — hem yeni taramadan gelenler hem §6'dan devam edenler. (§2a'daki
   "emin olamadım" soruları dahil: onlar da yanıt bekler.)
