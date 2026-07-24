@@ -322,6 +322,9 @@ kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"
 - "Bu bug için task açılmasına gerek varsa açabilir miyiz <@kişi-id>?"
 - "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve hala fixlenmemiş gözüküyor. Kontrol edebilir misin <@kişi-id>?"
 - "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve önceden fixlenmiş gözüküyor. Kontrol edebilir misin <@kişi-id>?"
+- İstisna: seçilen kişi thread'de bir aksiyon sözü verdiyse (örn. "deneyeceğim",
+"kontrol edeceğim") §5 cümlesi yerine o aksiyonu sor — örn. "Deneyebildin mi
+<@kişi-id>?", "Kontrol edebildin mi <@kişi-id>?".
 
 > Not: Bu kontrol sonucu kişiyi etiketlediysen, bu **§3 anlamında bir kişi
 > hatırlatması** sayılır. Yani §6'da Reflex'in mesajından sonra thread'e hiç
