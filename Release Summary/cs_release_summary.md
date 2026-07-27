@@ -1,11 +1,12 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 24 Temmuz 2026 08:14
+> **Son güncelleme:** 27 Temmuz 2026 14:06
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v14.8005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784843711982039)** | 677 / 208628 | — | 🧪 Prod'a açılmadı (🤖🍎 review'a atıldı) |
+| **[v14.8006](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784907929055949)** | 678 / 208629 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 review geçti/Pending Release; Pzt yayın iptal — buglar, olası yeni build) |
+| **[v14.8005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784843711982039)** | 677 / 208628 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100) |
 | **[v14.8004](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784760617632839)**<br>(🍎 14.8003) | 669 / 208621 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 OT %100) |
 | **[v14.8003](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784661957442959)** | — / 208619 | — | 🧪 Sadece closed-beta (yalnızca 🤖; 🍎 build yok) |
 | **[v14.8002](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784563150145829)** | 666 / 208617 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 OB %100) |
