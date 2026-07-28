@@ -1,24 +1,26 @@
 # Reflex
 
-Slack kanallarında Product ekibinin işini kolaylaştıran bir bot. Dört özelliği var.
+Slack kanallarında Product ekibinin işini kolaylaştıran bir bot. Beş özelliği var.
 
 **1. Bug Watcher.** Her sabah çalışan bir routine. İzlenen kanalların son 24 saatteki thread'lerini tarar; ilgilenilmemiş bug raporlarını ve aksiyon gerektiren teknik işleri bulur, Asana'da task açılmış mı diye cross-check yapar ve gerekirse thread'e ilgili kişiye ya da ekibe yönelik hatırlatma yazar. Yanıt gelmeyen thread'leri backlog'unda tutar, her run'ın başında yeniden değerlendirip gerekirse tekrar hatırlatır; run sonunda backlog'un güncel durumunu `#reflex` kanalına raporlar.
 
 **2. Release Summary.** Her gün belirli aralıklarla çalışan bir routine. `#pa-releasehistory` ve `#cs-releasehistory` kanallarındaki release postlarını okuyup her oyunun release
 history tablosunu güncel tutar.
 
-**3. Bug Details.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
+**3. Skill Catalog.** Zamanlanmış bir routine. VertigoAI reposundaki plugin/skill kaynaklarını (`plugin-list.json` + `SKILL.md` dosyaları) tarar; değişiklik varsa `docs/SKILL_CATALOG.md`'yi ve ekibin Slack canvasındaki Skill Catalog bölümünü senkron tutar. Değişiklik yoksa hiçbir şeye dokunmadan çıkar.
+
+**4. Bug Details.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
 **Bug Details** kısayolu çalıştırılır → bot thread'in tamamını okur → Claude Opus ile
 Asana'ya geçirmeye hazır formata uygun bir text üretir → sonucu **sadece tıklayan kişiye** görünen bir **modal**'da gösterir. Kişi kopyalayıp Asana'ya yapıştırabilir.
 
-**4. Version Check.** CRITICAL bir bug raporunun ve ortam/sürüm bilgisi eksikse,
+**5. Version Check.** CRITICAL bir bug raporunun ve ortam/sürüm bilgisi eksikse,
 kişiyi etiketleyip aynı thread'e kısa bir soru atar: "Bu bug yayında var mı? Eğer yoksa sürüm bilgisi veya build numarası paylaşabilir misin?" gibi.
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
 yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
 **Haiku**, Bug Details **Opus** kullanır; her iki çağrı da MCP'siz/araçsız izole
-çalışır. **Anthropic API anahtarı gerekmez.** Bug Watcher ve Release Summary ise
-Slack/Asana MCP connector'larıyla çalışan zamanlanmış Claude Routine'leridir; davranışları
+çalışır. **Anthropic API anahtarı gerekmez.** Bug Watcher, Release Summary ve Skill Catalog ise
+zamanlanmış Claude Routine'leridir; davranışları
 kendi klasörlerindeki prompt dosyalarından yönetilir.
 
 ---
