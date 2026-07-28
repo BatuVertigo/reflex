@@ -36,6 +36,7 @@ Vertigo'nun skill kataloğunu tek kaynaktan senkron tut: VertigoAI reposundaki `
 2. Canvasta senin alanın SADECE `# Skill Catalog` H1'inden sonrası. Ondan önceki her şeye (`# 🎯 Skills` başlığı, `# Kullanım örnekleri` bölümü ve içeriği — adları değişmiş olsa bile Skill Catalog öncesindeki tüm bölümler) **kesinlikle dokunma**.
 3. `docs/SKILL_CATALOG.md`'nin son halini `# Skill Catalog` altına eşitle:
    - Dosyanın kendi `# Skill Catalog` H1 satırını canvasa YAZMA (başlık canvasta zaten var; ikilenmesin).
+   - Başlığın hemen altındaki "Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir. **Son güncelleme:** <tarih saat>" notu iki yüzeyde de aynıdır: içerik değişikliği yaptığın her koşuda bu satırdaki tarihi HEM dosyada HEM canvasta koşu zamanıyla güncelle; satırın geri kalan metnine dokunma.
    - Değişen tabloları/bölümleri `slack_update_canvas` ile section-`replace` et; yeni bölüm gerekiyorsa son bölümün altına `append` et; kalkan bölümü `delete` et. Tüm operasyonları tek atomik `sections` çağrısında topla.
    - Canvas markdown notları: tablolar destekli; hücre içinde `|` karakteri `\|` olarak kaçırılmalı; sadece `#`/`##`/`###` başlık seviyeleri.
 4. Update sonrası dönen mapping'den, Skill Catalog öncesi bölümlerin aynen durduğunu doğrula.
