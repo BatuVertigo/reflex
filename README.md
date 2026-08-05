@@ -1,6 +1,6 @@
 # Reflex
 
-Slack kanallarında Product ekibinin işini kolaylaştıran bir bot. Beş özelliği var.
+Slack kanallarında Product ekibinin işini kolaylaştıran bir bot. Altı özelliği var.
 
 **1. Bug Watcher.** Her sabah çalışan bir routine. İzlenen kanalların son 24 saatteki thread'lerini tarar; ilgilenilmemiş bug raporlarını ve aksiyon gerektiren teknik işleri bulur, Asana'da task açılmış mı diye cross-check yapar ve gerekirse thread'e ilgili kişiye ya da ekibe yönelik hatırlatma yazar. Yanıt gelmeyen thread'leri backlog'unda tutar, her run'ın başında yeniden değerlendirip gerekirse tekrar hatırlatır; run sonunda backlog'un güncel durumunu `#reflex` kanalına raporlar.
 
@@ -15,6 +15,12 @@ Asana'ya geçirmeye hazır formata uygun bir text üretir → sonucu **sadece t�
 
 **5. Version Check.** CRITICAL bir bug raporunun ve ortam/sürüm bilgisi eksikse,
 kişiyi etiketleyip aynı thread'e kısa bir soru atar: "Bu bug yayında var mı? Eğer yoksa sürüm bilgisi veya build numarası paylaşabilir misin?" gibi.
+
+**6. Task Move.** Asana UI'ının yapamadığı toplu taşıma: ⚡ (global shortcut) menüsünden
+**Move Asana tasks** açılır → modala parent task linki + taşınacak task linkleri
+(Asana'da çoklu seçim → *Copy task links* çıktısı) yapıştırılır → bot her task'ı
+Asana API'siyle parent'ın altına subtask olarak taşır, sonucu satır satır aynı
+modalda raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
 yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
@@ -45,6 +51,15 @@ kendi klasörlerindeki prompt dosyalarından yönetilir.
    - Name: `Bug Details`
    - Short description: `Thread'den Asana bug task üret`
    - **Callback ID: `bug_details`**  *(kodla birebir aynı olmalı)*
+
+   Aynı ekranda ikinci kısayol — **Create New Shortcut**:
+   - Tür: **Global** (⚡ menüsünden çalışır)
+   - Name: `Move Asana tasks`
+   - Short description: `Task'ları toplu subtask yap`
+   - **Callback ID: `task_move`**  *(kodla birebir aynı olmalı)*
+   - Task Move için ayrıca `.env`'e `ASANA_PAT` gerekir
+     ([app.asana.com/0/my-apps](https://app.asana.com/0/my-apps) → Personal access token).
+     Taşımalar Asana'da token sahibinin adına görünür.
 5. **Install App** (veya scope/shortcut ekledikten sonra **Reinstall**) →
    *Bot User OAuth Token* `xoxb-...` → `SLACK_BOT_TOKEN`.
 6. Botu izlenecek her kanala ekle: kanal içinde `/invite @<bot-adı>`
@@ -94,3 +109,6 @@ python app.py              # "reflex başlıyor..."
 Kanala eksik bilgili bir test mesajı at (örn. "şu ekranda crash oluyor") → bot
 thread'e soru atmalı. Tam bir mesaj at (örn. "Canlıda crash oluyor") → bot
 sessiz kalmalı.
+
+Task Move testi: ⚡ → **Move Asana tasks** → parent linki + 1-2 kobay task linki →
+task'lar Asana'da parent'ın altında subtask olarak görünmeli.

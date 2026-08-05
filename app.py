@@ -9,7 +9,11 @@ from __future__ import annotations
 import json
 import logging
 import os
+import re
 import subprocess
+import time
+import urllib.error
+import urllib.request
 
 from dotenv import load_dotenv
 from slack_bolt import App
@@ -43,6 +47,11 @@ VERSION_CHECK_EFFORT = os.environ.get("VERSION_CHECK_EFFORT", "low")
 BUG_DETAILS_MODEL = os.environ.get("BUG_DETAILS_MODEL", "opus")
 BUG_DETAILS_TIMEOUT = int(os.environ.get("BUG_DETAILS_TIMEOUT", "180"))
 BUG_DETAILS_EFFORT = os.environ.get("BUG_DETAILS_EFFORT", "medium")
+
+# --- Task Move: deterministic Asana subtask mover (no Claude call) ---
+ASANA_PAT = os.environ.get("ASANA_PAT", "")
+# Pause between Asana calls so bulk moves stay under the API rate limit.
+TASK_MOVE_REQUEST_INTERVAL = float(os.environ.get("TASK_MOVE_REQUEST_INTERVAL", "0.15"))
 
 # Isolated config dir for the bot's `claude` calls
 CLAUDE_FOLDER = os.environ.get(
@@ -297,10 +306,10 @@ def _with_slack_link(result: str, permalink: str | None) -> str:
 
 # --- modal UI ---
 
-def _modal(blocks: list[dict]) -> dict:
+def _modal(blocks: list[dict], title: str = "Bug Details") -> dict:
     return {
         "type": "modal",
-        "title": {"type": "plain_text", "text": "Bug Details"},
+        "title": {"type": "plain_text", "text": title},
         "close": {"type": "plain_text", "text": "Kapat"},
         "blocks": blocks,
     }
@@ -316,14 +325,14 @@ def _loading_view() -> dict:
     }])
 
 
-def _result_view(body: str) -> dict:
+def _result_view(body: str, title: str = "Bug Details") -> dict:
     # Slack section text blocks cap at ~3000 chars; split long output.
     text = body.strip() or "(boş yanıt)"
     chunks = [text[i : i + 2900] for i in range(0, len(text), 2900)][:45]
     blocks = [
         {"type": "section", "text": {"type": "mrkdwn", "text": c}} for c in chunks
     ]
-    return _modal(blocks)
+    return _modal(blocks, title=title)
 
 
 # --- shortcut handler ---
@@ -367,6 +376,178 @@ def handle_bug_details(ack, shortcut, client):
     except Exception:
         logger.exception("Failed to update modal")
     logger.info("Bug details generated (thread_ts=%s)", thread_ts)
+
+
+# =============================================================================
+# FEATURE - TASK MOVE
+# =============================================================================
+
+# Task GID = the last 10+ digit number in an Asana task URL. Covers both the
+# legacy /0/{project}/{task}[/f] and the new /1/{workspace}/task/{task} formats.
+_GID_PATTERN = re.compile(r"[0-9]{10,}")
+
+
+def _extract_task_gid(url: str) -> str | None:
+    matches = _GID_PATTERN.findall(url)
+    return matches[-1] if matches else None
+
+
+def _asana_set_parent(task_gid: str, parent_gid: str) -> tuple[bool, str]:
+    """Move one task under the parent (official setParent endpoint).
+
+    Returns (ok, detail): on success detail is the task name (free from the
+    response, no extra call); on failure it is the Asana error message.
+    Calling it again for an already-moved task is a harmless no-op.
+    """
+    request = urllib.request.Request(
+        f"https://app.asana.com/api/1.0/tasks/{task_gid}/setParent",
+        data=json.dumps({"data": {"parent": parent_gid}}).encode(),
+        headers={
+            "Authorization": f"Bearer {ASANA_PAT}",
+            "Content-Type": "application/json",
+        },
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            payload = json.loads(response.read().decode())
+        return True, payload.get("data", {}).get("name") or task_gid
+    except urllib.error.HTTPError as error:
+        try:
+            body = json.loads(error.read().decode())
+            detail = "; ".join(
+                e.get("message", "") for e in body.get("errors", []) if e.get("message")
+            )
+        except Exception:
+            detail = ""
+        return False, detail or f"HTTP {error.code}"
+    except Exception as error:
+        return False, str(error)
+
+
+def _task_move_form_view() -> dict:
+    return {
+        "type": "modal",
+        "callback_id": "task_move_submit",
+        "title": {"type": "plain_text", "text": "Move Asana tasks"},
+        "submit": {"type": "plain_text", "text": "Taşı"},
+        "close": {"type": "plain_text", "text": "Vazgeç"},
+        "blocks": [
+            {
+                "type": "input",
+                "block_id": "parent",
+                "label": {"type": "plain_text", "text": "Parent task linki"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "text",
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "https://app.asana.com/…",
+                    },
+                },
+            },
+            {
+                "type": "input",
+                "block_id": "tasks",
+                "label": {"type": "plain_text", "text": "Taşınacak task linkleri"},
+                "element": {
+                    "type": "plain_text_input",
+                    "action_id": "text",
+                    "multiline": True,
+                    "placeholder": {
+                        "type": "plain_text",
+                        "text": "Asana'da task'ları seç → sağ tık → Copy task links → yapıştır",
+                    },
+                },
+                "hint": {
+                    "type": "plain_text",
+                    "text": "Her satırda bir task linki. Hepsi yukarıdaki parent'ın subtask'ı olur.",
+                },
+            },
+        ],
+    }
+
+
+@app.shortcut("task_move")
+def handle_task_move_shortcut(ack, shortcut, client):
+    ack()
+    if not ASANA_PAT:
+        client.views_open(
+            trigger_id=shortcut["trigger_id"],
+            view=_result_view(
+                "`ASANA_PAT` tanımlı değil. `.env`'e ekleyip botu yeniden başlat.",
+                title="Move Asana tasks",
+            ),
+        )
+        return
+    client.views_open(trigger_id=shortcut["trigger_id"], view=_task_move_form_view())
+
+
+@app.view("task_move_submit")
+def handle_task_move_submit(ack, body, view, client):
+    state = view["state"]["values"]
+    parent_text = (state["parent"]["text"]["value"] or "").strip()
+    tasks_text = (state["tasks"]["text"]["value"] or "").strip()
+
+    parent_gid = _extract_task_gid(parent_text)
+    task_urls = [line.strip() for line in tasks_text.splitlines() if line.strip()]
+
+    # Field-level validation errors keep the form open with inline messages.
+    if not parent_gid:
+        ack(
+            response_action="errors",
+            errors={"parent": "Bu linkten task GID'i çıkarılamadı."},
+        )
+        return
+    if not task_urls:
+        ack(
+            response_action="errors",
+            errors={"tasks": "En az bir task linki gerekli."},
+        )
+        return
+
+    # Ack within 3 s by swapping to a progress view; the same root view is
+    # then updated by id when the moves finish (no time limit, like Bug Details).
+    ack(
+        response_action="update",
+        view=_result_view(
+            f":hourglass_flowing_sand: *Taşınıyor…* ({len(task_urls)} task)",
+            title="Move Asana tasks",
+        ),
+    )
+    view_id = body["view"]["id"]
+
+    lines = []
+    moved = 0
+    try:
+        for task_url in task_urls:
+            task_gid = _extract_task_gid(task_url)
+            if not task_gid:
+                lines.append(f"SKIP (GID yok): {task_url}")
+                continue
+            if task_gid == parent_gid:
+                lines.append("SKIP: parent'ın kendisi listede")
+                continue
+            ok, detail = _asana_set_parent(task_gid, parent_gid)
+            if ok:
+                moved += 1
+                lines.append(f":white_check_mark: {detail}")
+            else:
+                lines.append(f":x: {task_gid}: {detail}")
+            time.sleep(TASK_MOVE_REQUEST_INTERVAL)
+        report = f"*Taşınan: {moved} / {len(task_urls)}*\n" + "\n".join(lines)
+    except Exception:
+        logger.exception("Task move failed (parent=%s)", parent_gid)
+        report = (
+            f"*Taşınan: {moved} / {len(task_urls)}* — beklenmedik hata, kalanlar "
+            "taşınmadı (loga bak). Aynı listeyle tekrar denemek güvenli."
+        )
+
+    try:
+        client.views_update(view_id=view_id, view=_result_view(report, title="Move Asana tasks"))
+    except Exception:
+        logger.exception("Failed to update task move modal")
+    logger.info("Task move finished: %s/%s under %s", moved, len(task_urls), parent_gid)
 
 
 # =============================================================================
