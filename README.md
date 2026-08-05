@@ -16,11 +16,9 @@ Asana'ya geçirmeye hazır formata uygun bir text üretir → sonucu **sadece t�
 **5. Version Check.** CRITICAL bir bug raporunun ve ortam/sürüm bilgisi eksikse,
 kişiyi etiketleyip aynı thread'e kısa bir soru atar: "Bu bug yayında var mı? Eğer yoksa sürüm bilgisi veya build numarası paylaşabilir misin?" gibi.
 
-**6. Task Move.** Asana UI'ının yapamadığı toplu taşıma: ⚡ (global shortcut) menüsünden
-**Move Asana tasks** açılır → modala parent task linki + taşınacak task linkleri
-(Asana'da çoklu seçim → *Copy task links* çıktısı) yapıştırılır → bot her task'ı
-Asana API'siyle parent'ın altına subtask olarak taşır, sonucu satır satır aynı
-modalda raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
+**6. Task Move.** Asana UI'ının yapamadığı toplu taşıma: Slack'te herhangi bir chatte "/"
+kullanılarak **Move Asana tasks** açılır. Bot her task'ı Asana API'siyle parent'ın altına
+subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
 yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
