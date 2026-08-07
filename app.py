@@ -254,7 +254,7 @@ def _display_name(client, uid: str | None) -> str:
 
 
 def _build_transcript(client, messages: list[dict]) -> str:
-    """Turn thread messages into 'Name: text' lines (bot messages excluded)."""
+    """Turn thread messages into '[DD.MM.YYYY HH:MM] Name: text' lines (bot messages excluded)."""
     lines = []
     for m in messages:
         if m.get("bot_id"):
@@ -262,7 +262,8 @@ def _build_transcript(client, messages: list[dict]) -> str:
         text = (m.get("text") or "").strip()
         if not text:
             continue
-        lines.append(f"{_display_name(client, m.get('user'))}: {text}")
+        stamp = time.strftime("%d.%m.%Y %H:%M", time.localtime(float(m["ts"])))
+        lines.append(f"[{stamp}] {_display_name(client, m.get('user'))}: {text}")
     return "\n".join(lines)
 
 
