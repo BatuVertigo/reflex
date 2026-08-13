@@ -1,10 +1,11 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 29 Temmuz 2026 14:07
+> **Son güncelleme:** 11 Ağustos 2026 20:08
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
+| **[v14.8500](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1786115128531989)** | 686 / 208633 | - 🍎🤖 %100: 11 Ağu 18:36 | 🟢 Yayın (🤖 %100, 🍎 %100) |
 | **[v14.8007](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1785176073927109)** | 683 / 208631 | - 🍎🤖 %100: 28 Tem 20:16<br>- 🍎🤖 Force: 29 Tem 12:09 | 🟢👊🏻 Yayın (son force) |
 | **[v14.8006](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784907929055949)** | 678 / 208629 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 Pending Release; buglar nedeniyle iptal → v14.8007 alındı) |
 | **[v14.8005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1784843711982039)** | 677 / 208628 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100) |
