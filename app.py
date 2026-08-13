@@ -521,7 +521,8 @@ def handle_task_move_submit(ack, body, view, client):
     lines = []
     moved = 0
     try:
-        for task_url in task_urls:
+        # Bottom to up
+        for task_url in reversed(task_urls):
             task_gid = _extract_task_gid(task_url)
             if not task_gid:
                 lines.append(f"SKIP (GID yok): {task_url}")
