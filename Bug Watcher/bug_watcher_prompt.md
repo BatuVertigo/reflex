@@ -308,7 +308,7 @@ Ekip dışındakileri havuzdan çıkar.
 |---|---|
 | **0 kişi** (ekipten kimse thread'e değmemiş) | **Ekibi** etiketle. |
 | **1 kişi** | **O kişiyi** etiketle. Ek sahiplenme sinyali aramana gerek yok — bug'ı o raporlamışsa ya da ekipten tek konuşan oysa doğal muhatap odur. |
-| **2+ kişi** | İçlerinden **en çok ilgilenen** kişiyi tespit et ve onu etiketle; **hiçbiri ilgilenmemişse ekibi** etiketle. |
+| **2+ kişi** | İçlerinden **en çok ilgilenen** kişiyi tespit et ve onu etiketle; **hiçbirinde açık sahiplenme sinyali yoksa** aşağıdaki "raporlayana düş" kuralını uygula. |
 
 **"İlgilenmiş" ne demek** (2+ kişi durumunda):
 - Konuyu o yürütmüş: soru sormuş, repro istemiş, detay istemiş, "bakıyorum / bende /
@@ -317,9 +317,19 @@ Ekip dışındakileri havuzdan çıkar.
   "sanırım <@X> ilgilenmişti".
 - Son sözü / kararı o vermiş.
 
-**Kararsızsan ekibi etiketle.** 2+ kişi varken şüphe hâlinde **her zaman ekip** —
-yanlış kişiyi etiketlemek, ekibi etiketlemekten daha kötüdür. (Bu tie-break yalnızca
-2+ kişilik havuz içindir; **tek kişilik havuzda tereddüt etme, o kişiyi etiketle**.)
+**"Raporlayana düş" kuralı (2+ kişilik havuzda tie-break).** Havuzdakilerin
+hiçbirinde net bir sahiplenme sinyali yoksa (kimse "bakıyorum / bende" dememiş,
+kimseye yönlendirilmemiş, son kararı kimse vermemiş):
+
+- **Ana mesajın yazarı havuzdaysa → onu etiketle.** Bug'ı raporlayan kişi, aksi
+  yönde bir sinyal olmadıkça doğal muhataptır. Thread'de kısa bir soru-cevap
+  olması (örn. başka biri "kapatıp açınca düzeliyor mu" diye sorup cevap alması)
+  sahiplenme sayılmaz — bu durumda yine **raporlayan** etiketlenir.
+- **Ana mesajın yazarı havuzda değilse** (ekip dışı biri raporlamışsa) → **ekibi**
+  etiketle.
+
+Yani 2+ kişilik havuzda sıra: net ilgilenen kişi → yoksa raporlayan → o da
+havuzda değilse ekip. (Tek kişilik havuzda tereddüt etme, o kişiyi etiketle.)
 
 **Adım 3 — Cümleyi kur.** §5'teki cümleyi aynen kullan, sadece `@etiket` yerine o
 kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"):
