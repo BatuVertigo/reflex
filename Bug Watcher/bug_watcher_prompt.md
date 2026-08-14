@@ -20,7 +20,7 @@
 - **Araçlar:** Bu Routine, bağlı **Slack MCP** (mesaj/thread/reaction okuma, kullanıcı
   çözümleme) ve **Asana MCP** (proje/task arama) connector'larını **yalnızca okuma**
   için kullanır. Asana'ya **hiçbir şey yazmaz/oluşturmaz**. Slack'e mesaj **gönderme**
-  connector ile YAPILMAZ (connector kullanıcı adına atar) — tüm gönderimler §0a'daki
+  connector ile YAPILMAZ — tüm gönderimler §0a'daki
   yöntemle, **Reflex app kimliğiyle** yapılır.
 - **Yanıt yeri:** Tüm yanıtlar ilgili bug mesajının **kendi thread'ine yanıt** olarak
   yazılır; bug kanallarına yeni (top-level) mesaj atılmaz.
@@ -367,9 +367,16 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
 1. **Backlog'u bul:** Rapor kanalı **#reflex** (`C0BFP48BMBK`) içinde,
    **yalnızca Reflex bot'unun attığı** (bot/app yazarlı — kullanıcı adına atılmış
    eski test raporlarını yok say) ve `🐛 Bug Watcher Raporu` başlığıyla başlayan
-   mesajlar arasından **en yeni `ts` değerlisini** al. Bu mesajdaki "Backlog"
-   listesi, bugünkü gözden geçirmenin girdisidir. Bot yazarlı rapor hiç yoksa
+   mesajlar arasından **en yeni `ts` değerlisini** al. Bot yazarlı rapor hiç yoksa
    (ilk çalıştırma) bu bölümü atla.
+
+   **Kuyruk mesajlarını da al (ZORUNLU).** Rapor 4000 karakteri aşarsa Slack onu
+   birden fazla mesaja böler; kuyruk parçaları başlıkla başlamaz. Bu yüzden
+   backlog girdisi = başlık mesajı **+ ondan sonra gelen, başka bir
+   `🐛 Bug Watcher Raporu` başlığına rastlayana kadarki tüm bot yazarlı mesajlar**.
+   Parçaları `ts` sırasına göre birleştir, backlog listesini birleşik metinden oku.
+   Yalnızca başlık mesajını okumak, bölünme backlog listesinin ortasına düştüğünde
+   kalan thread'leri **sessizce** backlog'dan düşürür.
 2. **Her backlog thread'ini tek tek yeniden değerlendir** — §2, §3, §4, §5 ve §5b
    adımlarını aynen yeni bir thread'miş gibi uygula ve şuna karar ver:
    *aksiyon almaya gerek var mı? backlog'da tutmaya gerek var mı?*
@@ -448,9 +455,9 @@ Reflex bir thread'e daha önce yazdıysa, sonraki her hatırlatma **kısa** olur
 - **Raporda etiket kullanılmaz:** `<@U...>` / `<!subteam^...>` formatları ve
   ID'ler rapora yazılmaz (#reflex'te bildirim düşürür). Sadece kişiye mi ekibe
   mi hatırlatıldığı kaydedilir; ertesi run bu alandan yalnızca eskalasyon yönünü okur.
-- **Rapor 4000 karakteri aşarsa Slack ikiye böler; sorun değil.** Bölünme yüzünden
-  içerik kısaltılmaz. §6 raporu `🐛 Bug Watcher Raporu` başlığından bulduğu için
-  kuyruk mesajı backlog okumasını bozmaz.
+- **Rapor 4000 karakteri aşarsa Slack böler; sorun değil.** Bölünme yüzünden içerik
+  kısaltılmaz — ertesi run §6.1'e göre başlık mesajını **ve kuyruk parçalarını
+  birlikte** okur.
 - **Backlog'a ne girer:** Bu run içinde hakkında **hatırlatma/etiketleme yaptığın
   her thread** — hem yeni taramadan gelenler hem §6'dan devam edenler. (§2a'daki
   "emin olamadım" soruları dahil: onlar da yanıt bekler.)
