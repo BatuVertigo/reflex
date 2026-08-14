@@ -145,20 +145,24 @@ VERSION_CHECK_PROMPT = _load_prompt("Version Check/version_check_prompt.md")
 _replied: set[str] = set()
 
 
-def _extract_json(text: str) -> dict:
-    """Extract the JSON object from the model's text response (even inside a code block)."""
-    s = text.strip()
-    if s.startswith("```"):
-        s = s.strip("`")
-        if s[:4].lower() == "json":
-            s = s[4:]
+def _extract_json(text: str) -> dict | None:
+    """Extract the JSON object from the model's response (code fences and prose tolerated).
+
+    The model does not always obey "JSON only": it can wrap the object in a
+    ```json fence, prefix it with prose, or answer with no JSON at all. Slicing
+    the outermost braces covers the first two; the last one returns None (and is
+    logged with the raw text) so one odd reply skips a message instead of
+    raising an unreadable traceback.
+    """
+    i, j = text.find("{"), text.rfind("}")
+    if i == -1 or j <= i:
+        logger.error("model reply contains no JSON object: %r", text[:500])
+        return None
     try:
-        return json.loads(s)
+        return json.loads(text[i : j + 1])
     except json.JSONDecodeError:
-        i, j = s.find("{"), s.rfind("}")
-        if i != -1 and j != -1 and j > i:
-            return json.loads(s[i : j + 1])
-        raise
+        logger.error("model reply is not valid JSON: %r", text[:500])
+        return None
 
 
 def check_version(text: str) -> dict | None:
