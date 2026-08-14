@@ -414,9 +414,13 @@ Reflex bir thread'e daha önce yazdıysa, sonraki her hatırlatma **kısa** olur
 🐛 **Bug Watcher Raporu** — <GG.AA.YYYY>
 
 📋 Backlog (yarınki run'da yeniden kontrol edilecek):
-1. [<bug'ın tek satırlık özeti>](<thread permalink>) — [<kanal adı>](<kanal linki>) — 
-   _Bugünkü aksiyon: <kişiye hatırlatma | ekibe hatırlatma> — backlog'da <n>. gün_
+
+**[#<kanal adı>](<kanal linki>)**:
+1. [<bug'ın tek satırlık özeti>](<thread permalink>) — <kişiye hatırlatma | ekibe hatırlatma> — backlog'da <n>. gün
 2. ...
+
+**[#<diğer kanal adı>](<kanal linki>)**:
+1. ...
 
 ✅ Backlog'dan çıkanlar:
 - [<bug'ın tek satırlık özeti>](<thread permalink>) — <çıkma sebebi: ✅/❌/✏️ emojisi geldi | Asana linki atıldı | onaylayan yanıt geldi | task açıldı>
@@ -424,9 +428,17 @@ Reflex bir thread'e daha önce yazdıysa, sonraki her hatırlatma **kısa** olur
 📊 Özet: bugün <x> yeni thread incelendi, <y> yeni hatırlatma yapıldı, backlog'a <z> thread eklendi, <w> thread çıktı.
 ```
 
+- **Backlog kanala göre gruplanır:** her kanal için kalın bir kanal linki başlığı
+  atılır, maddeler o başlığın altında **1'den başlayarak** numaralanır. Kanal adı
+  madde içinde tekrarlanmaz. Tek kanaldan madde varsa da başlık yazılır.
+- **Madde formatı:** `<özet linki> — <kişiye|ekibe hatırlatma> — backlog'da <n>. gün`.
+  "Bugünkü aksiyon:" ifadesi ve ayrı satır kullanılmaz — tek satır.
 - **Raporda etiket kullanılmaz:** `<@U...>` / `<!subteam^...>` formatları ve
   ID'ler rapora yazılmaz (#reflex'te bildirim düşürür). Sadece kişiye mi ekibe
   mi hatırlatıldığı kaydedilir; ertesi run bu alandan yalnızca eskalasyon yönünü okur.
+- **Rapor 4000 karakteri aşarsa Slack ikiye böler; sorun değil.** Bölünme yüzünden
+  içerik kısaltılmaz. §6 raporu `🐛 Bug Watcher Raporu` başlığından bulduğu için
+  kuyruk mesajı backlog okumasını bozmaz.
 - **Backlog'a ne girer:** Bu run içinde hakkında **hatırlatma/etiketleme yaptığın
   her thread** — hem yeni taramadan gelenler hem §6'dan devam edenler. (§2a'daki
   "emin olamadım" soruları dahil: onlar da yanıt bekler.)
