@@ -48,9 +48,11 @@ bot token'ı** ile `chat.postMessage` üzerinden gönderilir; böylece mesajlar 
    için payload her zaman dosyadan verilir):
 
    ```json
-   {"channel": "<kanal ID>", "thread_ts": "<ana mesajın ts değeri>", "text": "<mesaj>"}
+   {"channel": "<kanal ID>", "thread_ts": "<ana mesajın ts değeri>", "text": "<mesaj>",
+    "unfurl_links": false, "unfurl_media": false}
    ```
 
+   - **`unfurl_links` / `unfurl_media` her payload'da `false` olur.**
    - **Thread yanıtı:** `thread_ts` = yanıtlanan ana (top-level) mesajın `ts` değeri.
    - **Gün sonu raporu (§7):** `channel` = `C0BFP48BMBK` (#reflex), `thread_ts` alanı
      payload'a **konmaz** (top-level mesaj).
