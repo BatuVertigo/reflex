@@ -69,13 +69,23 @@ bot token'ı** ile `chat.postMessage` üzerinden gönderilir; böylece mesajlar 
    curl -s -X POST https://slack.com/api/chat.postMessage \
      -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
      -H "Content-type: application/json; charset=utf-8" \
-     -d @<payload dosyası>
+     -d @<payload dosyası> \
+     -o <yanıt dosyası>
    ```
+
+   Yanıt **dosyaya** yazılır ve dosyadan okunur; `echo`/değişkenle shell'den
+   geçirilmez — zsh `echo` yanıttaki `\n`/`\uXXXX` escape'lerini genişletir, JSON
+   bozulur ve gönderim başarılıyken parse hatası alırsın.
 
 3. Yanıttaki `"ok"` alanını kontrol et. `"ok": false` ise:
    - Hatayı (`error` alanı) run çıktısında raporla ve o mesajı gönderilmemiş say.
    - **Connector'ın mesaj atma araçlarına GERİ DÜŞME** — hiçbir koşulda mesaj
      kullanıcı adına atılmaz. Gönderilemeyen mesaj rapor/çıktıda belirtilir.
+
+4. Yanıt okunamadıysa veya komut hata verdiyse gönderimi hemen tekrarlama —
+   `chat.postMessage` idempotent değil, ikinci POST thread'e ikinci mesaj düşürür.
+   Önce thread'i oku (`conversations.replies` / `slack_read_thread`): mesaj yoksa
+   yeniden gönder, varsa bitmiştir.
 
 **Dry-run kapısı değişmez:** dry-run `true` iken bu curl çağrıları dahil Slack'e
 **hiçbir yazma yapılmaz**; yalnızca gönderilecek payload'lar run çıktısında gösterilir.
