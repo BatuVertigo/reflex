@@ -13,7 +13,7 @@
   1. **Backlog gözden geçirme** (§6) — bir önceki raporun backlog listesindeki thread'leri yeniden değerlendir.
   2. **Yeni thread taraması** — §1'deki kanalların son 24 saatteki ana mesajlarını incele (aşağıdaki "Geriye bakış").
   3. **Gün sonu raporu** (§7) — backlog'un güncel halini #reflex kanalına raporla.
-- **Geriye bakış:** Kanala **son 24 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku.
+- **Geriye bakış:** Kanala **son 24 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku. **Pazartesi run'larında bu pencere 72 saattir** — routine hafta sonu çalışmadığı için cuma run'ından beri biriken mesajlar da kapsanır.
 - **Deneme modu (dry-run):** `false`
   - `true` olduğunda ajan tüm analizi yapar ama Slack'e **hiçbir yanıt yazmaz** —
     sadece ne yapacağını raporlar. Test ederken bunu `true` yapabilirsin.
