@@ -98,6 +98,8 @@ bot token'ı** ile `chat.postMessage` üzerinden gönderilir; böylece mesajlar 
 |---|---|---|---|---|
 | Polygun Arena | #qa-polygunarena | `C0636S9C278` | vertigohq.slack.com | `@pa-product` |
 | Polygun Arena | #community-feedback_polygun-arena | `C09S20F1V7E` | vertigohq.slack.com | `@pa-product` |
+| Critical Strike | #qa-criticalstrike | `CBG0L949W` | vertigohq.slack.com | `@cs-product` |
+| Critical Strike | #community-feedback_critical-strike | `C04L92H8QLA` | vertigohq.slack.com | `@cs-product` |
 
 > İstediğiniz kanalları yeni satır olarak ekleyebilirsiniz.
 > Ajan her kanalın son 24 saatteki ana mesajlarını ve thread yanıtlarını okur.
