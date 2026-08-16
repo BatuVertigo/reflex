@@ -1,6 +1,6 @@
 # Routine Prompt — Bug Watcher
 
-> Her sabah çalışan "Bug Watcher Routine"inin tek doğruluk kaynağı bu dosyadır.
+> Hafta içi (pzt–cum) her sabah çalışan "Bug Watcher Routine"inin tek doğruluk kaynağı bu dosyadır.
 > Bu dosyayı düzenleyerek Routine'i istediğiniz şekilde değiştirmiş olursunuz.
 > dry-run flag'ini §0'dan, Slack kanallarını §1'den yönetebilirsiniz.
 
