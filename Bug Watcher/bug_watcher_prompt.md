@@ -398,7 +398,9 @@ kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"
 
 ## 6. Backlog gözden geçirme (her run'ın BAŞINDA)
 
-Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu işle:
+Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu işle.
+Bu bölümün **okuma işi** (rapor parse + thread okuma) §6b'deki tek subagent'a
+verilir; aşağıdaki kararlar, mesaj metni ve gönderim ana thread'de kalır.
 
 1. **Backlog'u bul:** Rapor kanalı **#reflex** (`C0BFP48BMBK`) içinde,
    **yalnızca Reflex bot'unun attığı** (bot/app yazarlı — kullanıcı adına atılmış
@@ -455,6 +457,43 @@ Reflex bir thread'e daha önce yazdıysa, sonraki her hatırlatma **kısa** olur
 - **"X'dan yanıt gelmedi" YAZMA:** kişiden ekibe yükseltirken kişinin
   yanıtsızlığından bahsetme — thread'e bakan zaten görür. Sadece kısa soru +
   etiket.
+
+### 6b. §6 verisini toplayan subagent
+
+Rapor parse'ı ve backlog thread'lerinin okunması **tek bir subagent'a** verilir —
+thread başına ayrı agent açma.
+
+Subagent sırayla şunları yapar:
+
+1. §6.1'e göre #reflex'teki en yeni **bot yazarlı** raporu ve kuyruk parçalarını
+   bulup birleştirir, backlog listesini çıkarır.
+2. Listedeki **her** thread'i okur.
+
+Dönüşü, backlog satırı başına bir kayıt:
+
+- `permalink`, tek satırlık özet, önceki hatırlatma yönü (`kişiye`/`ekibe`) ve
+  önceki rapordaki gün sayısı,
+- **ana mesajdaki** reaction'lar (✅/❌/✏️ var mı — thread yanıtlarındakiler
+  sayılmaz),
+- thread'de Asana linki var mı, varsa URL'ler,
+- Reflex'in son mesajının `ts`i ve **ondan sonra** gelen yanıtlar,
+- karar niteliğindeki cümlelerin **birebir alıntısı** — parafraz etme; "şu anlık
+  yok ama takipte kalalım" gibi bir cümle backlog'dan çıkarma kararını doğrudan
+  belirler,
+- thread'e katılanların Slack ID'leri + ana mesajın yazarı,
+- `cross-check gerekli mi` bayrağı (thread'de yeni bilgi belirdiyse).
+
+Sınırlar:
+
+- Subagent **karar vermez**: §2b "çıkar/tut", kişiden ekibe yükseltme ve §5/§5b
+  seçimi ana thread'in işidir.
+- Subagent **Slack'e yazmaz** ve **Asana araması yapmaz**; cross-check gerekiyorsa
+  ana thread §4a'yı ayrıca tetikler.
+- Backlog **25 thread'i aşarsa** işi kanala göre iki subagent'a böl — tek agent'ın
+  kendi context'inde boğulup thread'leri savsaklaması ana agent'tan görünmez.
+- Rapor bulunamaz/parse edilemezse `backlog okunamadı` döner. Ana thread bunu §6'yı
+  atlamak için değil, backlog'u kendisi okumayı denemek için kullanır ve durumu run
+  çıktısında belirtir.
 
 ---
 
