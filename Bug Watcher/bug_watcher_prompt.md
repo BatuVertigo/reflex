@@ -210,27 +210,19 @@ thread'e katılmış ekip üyelerinden ilgilenen biri varsa (§5b'deki "ilgilenm
 
 ## 4. Asana cross-check
 
-- **Kapsam kuralı (ZORUNLU — önce oku, bir filtredir, tavsiye değil):** Bir bug'ı
-  YALNIZCA ilgili oyunun kapsam içindeki Asana projelerindeki tasklarla eşleştir.
-  Kapsam, ilgili Slack kanalının oyununa (§1) göre belirlenir:
-  - **Polygun Arena** kanalı → adı **`PA` ile başlayan** projeler
-    (örn. `PA v1.370 - Main Menu Changes`).
-  - **Critical Strike** kanalı → adı **`CS` ile başlayan** projeler
-    (örn. `CS v14.8 - Gangster Paradise`).
-  Adı bu önekle **başlamayan** hiçbir proje kapsamda değildir. Özellikle eski
-  `Version X.Y ...` isimli release projeleri (örn. `Version 12.2 - DONE`) **kapsam
-  DIŞIDIR** — bunlardan gelen hiçbir task, ne kadar benzese de eşleşme olarak
-  sunulamaz. Önek kontrolünü proje adının **baş/son boşlukları kırpılmış (trim)**
-  haline uygula — örn. ` PA v1.010 - Arctic Siege` kapsam İÇİdir. Adında
-  `Template` geçen projeler (örn. `PA Version Template`) release projesi
-  değildir — **kapsam DIŞIDIR**.
+- **Kapsam kümeleri run boyunca sabittir.** Aramayı hafifletmek için
+  `projects_any`'ye kümenin bir alt kümesini verme; her cross-check o oyunun tam
+  listesiyle yapılır. Çağrı ağırlaşırsa **proje kümesini değil yanıtı** küçült:
+  `limit`i düşür, `opt_fields`i kıs. Zorunlu kalıp kapsamı daraltırsan o
+  cross-check'i run çıktısında **"kapsam daraltıldı"** diye belirt — sessizce
+  "eşleşme yok" deme.
 - **Asana'da task tipi:** Açılan her task bir **type** taşır — **Task** veya **Approval**.
   Bir bug Asana'ya girildiğinde **Approval** olarak açılır ve fix durumu bu approval'ın
   **state**'inden okunur: `rejected`, `changes requested` veya `approved`. Fix durumunu
   **yalnızca bu state belirler** — `completed: true` approval'ın sonuçlandığını gösterir,
-  fixlendiğini değil (`rejected` + `completed: true` → hâlâ fixlenmemiş, §5.1). Bir bug'ın benzerlerinin altında toplandığı **parent toplayıcı** ise normal **Task** tipindedir;
-  bunu task'ın **ismi** ile bizim bug'ın içeriğini karşılaştırarak
-  (anlamsal benzerlik) tespit et.
+  fixlendiğini değil (`rejected` + `completed: true` → hâlâ fixlenmemiş, §5.1).
+  Bir bug'ın benzerlerinin altında toplandığı **parent toplayıcı** ise normal
+  **Task** tipindedir.
 - **Eşleştirme mantığı:**
   1. Bu bug halihazırda Asana'ya girilmiş (**Approval** type) ve state'i `rejected` yani
      henüz fixlenmemiş → §5.1.
@@ -245,30 +237,72 @@ thread'e katılmış ekip üyelerinden ilgilenen biri varsa (§5b'deki "ilgilenm
     (örn. aynı ekranda ama başka bir öğeyi anlatan "TDM icon and Map icon
     overlaps") eşleşme olarak sunulMAZ; en fazla 4 (parent toplayıcı) adayı
     olarak değerlendirilir.
-- **Arama yöntemi (önemli — kapsamı arama anında zorla):**
-  1. **Önce kapsamdaki projeleri çıkar.** İlgili önekle (`PA` / `CS`) **başlayan**
-     projeleri bul (proje arayıp adı bu önekle **başlayanları** süz) ve bunların
-     **GID'lerini** topla. Bu, izin verilen proje kümesidir. Küme boşsa cross-check
-     sonucu "eşleşme yok" kabul edilir.
-  2. **Aramayı bu kümeyle sınırla.** `search_tasks`'i **`projects_any`**
-     parametresine bu GID'leri (virgülle ayrılmış) vererek çağır — böylece sonuçlar
-     yapısal olarak yalnızca kapsamdaki projelerden gelir. `search_objects`'e
-     **güvenme** (yalnızca task ismiyle eşleşir, gerçek eşleşmeleri kaçırır); tam
-     metin arayan **`search_tasks`** kullan (task ismi + açıklama + yorumları tarar).
-     Approval/Task tipini gerekirse `resource_subtype` ile daralt.
-  3. Anahtar kelimeleri **hem Türkçe hem İngilizce** dene (örn. `mor`/`purple`,
-     `arka plan`/`background`, `pop-up`/`popup`), çünkü task içerikleri karışık dilde
-     olabilir. Birden fazla sorgu varyasyonuyla ara; ilk boş sonuçta pes etme.
-  4. **Sunmadan önce son doğrulama (belt-and-suspenders).** Bir taskı eşleşme olarak
-     kullanmadan önce, taskın ait olduğu projelerin adlarını oku (`opt_fields`'e
-     `projects.name` ekle) ve **en az bir** projesinin adının gereken önekle
-     (`PA`/`CS`) başladığını doğrula. Başlamıyorsa o taskı **at — asla sunma.**
-     **Subtask istisnası:** subtask'larda `projects` çoğu zaman `[]` döner — bu
-     tek başına eleme sebebi DEĞİLDİR. `projects` boşsa `parent` zincirini yukarı
-     yürü ve ilk projesi olan atanın projelerine aynı önek kontrolünü uygula.
-     Zincirden de proje çıkmazsa, sonuç zaten `projects_any` ile kapsam
-     projelerinden geldiği için taskı **geçerli say** (yapısal kısıta güven).
-- Buradaki cross-check'ten bazı Asana taskları elde edilirse onlardan en son yanıtı oluştururken bahset.
+- **Arama prosedürü (sırayla, atlamadan):**
+  0. **`PA_GIDS` ve `CS_GIDS` kümelerini çıkar — run başına bir kez, sonra
+     tekrar çekme.** İki oyun için de aynı üç işlem:
+     a. `search_objects`'i `resource_type=project`, `query` = **çıplak önek**
+        (`PA` ya da `CS`), `count=100`, `opt_fields=name` ile çağır.
+     b. Dönen proje adlarını **trim'le** ve adı o önekle **başlayanları** al
+        (` PA v1.010 - Arctic Siege` içeri girer). Önekle başlamayanlar burada
+        elenir: `Version 12.2 - DONE`, `Critical Strike 12.51` gibi eski release
+        projeleri **kapsam DIŞIDIR**.
+     c. Kalanlardan adında **`Template`** geçenleri sil (örn.
+        `PA Version Template`).
+     Elde kalan GID'ler o oyunun kümesidir ve **iki küme ayrı tutulur**.
+     Sonuç 100 satıra dayanırsa liste kırpılmış olabilir;
+     `get_projects` (limit 100 + sayfalama) ile tamamla. Küme boşsa o oyunun
+     cross-check sonucu "eşleşme yok" kabul edilir.
+  1. **Anahtar kelimeleri çıkar.** Bug metninden 2-4 terim seç ve her biri için
+     **hem Türkçe hem İngilizce** varyant kullan (`karanlık`/`dark`,
+     `kompanzasyon`/`compensation`, `arka plan`/`background`), çünkü task
+     içerikleri karışık dilde. İlk boş sonuçta pes etme.
+  2. **Ara.** `search_tasks`'i **`projects_any`** parametresine bug'ın oyununa
+     ait kümenin **tamamını** (virgülle ayrılmış) vererek çağır; oyunu bug'ın
+     geldiği Slack kanalı belirler (§1: PA kanalları → `PA_GIDS`, CS kanalları →
+     `CS_GIDS`). Böylece dönen her sonuç yapısal olarak kapsam içindedir.
+     `limit=15`, `completed` **filtresi** verme (fixlenmiş tasklar da lazım),
+     `opt_fields=name,resource_subtype,approval_status,permalink_url`.
+     Gerekirse `resource_subtype` ile Approval/Task daralt. Task araması için
+     **`search_objects` kullanma** (yalnızca isimle eşleşir, gerçek eşleşmeleri
+     kaçırır); `search_tasks` ismi + açıklamayı + yorumları tarar.
+  3. **Adayları süz.** Yukarıdaki benzerlik eşiğini uygula.
+  4. **Adayı sunmadan önce doğrula.** `get_task` ile `notes` ve `parent.name`
+     oku; semptomun gerçekten eşleştiğini teyit et. Etmiyorsa aday **atılır.**
+     **Kapsam kontrolü yalnızca aramanın dışından gelen adaylar için gerekir**
+     (parent zincirini yürürken çıkan toplayıcı, Slack'te linklenmiş bir task):
+     bunlarda `projects.gid` oku ve **en az bir** projesinin o oyunun kümesinde
+     olduğunu doğrula; değilse **sunma**. `projects` boşsa `parent` zincirini
+     yukarı yürüyüp ilk projesi olan ataya aynı kontrolü uygula. Adım 2'nin
+     aramasından gelen sonuçlar `projects_any` sayesinde zaten kapsamdadır,
+     tekrar kontrol etme.
+  5. Senaryoyu seç (§5.1–5.4).
+- Cross-check'ten task elde edilirse §5 cümlesini kurarken onlardan bahset.
+
+### 4a. Cross-check'i subagent'a dağıtma
+
+Arama prosedürünün 1–4. adımlarını bug başına bir subagent'a dağıt ve hepsini
+**tek turda paralel** başlat. `PA_GIDS` / `CS_GIDS` kümelerini (adım 0) ana thread
+bir kez çıkarır ve **yalnızca o bug'ın oyununa ait kümeyi** subagent'a hazır verir
+— subagent proje listesi çekmez, kümeler arası seçim yapmaz.
+
+Her subagent'a verilecekler: bug metni, oyun (PA/CS), o oyunun GID kümesi, arama
+prosedürü ve benzerlik eşiği.
+
+**Subagent yalnızca arama yapar, senaryo seçmez.** Dönüş formatı:
+
+- her aday için: task adı, `permalink_url`, `resource_subtype`,
+  `approval_status`, ait olduğu projenin adı ve `notes`tan semptomu gösteren
+  1-2 cümle,
+- aday yoksa: `eşleşme yok` + denenen sorgular (Türkçe ve İngilizce),
+- arama tamamlanamadıysa: `cross-check yapılamadı` + sebep.
+
+Ana thread adayları benzerlik eşiğine göre kendisi değerlendirir ve §5.1–5.4
+senaryosunu kendisi seçer; subagent'ın "bu eşleşiyor" demesi tek başına yeterli
+değildir.
+
+Bir subagent boş/hatalı dönerse o bug için **"eşleşme yok" varsayma**:
+cross-check'i ana thread'de tekrarla, yine olmazsa o thread'e Asana'sız §5
+cümlesini yaz ve run çıktısında "cross-check yapılamadı" diye belirt.
 
 ---
 
