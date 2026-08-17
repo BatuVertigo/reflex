@@ -475,15 +475,13 @@ Dönüşü, backlog satırı başına bir kayıt:
 - karar niteliğindeki cümlelerin **birebir alıntısı** — parafraz etme; "şu anlık
   yok ama takipte kalalım" gibi bir cümle backlog'dan çıkarma kararını doğrudan
   belirler,
-- thread'e katılanların Slack ID'leri + ana mesajın yazarı,
-- `cross-check gerekli mi` bayrağı (thread'de yeni bilgi belirdiyse).
+- thread'e katılanların Slack ID'leri + ana mesajın yazarı.
 
 Sınırlar:
 
 - Subagent **karar vermez**: §2b "çıkar/tut", kişiden ekibe yükseltme ve §5/§5b
   seçimi ana thread'in işidir.
-- Subagent **Slack'e yazmaz** ve **Asana araması yapmaz**; cross-check gerekiyorsa
-  ana thread §4a'yı ayrıca tetikler.
+- Subagent **Slack'e yazmaz** ve **Asana araması yapmaz**.
 - Backlog **25 thread'i aşarsa** işi kanala göre iki subagent'a böl — tek agent'ın
   kendi context'inde boğulup thread'leri savsaklaması ana agent'tan görünmez.
 - Rapor bulunamaz/parse edilemezse `backlog okunamadı` döner. Ana thread bunu §6'yı
