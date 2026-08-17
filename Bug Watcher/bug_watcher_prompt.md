@@ -402,20 +402,7 @@ Yeni thread taramasına başlamadan **önce**, bir önceki run'ın backlog'unu i
 Bu bölümün **okuma işi** (rapor parse + thread okuma) §6b'deki tek subagent'a
 verilir; aşağıdaki kararlar, mesaj metni ve gönderim ana thread'de kalır.
 
-1. **Backlog'u bul:** Rapor kanalı **#reflex** (`C0BFP48BMBK`) içinde,
-   **yalnızca Reflex bot'unun attığı** (bot/app yazarlı — kullanıcı adına atılmış
-   eski test raporlarını yok say) ve `🐛 Bug Watcher Raporu` başlığıyla başlayan
-   mesajlar arasından **en yeni `ts` değerlisini** al. Bot yazarlı rapor hiç yoksa
-   (ilk çalıştırma) bu bölümü atla.
-
-   **Kuyruk mesajlarını da al (ZORUNLU).** Rapor 4000 karakteri aşarsa Slack onu
-   birden fazla mesaja böler; kuyruk parçaları başlıkla başlamaz. Bu yüzden
-   backlog girdisi = başlık mesajı **+ ondan sonra gelen, başka bir
-   `🐛 Bug Watcher Raporu` başlığına rastlayana kadarki tüm bot yazarlı mesajlar**.
-   Parçaları `ts` sırasına göre birleştir, backlog listesini birleşik metinden oku.
-   Yalnızca başlık mesajını okumak, bölünme backlog listesinin ortasına düştüğünde
-   kalan thread'leri **sessizce** backlog'dan düşürür.
-2. **Her backlog thread'ini tek tek yeniden değerlendir** — §2, §3, §4, §5 ve §5b
+1. **Her backlog thread'ini tek tek yeniden değerlendir** — §2, §3, §4, §5 ve §5b
    adımlarını aynen yeni bir thread'miş gibi uygula ve şuna karar ver:
    *aksiyon almaya gerek var mı? backlog'da tutmaya gerek var mı?*
 
@@ -433,11 +420,11 @@ verilir; aşağıdaki kararlar, mesaj metni ve gönderim ana thread'de kalır.
        tekrar**, §6a'daki **kısa formatla** hatırlat ve thread'i backlog'da
        **tut**. (Kişiden ekibe yükseltme **§5b'yi ezer** — aynı kişiye ikinci
        kez hatırlatma yapma; kişi §3'ten mi §5b'den mi seçilmiş fark etmez.)
-3. **Süre sınırı yok:** Bir thread, §2b kontrollerinden birine takılana kadar
+2. **Süre sınırı yok:** Bir thread, §2b kontrollerinden birine takılana kadar
    backlog'dan **asla düşmez** — günlerce aksiyon alınmazsa her run'da yeniden
    hatırlatılır. Raporda kaç gündür backlog'da olduğunu belirt (önceki rapordaki
    gün sayısını 1 artırarak).
-4. **Çift işleme yapma:** Backlog'da gözden geçirdiğin bir thread son 24 saat
+3. **Çift işleme yapma:** Backlog'da gözden geçirdiğin bir thread son 24 saat
    taramasında tekrar karşına çıkarsa onu ikinci kez değerlendirme/yazma.
 
 ### 6a. Tekrar hatırlatma formatı (2. hatırlatmadan itibaren)
@@ -465,8 +452,16 @@ thread başına ayrı agent açma.
 
 Subagent sırayla şunları yapar:
 
-1. §6.1'e göre #reflex'teki en yeni **bot yazarlı** raporu ve kuyruk parçalarını
-   bulup birleştirir, backlog listesini çıkarır.
+1. **Backlog'u bulur.** Rapor kanalı **#reflex** (`C0BFP48BMBK`) içinde,
+   `🐛 Bug Watcher Raporu` başlığıyla **başlayan** mesajlar arasından **en yeni
+   `ts` değerlisini** alır. **Tek ölçüt başlıktır**.
+
+   **Kuyruk mesajlarını da alır (ZORUNLU).** Rapor 4000 karakteri aşarsa Slack onu
+   birden fazla mesaja böler; kuyruk parçaları başlıkla başlamaz. Bu yüzden
+   backlog girdisi = başlık mesajı **+ ondan sonra gelen, başka bir `🐛 Bug Watcher Raporu` başlığına rastlayana kadarki tüm mesajlar**. (Araya giren bilgilendirme mesajını görmezden gel.)
+   Parçaları `ts` sırasına göre birleştirir, backlog listesini birleşik metinden
+   okur. Yalnızca başlık mesajını okumak, bölünme backlog listesinin ortasına
+   düştüğünde kalan thread'leri **sessizce** backlog'dan düşürür.
 2. Listedeki **her** thread'i okur.
 
 Dönüşü, backlog satırı başına bir kayıt:
@@ -531,7 +526,7 @@ Sınırlar:
   ID'ler rapora yazılmaz (#reflex'te bildirim düşürür). Sadece kişiye mi ekibe
   mi hatırlatıldığı kaydedilir; ertesi run bu alandan yalnızca eskalasyon yönünü okur.
 - **Rapor 4000 karakteri aşarsa Slack böler; sorun değil.** Bölünme yüzünden içerik
-  kısaltılmaz — ertesi run §6.1'e göre başlık mesajını **ve kuyruk parçalarını
+  kısaltılmaz — ertesi run §6b'ye göre başlık mesajını **ve kuyruk parçalarını
   birlikte** okur.
 - **Backlog'a ne girer:** Bu run içinde hakkında **hatırlatma/etiketleme yaptığın
   her thread** — hem yeni taramadan gelenler hem §6'dan devam edenler. (§2a'daki
