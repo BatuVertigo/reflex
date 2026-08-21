@@ -175,10 +175,8 @@ Aşağıdakilerden **herhangi biri** varsa bug'ı atla:
   yanıtlarındaki reaction'lar ve mesaj metninde geçen emojiler sayılmaz.)
 - Ana mesajda veya thread yanıtlarında ilgili bug için Asana linki atılmış.
 - Biri onaylayan bir yanıt yazmış: "düzeltildi", "task açıldı", "Asana taski açıldı", "hallettim", "bunu ignore edeceğiz", "bu bug değil", "bunu çözdük" gibi.
-- Reflex'in hatırlatma sorusuna, sorulan aksiyonun yapıldığını bildiren bir yanıt
-  gelmiş: "denedim", "test ettik", "x test etti" gibi. Yanıt olumsuz
-  sonuç bildirmiyorsa (örn. "denedik, hala bozuk") ayrıca fix onayı arama —
-  aksiyon tamamlanmış say, backlog'dan çıkar.
+- Reflex'in hatırlatma sorusuna, sorulan aksiyonun yapıldığını bildiren bir yanıt gelmiş: "denedim", "test ettik", "x test etti" gibi. Yanıt olumsuz
+  sonuç bildirmiyorsa (örn. "denedik, sorun yok") ayrıca fix onayı arama — aksiyon tamamlanmış say, backlog'dan çıkar.
 
 ---
 
@@ -186,8 +184,9 @@ Aşağıdakilerden **herhangi biri** varsa bug'ı atla:
 
 Thread'in son yanıtlarında belirli bir x kişisi:
 1. "Bunu deneyeceğim."
-2. "Bunu kontrol edeceğim."
-3. "Bunun taskını açacağım."
+2. "Bunun taskını açacağım."
+3. "Test ettim ama tekrar deneyeceğim."
+4. "Baktım ama tekrar kontrol ederim."
 
 diyerek kendisinin bir aksiyon alacağını söylemiş ve ondan yanıt bekleniyorsa,
 bu kişi **ekip dışından biriyse**, x kişisini ve yanına ekipten bir muhatap da etiketle:
