@@ -292,6 +292,9 @@ prosedürü ve benzerlik eşiği.
 - her aday için: task adı, `permalink_url`, `resource_subtype`,
   `approval_status`, ait olduğu projenin adı ve `notes`tan semptomu gösteren
   1-2 cümle,
+- `notes`/yorumlardaki karar ve tarihçe cümlelerinin **birebir alıntısı** +
+  tarihi — eşleşme olmasa bile aynı sistemdeyse (ana thread'in özgün mesaj
+  kurması için hammadde, bkz. §5.0),
 - aday yoksa: `eşleşme yok` + denenen sorgular (Türkçe ve İngilizce),
 - arama tamamlanamadıysa: `cross-check yapılamadı` + sebep.
 
@@ -306,6 +309,32 @@ cümlesini yaz ve run çıktısında "cross-check yapılamadı" diye belirt.
 ---
 
 ## 5. Senaryolar
+
+### 5.0 Kalıpların statüsü
+
+§5, §5b, §6a'daki cümleler birer ŞABLON değil **ÖRNEKTİR**: varsayılan ton,
+uzunluk ve niyet için. Thread'in bağlamı (tartışmanın geldiği nokta, verilen
+sözler, Asana'da bulunan karar/tarihçe, yarım kalan soru) daha isabetli bir
+mesaj gerektiriyorsa **özgün cümle kur**. Ölçüt: "Thread'i okuyan bir ekip
+arkadaşı bu durumda ne sorardı?"
+
+**Değişmezler** (özgün cümlede de korunur):
+1. Mesaj bir **aksiyon sorusuyla** biter — bilgi notu tek başına atılmaz.
+2. Tek etiket, §3/§5b ile seçilmiş muhatap; tekil/çoğul ona göre.
+3. Asana'dan bahsediyorsan: link + task'ın **gerçek durumu** (approved /
+   rejected / eski karar). Eşleşmeyen task'ı "bu bug" gibi sunma; bağlam
+   olarak sun.
+4. Thread'den/Asana'dan alıntı yapıyorsan birebir ve kısa; parafraz etme.
+5. 1–3 cümle. Thread'de zaten olanı tekrarlama; thread'de olmayan yeni
+   bilgi ekliyorsan (Asana kararı gibi) ekle.
+6. §6a kısa-hatırlatma kuralları (🔄 n. hatırlatma, bağlam tekrarı yok) geçerli.
+7. Türkçe, mrkdwn.
+
+Özgün cümle kurduğun her thread'i run çıktısında **"özgün mesaj"** diye
+işaretle ve tek satırla gerekçelendir — prompt bu örneklerden iyileşir.
+
+> Esneklik yalnızca **mesaj metnindedir**. §2b atlama kuralları, §3/§5b
+> muhatap seçimi, §6 backlog mantığı ve §7 rapor formatı sabittir.
 
 ### Ne emoji ne yanıt hiçbir aksiyon verilmemiş:
 - Asana cross-check'ten sonuç dönmedi:
@@ -378,8 +407,9 @@ kimseye yönlendirilmemiş, son kararı kimse vermemiş):
 Yani 2+ kişilik havuzda sıra: net ilgilenen kişi → yoksa raporlayan → o da
 havuzda değilse ekip. (Tek kişilik havuzda tereddüt etme, o kişiyi etiketle.)
 
-**Adım 3 — Cümleyi kur.** §5'teki cümleyi aynen kullan, sadece `@etiket` yerine o
-kişinin `<@U...>` ID'sini koy ve fiili **tekil**e çevir ("misiniz" → "misin"):
+**Adım 3 — Cümleyi kur.** §5'teki örneği temel al (bağlam gerektiriyorsa
+özgün cümle, bkz. §5.0), `@etiket` yerine o kişinin `<@U...>` ID'sini koy ve
+fiili **tekil**e çevir ("misiniz" → "misin"):
 - "Bu bug için task açılmasına gerek varsa açabilir miyiz <@kişi-id>?"
 - "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve hala fixlenmemiş gözüküyor. Kontrol edebilir misin <@kişi-id>?"
 - "Asana'da bulduğum [şu task](link) bu bug'a benziyor ve önceden fixlenmiş gözüküyor. Kontrol edebilir misin <@kişi-id>?"
