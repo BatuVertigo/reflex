@@ -247,6 +247,9 @@ thread'e katılmış ekip üyelerinden ilgilenen biri varsa (§5b'deki "ilgilenm
         projeleri **kapsam DIŞIDIR**.
      c. Kalanlardan adında **`Template`** geçenleri sil (örn.
         `PA Version Template`).
+     d. **Ortak proje ekle:** `Product Planning` (gid `1209782033225676`) PA/CS
+        öneki taşımaz ama iki oyunun improvement task'ları buraya giriyor;
+        bu GID'i **hem `PA_GIDS`'e hem `CS_GIDS`'e** her run sabit olarak ekle.
      Elde kalan GID'ler o oyunun kümesidir ve **iki küme ayrı tutulur**.
      Sonuç 100 satıra dayanırsa liste kırpılmış olabilir;
      `get_projects` (limit 100 + sayfalama) ile tamamla. Küme boşsa o oyunun
