@@ -1,11 +1,12 @@
 # Polygun Arena (PA) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 18 Ağustos 2026 10:49
+> **Son güncelleme:** 4 Eylül 2026 08:08
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v1.4100](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1786548242669819)** | 578 / 890 | - 🍎🤖 %100: 17 Ağu 11:20<br>- 🍎🤖 Force: 18 Ağu 10:45 | 🟢👊🏻 Yayın (son force) |
+| **[v1.5000](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1788282182614889)**<br>(v1: 860/1020 halt) | 870 / 1030 | - 🍎🤖 %100: 2 Eyl 16:16<br>- 🍎🤖 Force: 4 Eyl 11:31 | 🟢👊🏻 Yayın (son force) |
+| **[v1.4100](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1786548242669819)** | 578 / 890 | - 🍎🤖 %100: 17 Ağu 11:20<br>- 🍎🤖 Force: 18 Ağu 10:45 | 🔵👊🏻 Forcelanmıştı → v1.5000 forcelandı |
 | **[v1.4005](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1786099615512089)** | 576 / 888 | - 🍎🤖 %100: 10 Ağu 19:11<br>- 🍎🤖 Force: 11 Ağu 11:40 | 🔵👊🏻 Forcelanmıştı → v1.4100 forcelandı |
 | **[v1.4004](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1786087404992939)** | 574 / 882 | — | 🧪 Prod'a açılmadı (🤖 Prod %0 review'a atıldı, 🍎 Testflight) |
 | **[v1.4002](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1786008422811349)** | 567 / 880 | — | 🧪 Release process yok |
