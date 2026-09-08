@@ -156,7 +156,8 @@ ağ/desync sorunları, repro adımları, bir hatanın ekran görüntüsü/videos
 **2) Aksiyon gerektiren teknik iş:** hata bildirmese de yapılması gereken somut
 bir teknik işi işaret eden mesajlar — tech-debt, bakım, ileriye dönük zorunlu iş.
 Örnekler: "xxx eklemek lazım", "sonraki sezonda xxx yazmalıyız"; özellikle "önemli" / :red_circle: gibi
-aciliyet vurgusu taşıyan notlar. Bunlar için §5 cümlelerinde "Bu bug için" yerine
+aciliyet vurgusu taşıyan notlar. Test planları / QA case listeleri de bu sınıftadır. Birinin koşup sonucu thread'e yazması gerekir.
+Bunlar için §5 cümlelerinde "Bu bug için" yerine
 "Bunun için" kullan — örn. "Bunun için task açılmasına gerek varsa açabilir miyiz
 @etiket?"
 
