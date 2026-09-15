@@ -1,12 +1,13 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 8 Eylül 2026 10:52
+> **Son güncelleme:** 14 Eylül 2026 08:39
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v14.9500](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1788809361374919)** | 1010 / 208880 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100) |
-| **[v14.9005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1787846268440699)** | 940 / 208860 | - 🍎🤖 %100: 31 Ağu 20:48<br>- 🍎🤖 Force: 1 Eyl 12:53 | 🟢👊🏻 Yayın (son force; Galaxy's End sezon build'i) |
+| **[v14.9501](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1789060736920569)** | 1080 / 208920 | - 🍎🤖 %100: 11 Eyl 18:11<br>- 🍎🤖 Force: 12 Eyl 11:57 | 🟢👊🏻 Yayın (son force) |
+| **[v14.9500](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1788809361374919)** | 1010 / 208880 | - 🍎 %100: 9 Eyl 18:57<br>- 🤖 %100: 9 Eyl 18:58 | 🔵 🤖 %100, 🍎 %100 → v14.9501 forcelandı |
+| **[v14.9005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1787846268440699)** | 940 / 208860 | - 🍎🤖 %100: 31 Ağu 20:48<br>- 🍎🤖 Force: 1 Eyl 12:53 | 🔵👊🏻 Forcelanmıştı → v14.9501 forcelandı (Galaxy's End sezon build'i) |
 | **[v14.9004](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1787770873348269)** | 900 / 208850 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100; Galaxy's End sezon build'i) |
 | **[v14.9003](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1787671780537489)** | 880 / 208830 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB açıldı; Galaxy's End sezon build'i) |
 | **[v14.9002](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1787601919498579)** | 850 / 208810 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB review'da; Galaxy's End sezon build'i) |
