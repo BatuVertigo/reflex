@@ -6,16 +6,21 @@
   const SHORT_MATCH_WINDOW = 100;
 
   const page = document.querySelector(".page");
+  const topbar = document.querySelector(".topbar");
   const form = SP.byId("search-form");
   const input = SP.byId("playfab-id");
   const searchButton = form.querySelector("button");
   const status = SP.byId("status");
   const badge = SP.byId("badge");
+  const rail = SP.byId("rail");
+  const playersHost = SP.byId("rail-players");
   const top = SP.byId("player-top");
+  const periodTop = SP.byId("period-top");
+  const zone = SP.byId("period-zone");
   const host = SP.byId("report");
   const playerTemplate = SP.byId("player-template");
+  const periodTemplate = SP.byId("period-template");
   const reportTemplate = SP.byId("report-template");
-  const searchedRow = SP.byId("searched");
 
   const chartRenderers = [SP.renderLeagueChart, SP.renderKdChart, SP.renderWeaponHeat, SP.renderPowerGap, SP.renderSearchTimeline, SP.renderTimePerDay, SP.renderHourGrid];
   // Open or closed per card for this visit, so a card keeps its state when the period or the player changes.
@@ -29,6 +34,7 @@
   let busy = false;
   let lastWidth = 0;
   let frame = 0;
+  let spyFrame = 0;
 
   const dayName = days => (days === 1 ? "Last day" : `Last ${SP.formatNumber(days)} days`);
   const matchName = count => (count === 1 ? "Last match" : `Last ${SP.formatNumber(count)} matches`);
@@ -141,23 +147,45 @@
   function setBusy(value) {
     busy = value;
     page.setAttribute("aria-busy", String(value));
-    for (const control of [input, searchButton, ...document.querySelectorAll(".chip-button, .period-dates input")]) control.disabled = value;
+    for (const control of [input, searchButton, ...document.querySelectorAll(".chip-button, .rail-player, .period-dates input")]) control.disabled = value;
   }
 
-  function renderChips() {
-    searchedRow.replaceChildren(searchedRow.firstElementChild);
+  function renderPlayers() {
+    playersHost.replaceChildren();
     for (const entry of held.values()) {
-      const button = SP.htmlElement("button", "chip-button", searchedRow);
+      const button = SP.htmlElement("button", "rail-player", SP.htmlElement("li", "", playersHost));
       button.type = "button";
       button.setAttribute("aria-pressed", String(entry === current));
-      button.append(`${entry.allTime.player.name || "Unknown"} · `);
+      SP.htmlElement("span", "", button).textContent = entry.allTime.player.name || "Unknown";
       SP.htmlElement("code", "", button).textContent = entry.id;
       button.addEventListener("click", () => {
         if (busy || entry === current) return;
         switchTo(entry);
       });
     }
-    searchedRow.hidden = held.size === 0;
+  }
+
+  // The sticky bars cover the top of the page, so anchor jumps and the rail offset need their measured heights.
+  function measure() {
+    const bar = document.querySelector(".period-bar");
+    page.style.setProperty("--topbar", `${getComputedStyle(topbar).position === "sticky" ? topbar.offsetHeight : 0}px`);
+    page.style.setProperty("--period-bar", `${bar ? bar.offsetHeight : 0}px`);
+  }
+
+  // Marks the rail link of the last section whose top has passed the sticky bars.
+  function markSection() {
+    const style = getComputedStyle(page);
+    const line = parseFloat(style.getPropertyValue("--topbar")) + parseFloat(style.getPropertyValue("--period-bar")) + 40;
+    let currentLink = null;
+    const links = [...rail.querySelectorAll("a[href^='#']")];
+    for (const link of links) {
+      const target = document.querySelector(link.getAttribute("href"));
+      if (target && target.getBoundingClientRect().top <= line) currentLink = link;
+    }
+    // At the very top nothing has passed the line yet; the first link stands for the player header and totals.
+    if (!currentLink) currentLink = links[0];
+    for (const link of links) link.setAttribute("aria-current", String(link === currentLink));
+    for (const group of rail.querySelectorAll(".rail-group")) group.classList.toggle("is-active", group.contains(currentLink));
   }
 
   function renderPeriod() {
@@ -184,6 +212,8 @@
     for (const [id, view] of [["lp-chart", "lp"], ["kd-chart", "kd"], ["weapon-heat", "weapons"], ["power-gap", "power"]]) SP.attachKeyboard(SP.byId(id), view);
     lastWidth = SP.byId("career-strip").clientWidth;
     window.scrollTo(0, scroll);
+    measure();
+    markSection();
   }
 
   // A period seen before shows from memory; a new one loads first, and the old one stays on screen if that fails.
@@ -216,7 +246,9 @@
     period = entry.period;
     input.value = entry.id;
     top.replaceChildren(playerTemplate.content.cloneNode(true));
+    periodTop.replaceChildren(periodTemplate.content.cloneNode(true));
     prepareCards(top);
+    for (const element of [rail, zone]) element.hidden = false;
     SP.renderPlayer(allTime);
     SP.renderSummary(career, allTime.finalLeaguePoints);
     // The Career group never changes with the period, so it renders once per player.
@@ -227,7 +259,7 @@
     SP.renderEconomy(careerReport);
     renderPresets(entry.options);
     bindDates();
-    renderChips();
+    renderPlayers();
     renderPeriod();
     window.scrollTo(0, 0);
   }
@@ -271,14 +303,21 @@
   });
 
   // A section link opens its card first, so the jump never lands on a closed card.
-  top.addEventListener("click", event => {
-    const link = event.target.closest(".nav a");
+  rail.addEventListener("click", event => {
+    const link = event.target.closest("a[href^='#']");
     const target = link && document.querySelector(link.getAttribute("href"));
     const card = target && target.closest("details");
     if (card) card.open = true;
   });
 
+  window.addEventListener("scroll", () => {
+    if (!current) return;
+    cancelAnimationFrame(spyFrame);
+    spyFrame = requestAnimationFrame(markSection);
+  }, { passive: true });
+
   new ResizeObserver(() => {
+    measure();
     const strip = SP.byId("career-strip");
     if (!strip || !SP.report || strip.clientWidth === lastWidth) return;
     lastWidth = strip.clientWidth;

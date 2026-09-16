@@ -29,36 +29,55 @@
       const rows = currencyDays.filter(row => row[1] === item);
       return rows.length ? rows[rows.length - 1][4] : null;
     };
-    const lastDay = currencyDays.length ? currencyDays[currencyDays.length - 1][0] : null;
-    const matchPassPoints = resources.filter(row => row[0] === "earn" && row[3] === "BattlePassPoint" && row[1] === "battle_end_rewards").reduce((sum, row) => sum + (row[5] || 0), 0);
-    const statsHost = byId("economy-stats");
-    for (const [label, value, sub] of [
-      ["Soft currency earned", formatNumber(total("earn", "SoftCurrency")), `${formatNumber(total("spend", "SoftCurrency"))} spent`],
-      ["Hard currency earned", formatNumber(total("earn", "HardCurrency")), `${formatNumber(total("spend", "HardCurrency"))} spent`],
-      ["Battle pass points", formatNumber(total("earn", "BattlePassPoint")), `${formatNumber(matchPassPoints)} from matches`],
-      [lastDay ? `Balance on ${SP.dayLabel(lastDay)}` : "Balance", lastBalance("SoftCurrency") === null ? "–" : `${formatNumber(lastBalance("SoftCurrency"))} soft`, lastBalance("HardCurrency") === null ? "" : `${formatNumber(lastBalance("HardCurrency"))} hard`],
-    ]) {
-      const cell = htmlElement("div", "mini-stat", statsHost);
-      htmlElement("p", "stat-label", cell).textContent = label;
-      htmlElement("p", "mini-value", cell).textContent = value;
-      htmlElement("p", "mini-sub", cell).textContent = sub;
-    }
+    const balanceText = item => (lastBalance(item) === null ? "" : ` · ${formatNumber(lastBalance(item))} now`);
+    const packCount = itemType => resources.filter(row => row[0] === "earn" && row[2] === itemType).reduce((sum, row) => sum + (row[5] || 0), 0);
 
-    const softSources = new Map();
-    for (const [event, source, , item, rows, quantity] of resources) {
-      if (event !== "earn" || item !== "SoftCurrency") continue;
-      const name = sourceName(source);
-      const entry = softSources.get(name) || { name, rows: 0, quantity: 0 };
-      entry.rows += rows || 0;
-      entry.quantity += quantity || 0;
-      softSources.set(name, entry);
+    // The four tiles are tabs: one pane shows at a time, soft currency first.
+    const tabsHost = byId("economy-tabs");
+    const tabs = [
+      ["soft", "Soft currency earned", formatNumber(total("earn", "SoftCurrency")), `${formatNumber(total("spend", "SoftCurrency"))} spent${balanceText("SoftCurrency")}`],
+      ["hard", "Hard currency earned", formatNumber(total("earn", "HardCurrency")), `${formatNumber(total("spend", "HardCurrency"))} spent${balanceText("HardCurrency")}`],
+      ["chests", "Chests and booster packs", formatNumber(packCount("Chest") + packCount("BoosterPack")), `${SP.plural(packCount("Chest"), "chest", "chests")} · ${SP.plural(packCount("BoosterPack"), "pack", "packs")}`],
+      ["spent", "Spent on", `${formatNumber(total("spend", "SoftCurrency"))} soft`, `${formatNumber(total("spend", "HardCurrency"))} hard`],
+    ];
+    const select = key => {
+      for (const [id] of tabs) {
+        byId(`economy-tab-${id}`).setAttribute("aria-selected", String(id === key));
+        byId(`economy-${id}`).hidden = id !== key;
+      }
+    };
+    for (const [id, label, value, sub] of tabs) {
+      const tab = htmlElement("button", "mini-stat economy-tab", tabsHost);
+      tab.type = "button";
+      tab.id = `economy-tab-${id}`;
+      tab.setAttribute("role", "tab");
+      tab.setAttribute("aria-controls", `economy-${id}`);
+      htmlElement("p", "stat-label", tab).textContent = label;
+      htmlElement("p", "mini-value", tab).textContent = value;
+      htmlElement("p", "mini-sub", tab).textContent = sub;
+      tab.addEventListener("click", () => select(id));
     }
-    SP.renderBarList(byId("soft-sources"), [...softSources.values()].filter(entry => entry.quantity > 0).sort((left, right) => right.quantity - left.quantity).map(entry => ({
-      label: entry.name,
-      sublabel: SP.plural(entry.rows, "time", "times"),
-      value: entry.quantity,
-      tip: `${entry.name}\n${formatNumber(entry.quantity)} soft currency from ${SP.plural(entry.rows, "reward", "rewards")}`,
-    })), "No soft currency logged.");
+    select("soft");
+
+    const earnSources = item => {
+      const sources = new Map();
+      for (const [event, source, , rowItem, rows, quantity] of resources) {
+        if (event !== "earn" || rowItem !== item) continue;
+        const name = sourceName(source);
+        const entry = sources.get(name) || { name, rows: 0, quantity: 0 };
+        entry.rows += rows || 0;
+        entry.quantity += quantity || 0;
+        sources.set(name, entry);
+      }
+      return [...sources.values()].filter(entry => entry.quantity > 0).sort((left, right) => right.quantity - left.quantity).map(entry => ({
+        label: entry.name,
+        sublabel: SP.plural(entry.rows, "time", "times"),
+        value: entry.quantity,
+        tip: `${entry.name}\n${formatNumber(entry.quantity)} ${CURRENCY_WORDS[item]} currency from ${SP.plural(entry.rows, "reward", "rewards")}`,
+      }));
+    };
+    SP.renderBarList(byId("economy-soft"), earnSources("SoftCurrency"), "No soft currency logged.");
+    SP.renderBarList(byId("economy-hard"), earnSources("HardCurrency"), "No hard currency logged.");
 
     const packs = new Map();
     for (const [event, source, itemType, item, , quantity] of resources) {
@@ -69,7 +88,7 @@
       packs.set(item, entry);
     }
     const rarityRank = rarity => (RARITIES.includes(rarity) ? RARITIES.indexOf(rarity) : RARITIES.length);
-    SP.renderBarList(byId("chests"), [...packs.values()]
+    SP.renderBarList(byId("economy-chests"), [...packs.values()]
       .sort((left, right) => (left.itemType === right.itemType ? 0 : left.itemType === "Chest" ? -1 : 1) || rarityRank(left.rarity) - rarityRank(right.rarity))
       .map(entry => {
         const sources = [...entry.sources.entries()].sort((left, right) => right[1] - left[1]);
@@ -82,7 +101,7 @@
         };
       }), "No chests or booster packs logged.");
 
-    const spentHost = byId("spent-on");
+    const spentHost = byId("economy-spent");
     const spendBySource = new Map();
     for (const [event, source, itemType, item, , quantity] of resources) {
       if (event !== "spend" || itemType !== "Currency") continue;

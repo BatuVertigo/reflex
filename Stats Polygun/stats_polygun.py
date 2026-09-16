@@ -335,8 +335,20 @@ class Handler(SimpleHTTPRequestHandler):
     def do_GET(self):
         if self.path.startswith("/api/"):
             self.handle_api(urlparse(self.path))
+        elif urlparse(self.path).path in ("/", "/index.html"):
+            self.send_page()
         else:
             super().do_GET()
+
+    def send_page(self):
+        # index.html carries no doctype because the artifact host wraps it; without one browsers render in quirks mode.
+        with open(os.path.join(STATIC, "index.html"), "rb") as file:
+            body = b'<!doctype html>\n<html lang="en">\n' + file.read() + b"\n</html>\n"
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "text/html; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self.end_headers()
+        self.wfile.write(body)
 
     def handle_api(self, url):
         try:
