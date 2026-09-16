@@ -222,3 +222,6 @@ __marimo__/
 
 # reflex botunun izole Claude config dizini
 .claude-bot/
+
+# Stats Polygun önizleme verisi: oyuncu verisi içerir, repoya girmez
+Stats Polygun/preview/data-*.js

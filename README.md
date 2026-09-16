@@ -1,6 +1,6 @@
 # Reflex
 
-Slack kanallarında Product ekibinin işini kolaylaştıran bir bot. Altı özelliği var.
+Product ekibinin işini kolaylaştıran bir bot. Yedi özelliği var: altısı Slack'te, yedincisi ofis Wi-Fi'ındaki bir web sayfasında çalışır.
 
 **1. Bug Watcher.** Her sabah çalışan bir routine. İzlenen kanalların son 24 saatteki thread'lerini tarar; ilgilenilmemiş bug raporlarını ve aksiyon gerektiren teknik işleri bulur, Asana'da task açılmış mı diye cross-check yapar ve gerekirse thread'e ilgili kişiye ya da ekibe yönelik hatırlatma yazar. Yanıt gelmeyen thread'leri backlog'unda tutar, her run'ın başında yeniden değerlendirip gerekirse tekrar hatırlatır; run sonunda backlog'un güncel durumunu `#reflex` kanalına raporlar.
 
@@ -20,12 +20,18 @@ kişiyi etiketleyip aynı thread'e kısa bir soru atar: "Bu bug yayında var mı
 kullanılarak **Move Asana tasks** açılır. Bot her task'ı Asana API'siyle parent'ın altına
 subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
 
+**7. Stats Polygun.** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu açtığı web sayfası. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
+(disk yok, cache yok, log'da ID yok). Aranan her oyuncu sayfada bir chip olarak kalır; chip'e tıklayınca yeniden sorgu
+atılmaz, aynı ID'yi tekrar yazmak veriyi tazeler, sayfa yenilenince chip'ler gider.
+
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
 yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
 **Haiku**, Bug Details **Opus** kullanır; her iki çağrı da MCP'siz/araçsız izole
 çalışır. **Anthropic API anahtarı gerekmez.** Bug Watcher, Release Summary ve Skill Catalog ise
 zamanlanmış Claude Routine'leridir; davranışları
-kendi klasörlerindeki prompt dosyalarından yönetilir.
+kendi klasörlerindeki prompt dosyalarından yönetilir. Stats Polygun ayrı bir süreçtir
+(`Stats Polygun/stats_polygun.py`, Python `http.server`, port 3800): Slack'e ve `app.py`'ye dokunmaz, TE'ye paylaşılan
+MCP token'ıyla bağlanır. Sayfası `Stats Polygun/static/`, artifact önizlemesinin veri üreticisi `Stats Polygun/preview/` altındadır.
 
 ---
 
@@ -110,3 +116,28 @@ sessiz kalmalı.
 
 Task Move testi: ⚡ → **Move Asana tasks** → parent linki + 1-2 kobay task linki →
 task'lar Asana'da parent'ın altında subtask olarak görünmeli.
+
+## 4. Stats Polygun'u başlat
+
+`.env`'e üç anahtar ekle (`.env.example`'a bak): `TE_MCP_URL`, `TE_MCP_TOKEN` (TE MCP token'ı; paylaşılan
+"Gizem" hesabı) ve `STATS_POLYGUN_PORT` (boşsa 3800). Yeni bağımlılık yok; botun `.venv`'i yeter.
+
+```bash
+cd reflex
+source .venv/bin/activate
+python "Stats Polygun/stats_polygun.py"     # "Stats Polygun is up: http://192.168.x.x:3800 (Ctrl+C stops it)"
+```
+
+Ekip arkadaşı aynı Wi-Fi'da `http://<Mac'in adresi>:3800` açar, PlayFab ID yapıştırır, 5–15 sn bekler.
+Test: `D6B0E21AF503CBDA` → 69 maç, %64 win rate, KD 2.48, 1.144 lig puanı görünmeli.
+
+Bilinmesi gerekenler:
+
+- Aynı anda tek arama çalışır; ikinci arama sıra bekler (sayfadaki "Looking up…" sayacı akmaya devam eder).
+  120 sn'den uzun bekleyen istek "busy" cevabı alır.
+- Sayfa yalnız Mac uyanıkken ve script çalışırken açıktır. Ctrl+C kapatır.
+- Mac'in Wi-Fi adresi değişebilir; script açılışta güncel adresi yazar.
+- Aynı Wi-Fi'daki herkes (misafirler dahil) her oyuncunun harcama, cihaz ve ülke bilgisini görebilir. Bilinen ve kabul edilen risk.
+- 20.000 satırı aşan bir sorgu rapor yerine hata döner ("cut off"); o oyuncu için sorguyu aya bölmek gerekir.
+- Artifact önizlemesinin verisi `Stats Polygun/preview/build_preview_data.py` ile üretilir. `data-*.js` dosyaları oyuncu verisi
+  içerir; `.gitignore`'dadır.

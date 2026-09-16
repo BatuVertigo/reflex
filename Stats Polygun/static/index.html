@@ -1,0 +1,876 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stats Polygun</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ground: #edf0f3;
+  --surface: #fbfcfd;
+  --ink: #10151c;
+  --ink-2: #4a5360;
+  --muted: #68717e;
+  --hairline: #e0e4ea;
+  --baseline: #c2c9d2;
+  --band: #f0f2f5;
+  --wash: rgba(16, 21, 28, 0.07);
+  --win: #2a78d6;
+  --loss: #e34948;
+  --draw: #848b96;
+  --on-win: #ffffff;
+  --on-loss: #ffffff;
+  --on-draw: #10151c;
+  --accent: #4a3aa7;
+  --on-accent: #ffffff;
+  --rarity-1: #a79fe0;
+  --rarity-2: #8d82d4;
+  --rarity-3: #7466c6;
+  --rarity-4: #5b4db5;
+  --rarity-5: #45389c;
+  --rarity-6: #32287a;
+  --tip-bg: #ffffff;
+  --tip-border: rgba(16, 21, 28, 0.12);
+  --tip-shadow: 0 8px 28px rgba(16, 21, 28, 0.14);
+  --focus: #2a78d6;
+  --font-display: "Archivo", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0b0e12;
+    --surface: #151920;
+    --ink: #eef1f5;
+    --ink-2: #b6bdc7;
+    --muted: #8b94a1;
+    --hairline: #242a33;
+    --baseline: #3b434e;
+    --band: #1a1f27;
+    --wash: rgba(238, 241, 245, 0.08);
+    --win: #3987e5;
+    --loss: #e66767;
+    --draw: #939aa5;
+    --on-win: #0b0e12;
+    --on-loss: #0b0e12;
+    --on-draw: #0b0e12;
+    --accent: #9085e9;
+    --on-accent: #0b0e12;
+    --rarity-1: #4b40a3;
+    --rarity-2: #5f53bb;
+    --rarity-3: #7568d2;
+    --rarity-4: #8c81e2;
+    --rarity-5: #a59cee;
+    --rarity-6: #c1baf5;
+    --tip-bg: #1f242c;
+    --tip-border: rgba(255, 255, 255, 0.12);
+    --tip-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+    --focus: #3987e5;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0b0e12;
+  --surface: #151920;
+  --ink: #eef1f5;
+  --ink-2: #b6bdc7;
+  --muted: #8b94a1;
+  --hairline: #242a33;
+  --baseline: #3b434e;
+  --band: #1a1f27;
+  --wash: rgba(238, 241, 245, 0.08);
+  --win: #3987e5;
+  --loss: #e66767;
+  --draw: #939aa5;
+  --on-win: #0b0e12;
+  --on-loss: #0b0e12;
+  --on-draw: #0b0e12;
+  --accent: #9085e9;
+  --on-accent: #0b0e12;
+  --rarity-1: #4b40a3;
+  --rarity-2: #5f53bb;
+  --rarity-3: #7568d2;
+  --rarity-4: #8c81e2;
+  --rarity-5: #a59cee;
+  --rarity-6: #c1baf5;
+  --tip-bg: #1f242c;
+  --tip-border: rgba(255, 255, 255, 0.12);
+  --tip-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
+  --focus: #3987e5;
+}
+
+* { box-sizing: border-box; }
+/* The artifact host adds this rule itself; the Mac's http.server does not, and .samples/.tooltip set display, which would beat the browser's own hidden rule. */
+[hidden] { display: none !important; }
+body {
+  background: var(--ground);
+  color: var(--ink);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.5;
+  padding-inline: 20px;
+  padding-block: 24px 72px;
+  -webkit-font-smoothing: antialiased;
+}
+p, h1, h2, h3, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+.page { max-width: 1100px; margin-inline: auto; display: grid; gap: 16px; }
+.page > *, #player-top > *, #report > * { min-width: 0; }
+#player-top, #report { display: grid; gap: 16px; }
+
+.topbar { display: grid; gap: 14px; padding-block: 4px 8px; }
+.brand { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.brand-logo { width: 52px; height: 52px; flex: none; margin-right: -4px; }
+.wordmark {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  font-size: 40px;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+}
+.wordmark span { color: var(--accent); }
+.pill {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  border: 1px solid var(--baseline);
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.brand-note { font-size: 13px; color: var(--muted); }
+.search { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.search input {
+  flex: 1 1 260px;
+  min-width: 0;
+  font-family: var(--font-data);
+  font-size: 16px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--baseline);
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.search input::placeholder { text-transform: none; letter-spacing: 0; color: var(--muted); }
+.search input:focus-visible, .search button:focus-visible, .chip-button:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.search button {
+  font: inherit;
+  font-weight: 600;
+  color: var(--on-accent);
+  background: var(--accent);
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+}
+.samples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; color: var(--muted); }
+.chip-button {
+  font: inherit;
+  font-size: 13px;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  padding: 4px 11px;
+  cursor: pointer;
+}
+.chip-button[aria-pressed="true"] { color: var(--ink); border-color: var(--ink-2); }
+.chip-button code { font-family: var(--font-data); font-size: 12px; }
+.status { font-size: 13.5px; color: var(--ink-2); min-height: 1.5em; }
+/* One request at a time: while it runs, the report, the picker, the strip and the chips are dimmed and inert. */
+.page[aria-busy="true"] #report, .page[aria-busy="true"] .period-bar, .page[aria-busy="true"] #career-strip { opacity: 0.55; pointer-events: none; }
+.search input:disabled, .search button:disabled, .chip-button:disabled { opacity: 0.6; cursor: wait; }
+
+.player { display: grid; gap: 8px; padding-block: 6px 2px; }
+.player-name {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  font-size: clamp(48px, 9vw, 88px);
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+.meta { display: flex; flex-wrap: wrap; gap: 4px 18px; font-family: var(--font-data); font-size: 12.5px; color: var(--ink-2); }
+
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.stat { background: var(--surface); padding: 18px 20px 20px; display: grid; align-content: start; gap: 6px; }
+.stat-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.stat-value { font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -0.02em; }
+.stat-sub { font-size: 13.5px; color: var(--ink-2); }
+.record-bar { display: flex; gap: 2px; height: 8px; margin-block: 4px 2px; }
+
+.panel {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  padding: 20px 22px 22px;
+  display: grid;
+  align-content: start;
+  gap: 16px;
+  min-width: 0;
+}
+.panel-head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 8px 24px; }
+details.panel { display: block; }
+details.panel > summary { position: relative; padding-right: 40px; list-style: none; cursor: pointer; border-radius: 6px; }
+details.panel > summary::-webkit-details-marker { display: none; }
+details.panel > summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+details.panel:not([open]) > summary .lede,
+details.panel:not([open]) > summary .legend { display: none; }
+.card-arrow { position: absolute; top: 0; right: 0; width: 28px; height: 28px; fill: var(--ink-2); transition: transform 160ms ease; }
+details.panel[open] > summary .card-arrow { transform: rotate(180deg); }
+details.panel > summary:hover .card-arrow { fill: var(--ink); }
+.panel-body { display: grid; gap: 16px; margin-top: 16px; min-width: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .card-arrow { transition: none; }
+}
+.panel h2 {
+  font-family: var(--font-display);
+  font-weight: 800;
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  font-size: 30px;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  text-wrap: balance;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.panel h3 { font-size: 14px; font-weight: 600; line-height: 1.3; }
+.title-icon { width: 0.8em; height: 0.8em; flex: none; fill: var(--accent); }
+.icon-sprite { position: absolute; width: 0; height: 0; overflow: hidden; }
+.group-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding-block: 28px 2px; border-top: 1px solid var(--baseline); }
+.group-title {
+  font-family: var(--font-display);
+  font-weight: 900;
+  font-stretch: 62%;
+  font-variation-settings: "wdth" 62;
+  font-size: 48px;
+  line-height: 0.9;
+  letter-spacing: 0.01em;
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.group-lede { flex: 1 1 100%; font-size: 14px; color: var(--ink-2); max-width: 70ch; }
+.scope {
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--ink-2);
+  border: 1px solid var(--baseline);
+  border-radius: 999px;
+  padding: 1px 8px;
+  white-space: nowrap;
+}
+.scope-period { color: var(--accent); border-color: var(--accent); }
+.period-bar { flex: 1 1 100%; display: flex; flex-wrap: wrap; align-items: center; gap: 12px 24px; padding: 14px 16px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 10px; }
+.period-presets { display: flex; flex-wrap: wrap; gap: 8px 18px; }
+.preset-group { display: flex; flex-wrap: wrap; gap: 6px; }
+.period-dates { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 8px; font-size: 13px; color: var(--ink-2); }
+.period-dates input { font-family: var(--font-data); font-size: 14px; color: var(--ink); background: var(--surface); border: 1px solid var(--baseline); border-radius: 8px; padding: 5px 8px; }
+.period-dates input:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.period-summary { flex: 1 1 100%; font-size: 13.5px; font-weight: 500; color: var(--ink); }
+.career-strip svg { cursor: pointer; }
+.strip-bar { fill: var(--muted); fill-opacity: 0.55; }
+.period-band { fill: var(--accent); fill-opacity: 0.12; }
+.key-ink-line { width: 16px; height: 2px; border-radius: 2px; background: var(--ink-2); }
+.key-muted { background: var(--muted); opacity: 0.55; }
+.key-period { background: var(--accent); opacity: 0.3; }
+.panel[id], .panel h2[id], .group-head { scroll-margin-top: 16px; }
+.lede { font-size: 14px; color: var(--ink-2); margin-top: 6px; max-width: 70ch; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 13px; color: var(--ink-2); }
+.legend li { display: inline-flex; align-items: center; gap: 6px; }
+.key { display: inline-block; flex: none; }
+.key-rect { width: 12px; height: 12px; border-radius: 3px; }
+.key-dot { width: 10px; height: 10px; border-radius: 50%; }
+.key-dot-small { width: 6px; height: 6px; }
+.key-glyph { width: 10px; height: 10px; stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.key-win, .seg-win, .chip-win { background: var(--win); }
+.key-loss, .seg-loss, .chip-loss { background: var(--loss); }
+.key-draw, .seg-draw, .chip-draw { background: var(--draw); }
+.key-accent { background: var(--accent); }
+.key-hollow { background: var(--surface); box-shadow: inset 0 0 0 1.5px var(--muted); }
+.key-version { width: 2px; height: 12px; background: var(--ink-2); }
+.key-search { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); opacity: 0.6; }
+.key-line { width: 16px; height: 3px; border-radius: 2px; background: var(--accent); }
+.buckets { max-width: 720px; }
+.search-dot { fill: var(--muted); fill-opacity: 0.55; }
+.search-dot-active { fill: var(--ink); fill-opacity: 1; stroke: var(--surface); stroke-width: 2; }
+.search-line { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; }
+
+.nav { display: grid; gap: 8px; }
+.nav-group { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.nav-label { min-width: 60px; font-size: 11px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.nav a {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink-2);
+  text-decoration: none;
+  padding: 5px 11px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  background: var(--surface);
+}
+.nav a:hover { color: var(--ink); border-color: var(--baseline); }
+.nav a:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+
+.form-strip { display: flex; flex-wrap: wrap; gap: 16px 24px; border-radius: 6px; }
+.day { display: grid; gap: 6px; align-content: start; max-width: 100%; }
+.day-head { display: flex; gap: 8px; align-items: baseline; font-size: 12.5px; }
+.day-name { font-weight: 600; }
+.day-record { font-family: var(--font-data); font-size: 12px; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.chip {
+  width: 20px;
+  height: 26px;
+  border-radius: 4px;
+  display: grid;
+  place-items: center;
+  font-family: var(--font-data);
+  font-size: 11px;
+  font-weight: 600;
+  user-select: none;
+}
+.chip-win { color: var(--on-win); }
+.chip-loss { color: var(--on-loss); }
+.chip-draw { color: var(--on-draw); }
+.chip.is-active { outline: 2px solid var(--ink); outline-offset: 2px; }
+.streaks { display: flex; flex-wrap: wrap; gap: 4px 24px; font-size: 13.5px; color: var(--ink-2); }
+.streaks strong { color: var(--ink); font-weight: 600; }
+
+.chart-scroll { overflow-x: auto; }
+.chart { min-width: 560px; }
+.scrub { border-radius: 6px; }
+.scrub:focus-visible { outline: 2px solid var(--focus); outline-offset: -2px; }
+.chart-svg { display: block; }
+.chart-svg text { font-family: var(--font-data); font-size: 11px; fill: var(--muted); }
+.chart-svg .band-label { font-size: 10px; letter-spacing: 0.04em; }
+.chart-svg .day-label { fill: var(--ink-2); font-weight: 500; }
+.chart-svg .label-strong { fill: var(--ink); font-weight: 600; }
+.chart-svg .ref-label { fill: var(--ink-2); }
+.chart-svg .version-label { fill: var(--ink); font-weight: 600; font-size: 10.5px; paint-order: stroke; stroke: var(--surface); stroke-width: 3px; stroke-linejoin: round; }
+.chart-svg .row-label, .chart-svg .track-label { font-family: var(--font-body); font-size: 12px; fill: var(--ink-2); }
+.chart-svg .cell-label { font-size: 10px; fill: var(--ink); pointer-events: none; }
+.chart-svg .cell-label-on { fill: var(--on-accent); }
+.band { fill: transparent; }
+.band-alt { fill: var(--band); }
+.grid { stroke: var(--hairline); stroke-width: 1; }
+.axis-base, .day-rule { stroke: var(--baseline); stroke-width: 1; }
+.version-rule { stroke: var(--ink-2); stroke-width: 1; }
+.lp-line { fill: none; stroke: var(--ink-2); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+.dot { stroke: var(--surface); stroke-width: 2; }
+.dot-start { fill: var(--surface); stroke: var(--ink-2); stroke-width: 2; }
+.dot-win, .bar-win { fill: var(--win); }
+.dot-loss, .bar-loss { fill: var(--loss); }
+.dot-draw, .bar-draw { fill: var(--draw); }
+.mark-glyph { stroke: var(--ink); stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; fill: none; }
+.hit { fill: transparent; }
+.cursor-line { stroke: var(--ink-2); stroke-width: 1; pointer-events: none; }
+.cursor-halo { fill: none; stroke: var(--ink); stroke-width: 2; pointer-events: none; }
+.column-wash { fill: var(--wash); pointer-events: none; }
+.ref-even { stroke: var(--baseline); stroke-width: 1; }
+.ref-average { stroke: var(--ink-2); stroke-width: 1; }
+.break { stroke: var(--surface); stroke-width: 3; }
+.bar-accent, .heat { fill: var(--accent); }
+.cell-empty { fill: var(--band); }
+.track { fill: var(--surface); stroke: var(--baseline); stroke-width: 1; }
+.track-trial { fill: var(--band); }
+.no-data { fill: var(--surface); stroke: var(--muted); stroke-width: 1.5; }
+
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); align-items: start; gap: 16px; }
+.split-2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; }
+.stack { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.subhead { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 20px; }
+.split { display: grid; gap: 14px; }
+.split-caption { font-family: var(--font-data); font-size: 11.5px; color: var(--muted); text-align: right; }
+.split-row { display: grid; grid-template-columns: 128px minmax(0, 1fr) auto; align-items: center; gap: 14px; }
+.split-name { font-size: 14px; font-weight: 500; line-height: 1.3; }
+.split-count { display: block; font-family: var(--font-data); font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.split-bar { display: flex; gap: 2px; height: 12px; }
+.seg { flex-basis: 0; min-width: 3px; }
+.seg:first-child { border-radius: 4px 0 0 4px; }
+.seg:last-child { border-radius: 0 4px 4px 0; }
+.seg:only-child { border-radius: 4px; }
+.split-figures { text-align: right; font-family: var(--font-data); font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+.split-figures strong { display: block; color: var(--ink); font-size: 13px; font-weight: 600; }
+
+.bar-list { display: grid; gap: 10px; }
+.bar-row { display: grid; grid-template-columns: minmax(110px, 200px) minmax(0, 1fr) auto; align-items: center; gap: 12px; }
+.bar-label { font-size: 14px; font-weight: 500; line-height: 1.3; min-width: 0; }
+.bar-sublabel { display: block; font-family: var(--font-data); font-size: 11.5px; font-weight: 400; color: var(--muted); }
+.tag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid var(--hairline);
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+  vertical-align: 1px;
+}
+.bar-track { height: 10px; }
+.bar-fill { display: block; height: 100%; min-width: 2px; background: var(--accent); border-radius: 0 4px 4px 0; }
+.bar-fill.rarity-1 { background: var(--rarity-1); }
+.bar-fill.rarity-2 { background: var(--rarity-2); }
+.bar-fill.rarity-3 { background: var(--rarity-3); }
+.bar-fill.rarity-4 { background: var(--rarity-4); }
+.bar-fill.rarity-5 { background: var(--rarity-5); }
+.bar-fill.rarity-6 { background: var(--rarity-6); }
+.bar-value { font-family: var(--font-data); font-size: 12.5px; text-align: right; white-space: nowrap; }
+
+.mini-stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.mini-stat { background: var(--surface); padding: 12px 14px; display: grid; gap: 3px; align-content: start; }
+.mini-value { font-size: 24px; font-weight: 600; line-height: 1.1; letter-spacing: -0.01em; }
+.mini-sub { font-size: 12.5px; color: var(--ink-2); }
+.spend-list { display: grid; gap: 8px; }
+.spend-row { display: flex; justify-content: space-between; align-items: baseline; gap: 16px; padding-bottom: 8px; border-bottom: 1px solid var(--hairline); font-size: 14px; }
+.spend-value { font-family: var(--font-data); font-size: 12.5px; text-align: right; }
+.footnote { font-size: 12.5px; color: var(--muted); max-width: 80ch; }
+.callout { font-size: 13.5px; color: var(--ink-2); background: var(--band); border-radius: 8px; padding: 10px 12px; }
+.empty-note { font-size: 13.5px; color: var(--muted); background: var(--band); border-radius: 8px; padding: 12px 14px; }
+
+.table-scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th {
+  text-align: left;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  padding: 0 10px 8px;
+  border-bottom: 1px solid var(--baseline);
+  white-space: nowrap;
+}
+td { padding: 6px 10px; border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+th.num, td.num { text-align: right; font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+th.num { font-family: var(--font-body); }
+td.muted-cell { color: var(--muted); }
+tbody tr.is-active td { background: var(--wash); }
+.table-compact td { padding: 4px 10px; }
+.result { display: inline-flex; align-items: center; gap: 8px; }
+.result .chip { width: 18px; height: 20px; font-size: 10.5px; }
+.lp-delta { display: inline-block; min-width: 4ch; margin-left: 8px; color: var(--muted); }
+.spark { display: block; }
+.spark-base { stroke: var(--hairline); stroke-width: 1; }
+.spark-line { fill: none; stroke: var(--accent); stroke-width: 2; stroke-linejoin: round; }
+.spark-dot { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
+
+.notes { display: grid; gap: 8px; padding: 6px 4px 0; font-size: 13.5px; color: var(--ink-2); max-width: 84ch; }
+.notes h2 { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.notes .title-icon { width: 1.1em; height: 1.1em; fill: var(--muted); }
+.notes a { color: var(--ink-2); }
+.notes ul { display: grid; gap: 4px; padding-left: 18px; list-style: disc; }
+code { font-family: var(--font-data); font-size: 0.92em; }
+
+.tooltip {
+  position: fixed;
+  z-index: 10;
+  pointer-events: none;
+  background: var(--tip-bg);
+  color: var(--ink);
+  border: 1px solid var(--tip-border);
+  border-radius: 8px;
+  box-shadow: var(--tip-shadow);
+  padding: 10px 12px;
+  min-width: 200px;
+  max-width: 320px;
+  display: grid;
+  gap: 2px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+.tip-head { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
+.tip-key { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+.tip-key-win { background: var(--win); }
+.tip-key-loss { background: var(--loss); }
+.tip-key-draw { background: var(--draw); }
+.tip-key-mark { background: var(--ink); }
+.tip-data { font-family: var(--font-data); font-size: 12.5px; }
+.tip-muted { color: var(--muted); font-size: 12px; margin-top: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+@media (max-width: 820px) {
+  .pair, .split-2 { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 760px) {
+  .scoreboard, .mini-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stat-value { font-size: 34px; }
+  .panel { padding: 16px; }
+}
+@media (max-width: 480px) {
+  body { padding-inline: 16px; }
+  .split-row { grid-template-columns: 96px minmax(0, 1fr) auto; gap: 10px; }
+  .bar-row { grid-template-columns: minmax(90px, 120px) minmax(0, 1fr) auto; gap: 8px; }
+}
+</style>
+
+<div class="page">
+  <header class="topbar">
+    <div class="brand">
+      <img class="brand-logo" src="logo-web.png" alt="" width="52" height="52">
+      <p class="wordmark">Stats <span>Polygun</span></p>
+      <span class="pill" id="badge" hidden></span>
+      <p class="brand-note">Team player lookup · ThinkingData · all times UTC+0</p>
+    </div>
+    <form class="search" id="search-form" autocomplete="off">
+      <label class="sr-only" for="playfab-id">PlayFab ID</label>
+      <input id="playfab-id" name="playfab-id" maxlength="16" spellcheck="false" placeholder="PlayFab ID, for example D6B0E21AF503CBDA">
+      <button type="submit">Search</button>
+    </form>
+    <div class="samples" id="searched" hidden><span>Searched:</span></div>
+    <p class="status" id="status" aria-live="polite"></p>
+  </header>
+  <div id="player-top"></div>
+  <main id="report"></main>
+</div>
+
+<template id="player-template">
+  <section class="player" aria-label="Player">
+    <h1 class="player-name" id="player-name"></h1>
+    <p class="meta" id="player-meta"></p>
+  </section>
+
+  <nav class="nav" aria-label="Sections">
+    <div class="nav-group"><span class="nav-label">Career</span>
+      <a href="#h-mode">Modes &amp; maps</a>
+      <a href="#power-results">Power results</a>
+      <a href="#weapons">Weapons</a>
+      <a href="#economy">Earnings</a>
+    </div>
+    <div class="nav-group"><span class="nav-label">Period</span>
+      <a href="#period">Pick a period</a>
+      <a href="#h-form">Form</a>
+      <a href="#h-lp">League points</a>
+      <a href="#h-kd">KD</a>
+      <a href="#weapon-heat-panel">Kills per match</a>
+      <a href="#power">Power &amp; matchmaking</a>
+      <a href="#playtime">Play time</a>
+      <a href="#upgrades">Upgrades</a>
+      <a href="#days">Day by day</a>
+      <a href="#h-table">Every match</a>
+    </div>
+  </nav>
+
+  <header class="group-head" id="career">
+    <h2 class="group-title" id="h-career"><svg class="title-icon" aria-hidden="true"><use href="#icon-id-badge"></use></svg>Career</h2>
+    <span class="scope">All time</span>
+    <p class="group-lede">Every match the player has played. These numbers do not change with the period.</p>
+  </header>
+
+  <section class="scoreboard" aria-label="Career totals">
+    <div class="stat"><p class="stat-label">Matches</p><p class="stat-value" id="stat-matches"></p><p class="stat-sub" id="stat-matches-sub"></p></div>
+    <div class="stat"><p class="stat-label">Win rate</p><p class="stat-value" id="stat-win-rate"></p><div class="record-bar" id="record-bar" aria-hidden="true"></div><p class="stat-sub" id="stat-win-rate-sub"></p></div>
+    <div class="stat"><p class="stat-label">KD</p><p class="stat-value" id="stat-kd"></p><p class="stat-sub" id="stat-kd-sub"></p></div>
+    <div class="stat"><p class="stat-label">League points</p><p class="stat-value" id="stat-lp"></p><p class="stat-sub" id="stat-lp-sub"></p></div>
+  </section>
+
+  <div class="pair">
+    <details class="panel" data-card="mode" open>
+      <summary class="panel-head">
+        <div><h2 id="h-mode"><svg class="title-icon" aria-hidden="true"><use href="#icon-gamepad"></use></svg>By mode</h2><p class="lede">Wins, losses and draws per game mode.</p></div>
+        <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+      </summary>
+      <div class="panel-body">
+        <div class="split" id="by-mode"><p class="split-caption">W–L–D · win rate · KD</p></div>
+      </div>
+    </details>
+    <details class="panel" data-card="map" open>
+      <summary class="panel-head">
+        <div><h2 id="h-map"><svg class="title-icon" aria-hidden="true"><use href="#icon-map"></use></svg>By map</h2><p class="lede">Wins, losses and draws per map.</p></div>
+        <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+      </summary>
+      <div class="panel-body">
+        <div class="split" id="by-map"><p class="split-caption">W–L–D · win rate · KD</p></div>
+      </div>
+    </details>
+  </div>
+
+  <details class="panel" id="power-results" data-card="power-results">
+    <summary class="panel-head">
+      <div><h2 id="h-power-results"><svg class="title-icon" aria-hidden="true"><use href="#icon-balance-scale-left"></use></svg>Power gap results</h2><p class="lede">Wins, losses and draws by how much stronger or weaker the player's team was than the enemy team.</p></div>
+      <ul class="legend"><li><span class="key key-rect key-win"></span>Win</li><li><span class="key key-rect key-loss"></span>Loss</li><li><span class="key key-rect key-draw"></span>Draw</li></ul>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="split buckets" id="power-buckets"><p class="split-caption">W–L–D · win rate</p></div>
+    </div>
+  </details>
+
+  <details class="panel" id="weapons" data-card="weapons">
+    <summary class="panel-head">
+      <div><h2 id="h-weapons"><svg class="title-icon" aria-hidden="true"><use href="#icon-target"></use></svg>Weapons</h2><p class="lede" id="weapons-lede"></p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div id="weapon-kills"></div>
+    </div>
+  </details>
+
+  <details class="panel" id="economy" data-card="economy">
+    <summary class="panel-head">
+      <div><h2 id="h-economy"><svg class="title-icon" aria-hidden="true"><use href="#icon-coins"></use></svg>Earnings &amp; spending</h2><p class="lede">Currency and rewards the player got, and what they spent them on.</p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="mini-stats" id="economy-stats"></div>
+      <div class="split-2">
+        <div class="stack"><h3>Soft currency earned, by source</h3><div id="soft-sources"></div></div>
+        <div class="stack"><h3>Chests and booster packs</h3><div id="chests"></div><h3>Spent on</h3><div id="spent-on" class="spend-list"></div></div>
+      </div>
+    </div>
+  </details>
+
+  <header class="group-head" id="period">
+    <h2 class="group-title" id="h-period"><svg class="title-icon" aria-hidden="true"><use href="#icon-calendar-clock"></use></svg>Period</h2>
+    <span class="scope scope-period" data-period-label></span>
+    <p class="group-lede">Pick the days or matches to look at. Everything below shows only that period.</p>
+    <div class="period-bar">
+      <div class="period-presets" id="period-presets" role="group" aria-label="Period"></div>
+      <div class="period-dates">
+        <label for="period-from">From</label>
+        <input type="date" id="period-from">
+        <label for="period-to">To</label>
+        <input type="date" id="period-to">
+      </div>
+      <p class="period-summary" id="period-summary" aria-live="polite"></p>
+    </div>
+  </header>
+
+  <section class="panel" aria-label="Career strip">
+    <div class="panel-head">
+      <p class="lede">Each column is one UTC day of the player's career. The shaded days are the picked period; click a day to pick it.</p>
+      <ul class="legend">
+        <li><span class="key key-ink-line"></span>League points at day end</li>
+        <li><span class="key key-rect key-muted"></span>Matches per day</li>
+        <li><span class="key key-rect key-period"></span>Picked period</li>
+        <li><span class="key key-version"></span>New game version</li>
+      </ul>
+    </div>
+    <div class="chart-scroll"><div id="career-strip" class="chart career-strip"></div></div>
+    <p class="footnote">Day and match options count back from the player's last match.</p>
+  </section>
+</template>
+
+<template id="report-template">
+  <details class="panel" data-card="form" open>
+    <summary class="panel-head">
+      <div><h2 id="h-form"><svg class="title-icon" aria-hidden="true"><use href="#icon-list-check"></use></svg>Form</h2><p class="lede" id="form-lede"></p></div>
+      <ul class="legend"><li><span class="key key-rect key-win"></span>Win</li><li><span class="key key-rect key-loss"></span>Loss</li><li><span class="key key-rect key-draw"></span>Draw</li></ul>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div id="form-strip" class="form-strip scrub" tabindex="0" aria-label="Match results by day. Use the left and right arrow keys to step through matches."></div>
+      <p class="streaks" id="streaks"></p>
+    </div>
+  </details>
+
+  <details class="panel" data-card="lp" open>
+    <summary class="panel-head">
+      <div><h2 id="h-lp"><svg class="title-icon" aria-hidden="true"><use href="#icon-trophy"></use></svg>League points</h2><p class="lede">Points after each match. Shaded bands are leagues. Marks under the line show disconnects and early exits, which are not matches but can cost points.</p></div>
+      <ul class="legend">
+        <li><span class="key key-dot key-dot-small key-win"></span>Win</li>
+        <li><span class="key key-dot key-loss"></span>Loss</li>
+        <li><span class="key key-dot key-draw"></span>Draw</li>
+        <li><svg class="key key-glyph" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2 8 8 M8 2 2 8"/></svg>Disconnect</li>
+        <li><svg class="key key-glyph" viewBox="0 0 10 10" aria-hidden="true"><path d="M1.5 2.5 H8.5 L5 8.5 Z"/></svg>Left early</li>
+        <li><span class="key key-version"></span>New game version</li>
+      </ul>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="chart-scroll"><div id="lp-chart" class="chart scrub" tabindex="0" role="group" aria-label="League points chart. Use the left and right arrow keys to step through matches."></div></div>
+    </div>
+  </details>
+
+  <details class="panel" data-card="kd" open>
+    <summary class="panel-head">
+      <div><h2 id="h-kd"><svg class="title-icon" aria-hidden="true"><use href="#icon-skull"></use></svg>KD per match</h2><p class="lede">Kills divided by deaths. Bars above 12 are cut and labeled. A match with no deaths uses its kills.</p></div>
+      <ul class="legend"><li><span class="key key-rect key-win"></span>Win</li><li><span class="key key-rect key-loss"></span>Loss</li><li><span class="key key-rect key-draw"></span>Draw</li></ul>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="chart-scroll"><div id="kd-chart" class="chart scrub" tabindex="0" role="group" aria-label="KD per match chart. Use the left and right arrow keys to step through matches."></div></div>
+    </div>
+  </details>
+
+  <details class="panel" id="weapon-heat-panel" data-card="weapon-heat">
+    <summary class="panel-head">
+      <div><h2 id="h-weapon-heat"><svg class="title-icon" aria-hidden="true"><use href="#icon-bullet"></use></svg>Kills in each match</h2><p class="lede">Kills with the top 8 weapons in each match. The character row shows who was played; "trial" means a trial or rented character.</p></div>
+      <ul class="legend" id="weapon-heat-legend" aria-label="Kills per square"></ul>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="chart-scroll"><div id="weapon-heat" class="chart scrub" tabindex="0" role="group" aria-label="Kills per weapon in each match. Use the left and right arrow keys to step through matches."></div></div>
+    </div>
+  </details>
+
+  <details class="panel" id="power" data-card="power">
+    <summary class="panel-head">
+      <div><h2 id="h-power"><svg class="title-icon" aria-hidden="true"><use href="#icon-bolt"></use></svg>Power &amp; matchmaking</h2><p class="lede">How much stronger or weaker the player's team was than the enemy team, in percent. Above zero, the team was stronger.</p></div>
+      <ul class="legend">
+        <li><span class="key key-rect key-win"></span>Win</li>
+        <li><span class="key key-rect key-loss"></span>Loss</li>
+        <li><span class="key key-rect key-draw"></span>Draw</li>
+        <li><span class="key key-dot key-hollow"></span>No gap (no human enemies, or they left)</li>
+      </ul>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="chart-scroll"><div id="power-gap" class="chart scrub" tabindex="0" role="group" aria-label="Power gap per match. Use the left and right arrow keys to step through matches."></div></div>
+      <div class="subhead">
+        <h3>Time to find a match</h3>
+        <ul class="legend">
+          <li><span class="key key-dot key-search"></span>One match</li>
+          <li><span class="key key-line"></span>Typical time (median of the last 10 matches)</li>
+        </ul>
+      </div>
+      <p class="footnote" id="search-summary"></p>
+      <div class="chart-scroll"><div id="search-timeline" class="chart"></div></div>
+    </div>
+  </details>
+
+  <details class="panel" id="playtime" data-card="playtime">
+    <summary class="panel-head">
+      <div><h2 id="h-playtime"><svg class="title-icon" aria-hidden="true"><use href="#icon-clock"></use></svg>Play time</h2><p class="lede" id="playtime-lede"></p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="chart-scroll"><div id="time-per-day" class="chart"></div></div>
+      <div class="subhead"><h3>Matches by hour (UTC)</h3><p class="footnote">The last 14 days with matches. Darker squares mean more matches.</p></div>
+      <div class="chart-scroll"><div id="hour-grid" class="chart"></div></div>
+    </div>
+  </details>
+
+  <details class="panel" id="upgrades" data-card="upgrades">
+    <summary class="panel-head">
+      <div><h2 id="h-upgrades"><svg class="title-icon" aria-hidden="true"><use href="#icon-level-up"></use></svg>Upgrades &amp; loadout</h2><p class="lede">Every item upgraded in the period. The line shows its level across the period's matches.</p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="table-scroll">
+        <table class="table-compact">
+          <thead><tr><th scope="col">Item</th><th scope="col">Type</th><th scope="col">Rarity</th><th class="num" scope="col">Upgrades</th><th class="num" scope="col">Level</th><th scope="col">Level over matches</th></tr></thead>
+          <tbody id="upgrade-rows"></tbody>
+        </table>
+      </div>
+      <div class="subhead"><h3>Boosts, trials, rentals and buys</h3><p class="footnote" id="equip-summary"></p></div>
+      <div class="table-scroll">
+        <table class="table-compact">
+          <thead><tr><th scope="col">When (UTC)</th><th scope="col">What</th><th scope="col">Item</th><th scope="col">Type</th><th class="num" scope="col">Level</th></tr></thead>
+          <tbody id="special-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel" id="days" data-card="days">
+    <summary class="panel-head">
+      <div><h2 id="h-days"><svg class="title-icon" aria-hidden="true"><use href="#icon-calendar-days"></use></svg>Day by day</h2><p class="lede">Every UTC day with activity. A dash means nothing was logged.</p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Day</th><th class="num" scope="col">In app</th><th class="num" scope="col">Matches</th><th class="num" scope="col">W–L–D</th><th class="num" scope="col">League points</th><th class="num" scope="col">Soft earned</th><th class="num" scope="col">Soft spent</th><th class="num" scope="col">Soft balance</th><th class="num" scope="col">Search (median)</th></tr></thead>
+          <tbody id="day-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel" data-card="table">
+    <summary class="panel-head">
+      <div><h2 id="h-table"><svg class="title-icon" aria-hidden="true"><use href="#icon-table-list"></use></svg>Every match</h2><p class="lede" id="table-lede"></p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th class="num" scope="col">#</th><th scope="col">When (UTC)</th><th scope="col">Version</th><th scope="col">Mode</th><th scope="col">Map</th><th scope="col">Result</th><th class="num" scope="col">Score</th><th class="num" scope="col">K</th><th class="num" scope="col">D</th><th class="num" scope="col">KD</th><th class="num" scope="col">Humans</th><th class="num" scope="col">League points</th></tr></thead>
+          <tbody id="match-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <section class="notes" aria-labelledby="h-notes">
+    <h2 id="h-notes"><svg class="title-icon" aria-hidden="true"><use href="#icon-info"></use></svg>How this report reads the data</h2>
+    <ul>
+      <li>All times are UTC+0. Phones log their own clock, so every event is shifted by its time zone offset and sorted in UTC.</li>
+      <li>A match is any non-tutorial mode that ended normally. Disconnects and early exits are shown as marks, not matches. TrialMap is skipped.</li>
+      <li>The Career group covers every match. The Period group shows only the picked days or matches. A period with more than 300 matches shows no match charts; pick a shorter one.</li>
+      <li>A "Last N matches" period shows exactly those matches in the match charts and tables; play time, upgrades and day by day show whole days from the first of those matches.</li>
+      <li>League points are logged before rewards; the after value comes from the next match or the current profile.</li>
+      <li>Human player counts come from the match start, because the end count drops players who left.</li>
+      <li>Power gap is a percent, so old and new power scales compare. Deathmatch scores are hidden because both sides always log the same score.</li>
+      <li>Damage is shown for guns only. Accuracy is not shown because the logged values go past 100%.</li>
+      <li>Time to find a match covers every match in the period. Cancelled searches are not counted as failed.</li>
+      <li>The league points axis fits the period's matches, so it does not always start at 0.</li>
+      <li>Preview only: this page holds three accounts and cuts their embedded data by period. The real Stats Polygun runs the queries for any PlayFab ID and period.</li>
+      <li>Icons: <a href="https://www.flaticon.com/uicons">Uicons by Flaticon</a>.</li>
+    </ul>
+  </section>
+</template>
+
+<div id="tooltip" class="tooltip" hidden></div>
+<p id="announcer" class="sr-only" aria-live="polite"></p>
+<svg class="icon-sprite" aria-hidden="true" focusable="false">
+<symbol id="icon-id-badge" viewBox="0 0 300 300"><path d="M238 50H188V37Q188 22 177 11Q166 0 150 0Q134 0 123 11Q112 22 113 38V50H63Q46 50 31.5 58.5Q17 67 8.5 81.5Q0 96 0 112V237Q0 254 8.5 268.5Q17 283 31.5 291.5Q46 300 62 300H238Q254 300 268.5 291.5Q283 283 291.5 268.5Q300 254 300 238V112Q300 96 291.5 81.5Q283 67 268.5 58.5Q254 50 237 50ZM138 37Q137 32 141 28.5Q145 25 150 25Q155 25 159 28.5Q163 32 163 37V62Q163 68 159 71.5Q155 75 150 75Q145 75 141 71.5Q137 68 137 63ZM275 237Q275 253 264 264Q253 275 237 275H63Q47 275 36 264Q25 253 25 238V112Q25 97 36 86Q47 75 62 75H115Q119 86 128.5 93Q138 100 150 100Q162 100 171.5 93Q181 86 185 75H238Q253 75 264 86Q275 97 275 113ZM125 125H63Q57 125 53.5 128.5Q50 132 50 137V237Q50 243 53.5 246.5Q57 250 63 250H125Q130 250 134 246.5Q138 243 138 238V137Q138 132 134 128.5Q130 125 125 125ZM113 225H75V150H113ZM250 187Q250 193 246.5 196.5Q243 200 238 200H175Q170 200 166 196.5Q162 193 162.5 187.5Q163 182 166.5 178.5Q170 175 175 175H238Q243 175 246.5 178.5Q250 182 250 188ZM250 137Q250 143 246.5 146.5Q243 150 238 150H175Q170 150 166 146.5Q162 143 162.5 137.5Q163 132 166.5 128.5Q170 125 175 125H238Q243 125 246.5 128.5Q250 132 250 137ZM225 237Q225 243 221.5 246.5Q218 250 213 250H175Q170 250 166 246.5Q162 243 162.5 237.5Q163 232 166.5 228.5Q170 225 175 225H213Q218 225 221.5 228.5Q225 232 225 238Z"/></symbol>
+<symbol id="icon-calendar-clock" viewBox="0 0 300 300"><path d="M213 125Q189 125 169 137Q149 149 137 169Q125 189 125 213Q125 237 137 257Q149 277 169 288.5Q189 300 212.5 300Q236 300 256 288Q276 276 288 256Q300 236 300 212.5Q300 189 288 169Q276 149 256 137Q236 125 212 125ZM213 275Q196 275 181.5 266.5Q167 258 158.5 244Q150 230 150 213Q150 196 158.5 181.5Q167 167 181.5 158.5Q196 150 212.5 150Q229 150 243.5 158.5Q258 167 266.5 181.5Q275 196 275 212.5Q275 229 266.5 243.5Q258 258 243.5 266.5Q229 275 212 275ZM234 216Q238 220 238 225Q238 230 234 234Q230 238 225 238Q220 238 216 234L204 221Q200 218 200 213V187Q200 182 203.5 178.5Q207 175 212.5 175Q218 175 221.5 178.5Q225 182 225 187V207ZM300 87V112Q300 118 296.5 121.5Q293 125 287.5 125Q282 125 278.5 121.5Q275 118 275 112V87Q275 72 264 61Q253 50 237 50H63Q47 50 36 61Q25 72 25 87V100H138Q143 100 146.5 103.5Q150 107 150 112.5Q150 118 146.5 121.5Q143 125 137 125H25V237Q25 253 36 264Q47 275 63 275H113Q118 275 121.5 278.5Q125 282 125 287.5Q125 293 121.5 296.5Q118 300 113 300H63Q46 300 31.5 291.5Q17 283 8.5 268.5Q0 254 0 237V87Q0 71 8.5 56.5Q17 42 31.5 33.5Q46 25 63 25H75V12Q75 7 78.5 3.5Q82 0 87.5 0Q93 0 96.5 3.5Q100 7 100 13V25H200V12Q200 7 203.5 3.5Q207 0 212.5 0Q218 0 221.5 3.5Q225 7 225 13V25H238Q254 25 268.5 33.5Q283 42 291.5 56.5Q300 71 300 88Z"/></symbol>
+<symbol id="icon-gamepad" viewBox="0 0 300 300"><path d="M278 63Q269 49 255 40.5Q241 32 224 32H75Q58 32 44 40.5Q30 49 21 63Q0 101 0 144Q0 178 8.5 206.5Q17 235 31 251.5Q45 268 62 268Q90 268 107 215Q108 211 111.5 208.5Q115 206 120 206H180Q184 206 187.5 208.5Q191 211 193 215Q210 268 238 268Q255 268 269 251.5Q283 235 291.5 206.5Q300 178 300 144Q298 100 278 63ZM237 243Q233 243 227 234Q221 225 215 207Q212 195 202 188Q192 181 179 181H120Q107 181 97 188.5Q87 196 83 207Q77 225 71.5 234Q66 243 62 243Q56 243 47 230.5Q38 218 32 197Q25 172 25 144Q25 108 42 75Q48 67 56.5 62Q65 57 75 57H224Q233 57 242 62Q251 67 256 75Q274 108 274 144Q274 172 267 197Q261 218 252 230.5Q243 243 237 243ZM113 112H100V100Q100 94 96.5 91Q93 88 87.5 88Q82 88 78.5 91Q75 94 75 100V112H63Q57 112 53.5 115.5Q50 119 50 125Q50 131 53.5 134Q57 137 63 137H75V150Q75 156 78.5 159Q82 162 87.5 162Q93 162 96.5 159Q100 156 100 150V138H113Q118 138 121.5 134.5Q125 131 125 125Q125 119 121.5 116Q118 113 112 113ZM213 106Q213 114 218 119.5Q223 125 231 125Q239 125 244.5 119.5Q250 114 250 106Q250 98 244.5 92.5Q239 87 231 87Q223 87 218 92.5Q213 98 213 106ZM175 144Q175 152 180.5 157Q186 162 194 162Q202 162 207.5 157Q213 152 213 144Q213 136 207.5 130.5Q202 125 194 125Q186 125 180.5 130.5Q175 136 175 144Z"/></symbol>
+<symbol id="icon-map" viewBox="0 0 300 300"><path d="M259 15 258 14 224 3Q206 -3 188 2L118 22Q105 26 93 20L87 17Q72 11 56.5 12.5Q41 14 28 23Q15 32 7.5 45.5Q0 59 0 75V226Q0 247 12.5 263.5Q25 280 45 286L81 297Q90 300 99 300Q108 300 116 298L189 278Q199 275 209 278L238 286Q249 289 260.5 286.5Q272 284 281 277Q290 270 295 259.5Q300 249 300 238V73Q300 54 288.5 37.5Q277 21 259 15ZM52 262Q40 259 32.5 248.5Q25 238 25 226V75Q25 66 29.5 57.5Q34 49 42.5 43Q51 37 63 38Q70 38 76 40L87 45V273ZM113 273V48Q119 48 125 47L188 28V252ZM275 238Q275 250 265.5 257.5Q256 265 245 262L213 253V26L250 38Q261 42 268 52Q275 62 275 73Z"/></symbol>
+<symbol id="icon-balance-scale-left" viewBox="0 0 300 300"><path d="M299 133 261 29Q257 18 247 13Q237 8 226 11L163 27V12Q163 7 159 3.5Q155 0 150 0Q145 0 141.5 3.5Q138 7 138 13V34L72 52Q60 55 51 63Q42 71 38 83L1 183Q0 185 0 191Q0 207 7.5 220.5Q15 234 28 242Q41 250 56 250Q79 250 95 235Q103 227 107.5 216Q112 205 112 194V183L73 78L78 76L138 60V275H63Q57 275 53.5 278.5Q50 282 50 287.5Q50 293 53.5 296.5Q57 300 62 300H238Q243 300 246.5 296.5Q250 293 250 287.5Q250 282 246.5 278.5Q243 275 237 275H163V53L224 37L188 133L187 141Q188 165 203 182Q218 199 241.5 200Q265 201 282 185Q291 177 295.5 166Q300 155 300 144ZM55 225Q45 224 37 217Q29 210 26 200H87Q85 210 78 216Q68 226 55 225ZM82 175H30L56 104ZM244 55 270 125H218ZM242 175Q232 174 224 167Q216 160 214 150H274Q272 160 265 166Q256 176 242 175Z"/></symbol>
+<symbol id="icon-target" viewBox="0 0 300 300"><path d="M150 0Q109 0 74.5 20Q40 40 20 74.5Q0 109 0 150Q0 191 20 225.5Q40 260 74.5 280Q109 300 150 300Q191 300 225.5 280Q260 260 280 225.5Q300 191 300 150Q300 109 280 74.5Q260 40 225.5 20Q191 0 150 0ZM163 274V250Q163 245 159 241.5Q155 238 150 237.5Q145 237 141 241Q137 245 137 250V274Q108 271 83.5 256Q59 241 44 216.5Q29 192 26 163H50Q55 163 59 159Q63 155 63 150Q63 145 59 141Q55 137 50 137H26Q29 108 44 83.5Q59 59 83.5 44Q108 29 137 26V50Q137 55 141 59Q145 63 150 62.5Q155 62 159 58.5Q163 55 163 50V26Q192 29 216.5 44Q241 59 256 83.5Q271 108 274 137H250Q245 137 241 141Q237 145 237 150Q237 155 241 159Q245 163 250 163H274Q271 192 256 216.5Q241 241 216.5 256Q192 271 162 274ZM200 150Q200 155 196.5 159Q193 163 188 163H163V187Q163 193 159 196.5Q155 200 150 200Q145 200 141 196.5Q137 193 137 187V162H113Q107 162 103.5 158.5Q100 155 100 150Q100 145 103.5 141Q107 137 113 137H138V112Q138 107 141.5 103.5Q145 100 150 100Q155 100 159 103.5Q163 107 163 112V137H188Q193 137 196.5 141Q200 145 200 150Z"/></symbol>
+<symbol id="icon-coins" viewBox="0 0 300 300"><path d="M206 0Q180 0 158.5 7.5Q137 15 125 28Q113 41 113 56V89Q103 87 94 87Q68 87 46.5 94.5Q25 102 12.5 115Q0 128 0 144V244Q0 259 12.5 272Q25 285 46.5 292.5Q68 300 94 300Q125 300 149.5 289Q174 278 183 261Q195 263 206 262Q232 262 253.5 255Q275 248 287.5 235Q300 222 300 206V56Q300 41 287.5 28Q275 15 253.5 7.5Q232 0 206 0ZM275 156Q275 164 266 171Q257 178 241 183Q225 188 206 187Q197 187 188 186V161Q197 162 206 162Q226 162 244 157.5Q262 153 275 145ZM25 182Q38 191 56 195.5Q74 200 94 200Q114 200 132 195.5Q150 191 163 182V194Q163 201 153.5 208.5Q144 216 128.5 220.5Q113 225 94 225Q75 225 59 220.5Q43 216 34 208.5Q25 201 25 194ZM275 106Q275 114 266 121Q257 128 241 133Q225 138 206 137Q196 137 187 136Q183 120 165 107Q184 112 205 112Q226 112 244 107.5Q262 103 275 95ZM206 25Q225 25 241 29.5Q257 34 266 41.5Q275 49 275 56.5Q275 64 266 71Q257 78 241 82.5Q225 87 206 87Q187 87 171.5 82.5Q156 78 146.5 71Q137 64 137.5 56.5Q138 49 147 41.5Q156 34 171.5 29.5Q187 25 206 25ZM94 112Q113 112 128.5 117Q144 122 153.5 129Q163 136 163 143.5Q163 151 153.5 158.5Q144 166 128.5 170.5Q113 175 94 175Q75 175 59 170.5Q43 166 34 158.5Q25 151 25 143.5Q25 136 34 129Q43 122 59 117Q75 112 94 112ZM94 275Q75 275 59 270.5Q43 266 34 258.5Q25 251 25 244V232Q38 241 56 245.5Q74 250 94 250Q114 250 132 245.5Q150 241 163 232V244Q163 251 153.5 258.5Q144 266 128.5 270.5Q113 275 94 275ZM206 237Q197 237 188 236V211Q197 212 206 212Q226 212 244 207.5Q262 203 275 195V206Q275 214 266 221Q257 228 241 232.5Q225 237 206 237Z"/></symbol>
+<symbol id="icon-list-check" viewBox="0 0 300 300"><path d="M50 75Q34 75 23 64L4 47Q0 43 0 38Q0 33 3.5 29Q7 25 12 25Q17 25 21 28L41 46Q44 50 49.5 50Q55 50 59 46L104 3Q108 0 113 0.5Q118 1 121.5 4.5Q125 8 125 13Q125 18 121 22L76 64Q65 75 50 75ZM300 50Q300 45 296.5 41Q293 37 288 37H163Q157 37 153.5 41Q150 45 150 50Q150 55 153.5 59Q157 63 162 63H288Q293 62 296.5 58.5Q300 55 300 50ZM76 164 121 122Q127 117 125 109.5Q123 102 116 100Q109 98 104 103L59 146Q55 150 50 150Q45 150 41 146L21 127Q18 123 12.5 123Q7 123 3.5 126.5Q0 130 0 135.5Q0 141 4 144L23 164Q34 175 49.5 175Q65 175 76 164ZM300 150Q300 145 296.5 141Q293 137 288 137H163Q157 137 153.5 141Q150 145 150 150Q150 155 153.5 159Q157 163 162 163H288Q293 163 296.5 159Q300 155 300 150ZM76 264 121 222Q127 217 125 209.5Q123 202 116 200Q109 198 104 203L59 246Q55 250 49.5 250Q44 250 41 246L21 228Q17 225 12 225Q7 225 3.5 229Q0 233 0 238Q0 243 4 247L23 264Q34 275 49.5 275Q65 275 76 264ZM300 250Q300 245 296.5 241.5Q293 238 288 238H163Q157 237 153.5 241Q150 245 150 250Q150 255 153.5 258.5Q157 262 162 262H288Q293 262 296.5 258.5Q300 255 300 250Z"/></symbol>
+<symbol id="icon-trophy" viewBox="0 0 300 300"><path d="M189 200Q227 200 254 187Q277 176 289 156Q300 139 300 119Q300 103 290.5 91Q281 79 265 76L270 63Q273 52 271 40.5Q269 29 262 20Q255 11 244 5.5Q233 0 222 0H78Q67 0 56 5.5Q45 11 38 20Q31 29 29 40.5Q27 52 30 63L35 76Q19 79 9.5 91Q0 103 0 119Q0 139 11 156Q23 176 46 187Q73 200 111 200Q112 206 112 212V250Q113 261 105.5 268.5Q98 276 87 275H75Q70 275 66.5 278.5Q63 282 63 287.5Q63 293 66.5 296.5Q70 300 75 300H225Q230 300 234 296.5Q238 293 238 287.5Q238 282 234 278.5Q230 275 225 275H213Q202 276 194.5 268.5Q187 261 187 250V211Q188 206 189 200ZM256 100Q264 100 269.5 105.5Q275 111 275 119Q275 140 258 155Q238 172 200 175Q204 169 209 164Q239 137 256 100ZM25 119Q25 111 30.5 105.5Q36 100 44 100Q61 137 91 164Q96 169 100 175Q62 172 42 155Q25 140 25 119ZM131 275Q138 263 138 250V212Q138 192 130 175Q122 158 107 145Q68 108 54 56Q51 45 58.5 35Q66 25 78 25H222Q234 25 241.5 35Q249 45 246 56Q232 108 193 145Q178 158 170 175Q162 192 162 212V250Q162 263 169 275Z"/></symbol>
+<symbol id="icon-skull" viewBox="0 0 300 300"><path d="M159 0Q130 -2 103.5 7.5Q77 17 56 37Q35 57 24 83Q13 109 13 137V187Q13 210 27 227Q41 244 63 249Q65 270 81 285Q97 300 119 300H181Q203 300 219 285Q235 270 237 249Q259 244 273 227Q287 210 287 188V142Q288 105 270.5 73.5Q253 42 224 22.5Q195 3 159 0ZM263 187Q263 203 252 214Q241 225 225 225Q220 225 216.5 228.5Q213 232 213 238V244Q213 257 203.5 266Q194 275 181 275H119Q106 275 96.5 266Q87 257 87 244V237Q87 232 83.5 228.5Q80 225 75 225Q59 225 48 214Q37 203 37 188V137Q38 114 47 92.5Q56 71 72.5 56Q89 41 108.5 33Q128 25 150 25H158Q187 27 211 43.5Q235 60 248.5 86Q262 112 262 142V187ZM125 137Q125 148 117.5 155Q110 162 100 162Q90 162 82.5 155Q75 148 75 137.5Q75 127 82.5 119.5Q90 112 100 112Q110 112 117.5 119.5Q125 127 125 137ZM225 137Q225 148 217.5 155Q210 162 200 162Q190 162 182.5 155Q175 148 175 137.5Q175 127 182.5 119.5Q190 112 200 112.5Q210 113 217.5 120Q225 127 225 137ZM175 212Q175 221 169 224Q165 225 153 225H147Q135 225 131 224Q125 221 125 212Q125 201 132.5 188Q140 175 150 175Q160 175 167.5 188Q175 201 175 212Z"/></symbol>
+<symbol id="icon-bullet" viewBox="0 0 300 300"><path d="M150 87Q133 87 118.5 95.5Q104 104 96 118.5Q88 133 88 150Q88 167 96 181.5Q104 196 118.5 204Q133 212 150 212Q167 212 181.5 204Q196 196 204.5 181.5Q213 167 213 150Q213 133 204.5 118.5Q196 104 181.5 95.5Q167 87 150 87ZM150 187Q135 187 124 176Q113 165 113 150Q113 135 124 123.5Q135 112 150 112Q165 112 176.5 123.5Q188 135 188 150Q188 165 176.5 176Q165 187 150 187Z"/></symbol>
+<symbol id="icon-bolt" viewBox="0 0 300 300"><path d="M141 300Q134 300 129 297Q119 293 115 283.5Q111 274 114 265L133 200H87Q78 200 70 196Q62 192 57 185Q52 178 50.5 169Q49 160 51 152L89 27Q93 15 103 7.5Q113 0 125 0H171Q179 0 186 3.5Q193 7 197.5 14Q202 21 203 28.5Q204 36 202 44L181 100H213Q223 100 232 105.5Q241 111 246 120Q251 129 250 139.5Q249 150 244 159L164 287Q160 293 154 296.5Q148 300 141 300ZM125 25Q121 25 117.5 27.5Q114 30 113 34L75 159Q73 165 77 170Q81 175 87 175H150Q156 175 160 180Q164 185 162 191L138 272Q137 273 137.5 273.5Q138 274 139 274.5Q140 275 141 275Q142 275 142 274L223 145Q227 139 223.5 132Q220 125 213 125H163Q156 125 152 119.5Q148 114 151 108L178 35Q180 31 177.5 28Q175 25 171 25Z"/></symbol>
+<symbol id="icon-clock" viewBox="0 0 300 300"><path d="M150 0Q109 0 74.5 20Q40 40 20 74.5Q0 109 0 150Q0 191 20 225.5Q40 260 74.5 280Q109 300 150 300Q191 300 225.5 280Q260 260 280 225.5Q300 191 300 150Q300 109 280 74.5Q260 40 225.5 20Q191 0 150 0ZM150 275Q116 275 87.5 258Q59 241 42 212.5Q25 184 25 150Q25 116 42 87.5Q59 59 87.5 42Q116 25 150 25Q184 25 212.5 42Q241 59 258 87.5Q275 116 275 150Q275 184 258 212.5Q241 241 212.5 258Q184 275 150 275ZM150 75Q145 75 141 78.5Q137 82 137 87V142L95 168Q91 171 90 176Q89 181 91.5 185.5Q94 190 99 191Q104 192 109 189L157 159Q163 155 163 148V87Q163 82 159 78.5Q155 75 150 75Z"/></symbol>
+<symbol id="icon-level-up" viewBox="0 0 300 300"><path d="M221 72Q218 76 212.5 76Q207 76 204 72L163 32V237Q162 254 154 268.5Q146 283 131.5 291.5Q117 300 100 300H13Q7 300 3.5 296.5Q0 293 0 287.5Q0 282 3.5 278.5Q7 275 12 275H100Q116 275 127 264Q138 253 138 237V32L96 72Q91 78 84 76Q77 74 75 66.5Q73 59 79 54L115 19L125 9Q136 0 150 0Q164 0 175 9L185 19L221 54Q225 58 225 63Q225 68 221 72Z"/></symbol>
+<symbol id="icon-calendar-days" viewBox="0 0 300 300"><path d="M238 25H225V12Q225 7 221.5 3.5Q218 0 212.5 0Q207 0 203.5 3.5Q200 7 200 12V25H100V12Q100 7 96.5 3.5Q93 0 87.5 0Q82 0 78.5 3.5Q75 7 75 12V25H63Q46 25 31.5 33.5Q17 42 8.5 56.5Q0 71 0 87V237Q0 254 8.5 268.5Q17 283 31.5 291.5Q46 300 63 300H238Q254 300 268.5 291.5Q283 283 291.5 268.5Q300 254 300 237V87Q300 71 291.5 56.5Q283 42 268.5 33.5Q254 25 238 25ZM138 112V150H100V112ZM200 112V150H163V112ZM275 112V150H225V112ZM75 150H25V112H75ZM25 175H75V212H25ZM100 175H138V212H100ZM138 237V275H100V237ZM163 237H200V275H163ZM163 212V175H200V212ZM225 175H275V212H225ZM63 50H238Q253 50 264 61Q275 72 275 87H25Q25 72 36 61Q47 50 63 50ZM25 237H75V275H63Q47 275 36 264Q25 253 25 237ZM238 275H225V237H275Q275 253 264 264Q253 275 238 275Z"/></symbol>
+<symbol id="icon-table-list" viewBox="0 0 300 300"><path d="M238 25H63Q46 25 31.5 33.5Q17 42 8.5 56.5Q0 71 0 88V212Q0 229 8.5 243.5Q17 258 31.5 266.5Q46 275 63 275H238Q254 275 268.5 266.5Q283 258 291.5 243.5Q300 229 300 213V87Q300 71 291.5 56.5Q283 42 268.5 33.5Q254 25 238 25ZM25 125H75V175H25ZM100 125H275V175H100ZM275 87V100H100V50H238Q253 50 264 61Q275 72 275 87ZM63 50H75V100H25V87Q25 72 36 61Q47 50 63 50ZM25 212V200H75V250H63Q47 250 36 239Q25 228 25 212ZM238 250H100V200H275V212Q275 228 264 239Q253 250 237 250Z"/></symbol>
+<symbol id="icon-info" viewBox="0 0 300 300"><path d="M150 0Q109 0 74.5 20Q40 40 20 74.5Q0 109 0 150Q0 191 20 225.5Q40 260 74.5 280Q109 300 150 300Q191 300 225.5 280Q260 260 280 225.5Q300 191 300 150Q300 109 280 74.5Q260 40 225.5 20Q191 0 150 0ZM150 275Q116 275 87.5 258Q59 241 42 212.5Q25 184 25 150Q25 116 42 87.5Q59 59 87.5 42Q116 25 150 25Q184 25 212.5 42Q241 59 258 87.5Q275 116 275 150Q275 184 258 212.5Q241 241 212.5 258Q184 275 150 275ZM150 125H138Q132 125 128.5 128.5Q125 132 125 137.5Q125 143 128.5 146.5Q132 150 138 150H150V225Q150 230 153.5 233.5Q157 237 162.5 237Q168 237 171.5 233.5Q175 230 175 225V150Q175 140 167.5 132.5Q160 125 150 125ZM131 81Q131 89 136.5 94.5Q142 100 150 100Q158 100 163.5 94.5Q169 89 169 81Q169 73 163.5 67.5Q158 62 150 62.5Q142 63 136.5 68Q131 73 131 81Z"/></symbol>
+<symbol id="icon-angle-small-down" viewBox="0 0 300 300"><path d="M234 103Q230 99 225 99Q220 99 216 103L159 160Q155 164 150 164Q145 164 141 160L84 103Q80 99 75 99Q70 99 66 102.5Q62 106 62 111.5Q62 117 66 120L124 178Q134 189 150 189Q166 189 177 178L234 120Q238 117 238 111.5Q238 106 234 103Z"/></symbol>
+</svg>
+<script src="core.js"></script>
+<script src="source.js"></script>
+<script src="sections-matches.js"></script>
+<script src="sections-more.js"></script>
+<script src="sections-account.js"></script>
+<script src="main.js"></script>
