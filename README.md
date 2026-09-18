@@ -23,6 +23,8 @@ subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrıs
 **7. Stats Polygun.** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu açtığı web sayfası. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
 (disk yok, cache yok, log'da ID yok). Aranan her oyuncu sayfada bir chip olarak kalır; chip'e tıklayınca yeniden sorgu
 atılmaz, aynı ID'yi tekrar yazmak veriyi tazeler, sayfa yenilenince chip'ler gider.
+Mac'in Wi-Fi adresi değişebildiği için Slack'te **Stats Polygun** kısayolu ("/" menüsü) güncel linki (`http://<Mac IP>:3800`)
+sadece çalıştırana görünen bir popup'ta verir.
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
 yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
@@ -64,6 +66,11 @@ MCP token'ıyla bağlanır. Sayfası `Stats Polygun/static/`, artifact önizleme
    - Task Move için ayrıca `.env`'e `ASANA_PAT` gerekir
      ([app.asana.com/0/my-apps](https://app.asana.com/0/my-apps) → Personal access token).
      Taşımalar Asana'da token sahibinin adına görünür.
+   Üçüncü kısayol — **Create New Shortcut**:
+   - Tür: **Global**
+   - Name: `Stats Polygun`
+   - Short description: `Stats Polygun'un güncel linki`
+   - **Callback ID: `stats_polygun`**  *(kodla birebir aynı olmalı)*
 5. **Install App** (veya scope/shortcut ekledikten sonra **Reinstall**) →
    *Bot User OAuth Token* `xoxb-...` → `SLACK_BOT_TOKEN`.
 6. Botu izlenecek her kanala ekle: kanal içinde `/invite @<bot-adı>`

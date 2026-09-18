@@ -10,6 +10,7 @@ import json
 import logging
 import os
 import re
+import socket
 import subprocess
 import time
 import urllib.error
@@ -554,6 +555,36 @@ def handle_task_move_submit(ack, body, view, client):
     except Exception:
         logger.exception("Failed to update task move modal")
     logger.info("Task move finished: %s/%s under %s", moved, len(task_urls), parent_gid)
+
+
+# =============================================================================
+# FEATURE - STATS POLYGUN LINK
+# =============================================================================
+
+# The page runs on this same Mac; its Wi-Fi address changes, so it is read on every call.
+STATS_POLYGUN_PORT = int(os.environ.get("STATS_POLYGUN_PORT") or "3800")
+
+
+def _lan_address() -> str | None:
+    """Same probe as Stats Polygun/stats_polygun.py: the interface of the default route."""
+    try:
+        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
+            probe.connect(("8.8.8.8", 80))
+            return probe.getsockname()[0]
+    except OSError:
+        return None
+
+
+@app.shortcut("stats_polygun")
+def handle_stats_polygun_shortcut(ack, body, client):
+    ack()
+    address = _lan_address()
+    if address:
+        url = f"http://{address}:{STATS_POLYGUN_PORT}"
+        text = f"*Stats Polygun:*\n<{url}>\n\nGirebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin."
+    else:
+        text = "Mac'in Wi-Fi adresi okunamadı. Mac ağa bağlı mı?"
+    client.views_open(trigger_id=body["trigger_id"], view=_result_view(text, title="Stats Polygun"))
 
 
 # =============================================================================
