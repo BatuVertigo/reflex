@@ -2,16 +2,19 @@
   "use strict";
 
   const SP = window.StatsPolygun;
-  const PLAYFAB_ID = /^[0-9A-F]{16}$/;
+  // PlayFab IDs are hex numbers without leading zeros: 16 characters for most accounts, 11 to 15 for about 6% (TE, 2026-09-18).
+  const PLAYFAB_ID = /^[0-9A-F]{11,16}$/;
+  // Batuhan's rule: up to 10 characters is a player name (the longest in TE is 10), 11 to 16 hex characters is a PlayFab ID, anything else is refused.
+  const NAME_MAX = 10;
   const SHORT_MATCH_WINDOW = 100;
 
   const page = document.querySelector(".page");
-  const topbar = document.querySelector(".topbar");
   const form = SP.byId("search-form");
   const input = SP.byId("playfab-id");
   const searchButton = form.querySelector("button");
   const status = SP.byId("status");
   const badge = SP.byId("badge");
+  const toTop = SP.byId("to-top");
   const rail = SP.byId("rail");
   const playersHost = SP.byId("rail-players");
   const top = SP.byId("player-top");
@@ -130,15 +133,36 @@
     for (const render of chartRenderers) render(SP.report);
   }
 
-  // Shows "text · N s" in an element while a request runs.
-  function ticker(element, text) {
+  // Shows "Reflex verileri getiriyor · N s" and a loading bar in an element while a request runs. The server's finished queries
+  // move the bar; while another search holds the server, the bar stands still and a chip says this one is in line.
+  // The texts are Turkish (Batuhan's call) on an English page, so they carry lang="tr" for screen readers.
+  function ticker(element) {
     const started = Date.now();
-    let current = text;
-    const paint = () => { element.textContent = `${current} · ${Math.round((Date.now() - started) / 1000)} s`; };
+    element.replaceChildren();
+    const label = SP.htmlElement("span", "", element);
+    const inLine = SP.htmlElement("span", "in-line", element);
+    inLine.hidden = true;
+    SP.svgElement("use", { href: "#icon-info" }, SP.svgElement("svg", { "aria-hidden": "true" }, inLine));
+    inLine.append("Şu anda sıradasınız");
+    const track = SP.htmlElement("span", "loading-track", element);
+    track.setAttribute("role", "progressbar");
+    track.setAttribute("aria-label", "Yükleniyor");
+    for (const part of [label, inLine, track]) part.lang = "tr";
+    const fill = SP.htmlElement("span", "loading-fill", track);
+    const paint = () => { label.textContent = `Reflex verileri getiriyor · ${Math.round((Date.now() - started) / 1000)} s`; };
+    const fillTo = fraction => {
+      fill.style.width = `${fraction * 100}%`;
+      track.setAttribute("aria-valuenow", String(Math.round(fraction * 100)));
+    };
     paint();
+    fillTo(0);
     const timer = setInterval(paint, 1000);
     return {
-      update(next) { current = next; paint(); },
+      // One server event: {waiting} shows or hides the chip, {done, total} fills this request's share of the bar, from `from` to `to`.
+      step(event, from, to) {
+        inLine.hidden = !event.waiting;
+        if (event.total) fillTo(from + (to - from) * event.done / event.total);
+      },
       stop() { clearInterval(timer); },
     };
   }
@@ -165,22 +189,13 @@
     }
   }
 
-  // The sticky bars cover the top of the page, so anchor jumps and the rail offset need their measured heights.
-  function measure() {
-    const bar = document.querySelector(".period-bar");
-    page.style.setProperty("--topbar", `${getComputedStyle(topbar).position === "sticky" ? topbar.offsetHeight : 0}px`);
-    page.style.setProperty("--period-bar", `${bar ? bar.offsetHeight : 0}px`);
-  }
-
-  // Marks the rail link of the last section whose top has passed the sticky bars.
+  // Marks the rail link of the last section whose top is within 40 px of the window top; anchor jumps land 16 to 24 px down.
   function markSection() {
-    const style = getComputedStyle(page);
-    const line = parseFloat(style.getPropertyValue("--topbar")) + parseFloat(style.getPropertyValue("--period-bar")) + 40;
     let currentLink = null;
     const links = [...rail.querySelectorAll("a[href^='#']")];
     for (const link of links) {
       const target = document.querySelector(link.getAttribute("href"));
-      if (target && target.getBoundingClientRect().top <= line) currentLink = link;
+      if (target && target.getBoundingClientRect().top <= 40) currentLink = link;
     }
     // At the very top nothing has passed the line yet; the first link stands for the player header and totals.
     if (!currentLink) currentLink = links[0];
@@ -195,8 +210,10 @@
     host.replaceChildren(reportTemplate.content.cloneNode(true));
     prepareCards(host);
     const title = period.name ? `${period.name} · ${period.label}` : period.label;
-    for (const label of document.querySelectorAll("[data-period-label]")) label.textContent = title;
-    for (const button of top.querySelectorAll("[data-preset]")) button.setAttribute("aria-pressed", String(button.dataset.preset === period.preset));
+    const presetButtons = [...periodTop.querySelectorAll("[data-preset]")];
+    for (const button of presetButtons) button.setAttribute("aria-pressed", String(button.dataset.preset === period.preset));
+    // A hand-picked range (From/To or a day on the strip) has no button, so the date boxes carry the mark.
+    periodTop.querySelector(".period-dates").classList.toggle("is-picked", !presetButtons.some(button => button.dataset.preset === period.preset));
     SP.byId("period-from").value = period.from;
     SP.byId("period-to").value = period.to;
     SP.byId("period-summary").textContent = (period.lastMatches ? title : `${title} · ${SP.plural(period.matchCount, "match", "matches")}`)
@@ -212,7 +229,6 @@
     for (const [id, view] of [["lp-chart", "lp"], ["kd-chart", "kd"], ["weapon-heat", "weapons"], ["power-gap", "power"]]) SP.attachKeyboard(SP.byId(id), view);
     lastWidth = SP.byId("career-strip").clientWidth;
     window.scrollTo(0, scroll);
-    measure();
     markSection();
   }
 
@@ -222,9 +238,9 @@
     const entry = current;
     if (!entry.periods.has(periodKey(next))) {
       setBusy(true);
-      const progress = ticker(SP.byId("period-summary"), `Loading ${next.name || next.label}`);
+      const progress = ticker(SP.byId("period-summary"));
       try {
-        entry.periods.set(periodKey(next), await SP.source.period(entry.id, next.from, next.to, !next.tooMany));
+        entry.periods.set(periodKey(next), await SP.source.period(entry.id, next.from, next.to, !next.tooMany, event => progress.step(event, 0, 1)));
       } catch (error) {
         progress.stop();
         setBusy(false);
@@ -240,6 +256,7 @@
   }
 
   function switchTo(entry) {
+    status.textContent = "";
     current = entry;
     allTime = entry.allTime;
     career = entry.career;
@@ -250,7 +267,7 @@
     prepareCards(top);
     for (const element of [rail, zone]) element.hidden = false;
     SP.renderPlayer(allTime);
-    SP.renderSummary(career, allTime.finalLeaguePoints);
+    SP.renderSummary(career, allTime.finalLeaguePoints, allTime.vtd);
     // The Career group never changes with the period, so it renders once per player.
     const careerReport = { career, raw: { resources: allTime.resources, currencyDays: allTime.balances } };
     SP.renderBreakdowns(careerReport);
@@ -264,31 +281,41 @@
     window.scrollTo(0, 0);
   }
 
-  // Typing an ID always asks the source again and replaces the held copy; a chip click never does.
+  // Typing a name or an ID always asks the source again and replaces the held copy; a player click in the rail never does.
   async function search(value) {
-    const id = String(value || "").trim().toUpperCase();
-    if (!PLAYFAB_ID.test(id)) {
-      status.textContent = "A PlayFab ID has 16 characters: digits 0–9 and letters A–F.";
+    const text = String(value || "").trim();
+    // Code points, like the server and TE count them.
+    const isName = text.length > 0 && [...text].length <= NAME_MAX;
+    if (!isName && !PLAYFAB_ID.test(text.toUpperCase())) {
+      status.textContent = `Type a player name (up to ${NAME_MAX} characters) or a PlayFab ID (11 to 16 characters: digits 0–9 and letters A–F).`;
       return;
     }
     if (busy) return;
-    input.value = id;
+    if (!isName) input.value = text.toUpperCase();
     setBusy(true);
-    const progress = ticker(status, `Looking up ${id} · career`);
+    const progress = ticker(status);
     try {
-      const entry = { id, allTime: await SP.source.allTime(id), career: null, options: null, period: null, periods: new Map() };
+      let id = text.toUpperCase();
+      let note = "";
+      // A name is looked up first and then searched like its ID; the lookup does not move the bar.
+      if (isName) {
+        const found = await SP.source.find(text, event => progress.step(event, 0, 0));
+        id = found.playfabId;
+        if (found.shared > 1) note = `${SP.formatNumber(found.shared)} players share the name ${text}; this is the closest match. For another one, search by PlayFab ID.`;
+      }
+      // The career answer fills the first half of the bar, the period answer the second half.
+      const entry = { id, allTime: await SP.source.allTime(id, event => progress.step(event, 0, 0.5)), career: null, options: null, period: null, periods: new Map() };
       // periodOptions and defaultPeriod read the module-level career, which switchTo sets again from the entry.
       career = entry.career = SP.buildCareer(entry.allTime);
       entry.options = periodOptions();
       const first = defaultPeriod(entry.options);
-      progress.update(`Looking up ${id} · period`);
-      entry.periods.set(periodKey(first), await SP.source.period(id, first.from, first.to, !first.tooMany));
+      entry.periods.set(periodKey(first), await SP.source.period(id, first.from, first.to, !first.tooMany, event => progress.step(event, 0.5, 1)));
       entry.period = first;
       held.set(id, entry);
       progress.stop();
-      status.textContent = "";
       setBusy(false);
       switchTo(entry);
+      status.textContent = note;
     } catch (error) {
       progress.stop();
       setBusy(false);
@@ -311,13 +338,17 @@
   });
 
   window.addEventListener("scroll", () => {
+    toTop.hidden = window.scrollY < window.innerHeight;
     if (!current) return;
     cancelAnimationFrame(spyFrame);
     spyFrame = requestAnimationFrame(markSection);
   }, { passive: true });
 
+  toTop.addEventListener("click", () => {
+    window.scrollTo({ top: 0, behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  });
+
   new ResizeObserver(() => {
-    measure();
     const strip = SP.byId("career-strip");
     if (!strip || !SP.report || strip.clientWidth === lastWidth) return;
     lastWidth = strip.clientWidth;

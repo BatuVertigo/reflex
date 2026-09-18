@@ -33,7 +33,7 @@
     return best;
   };
 
-  SP.renderSummary = (career, finalLeaguePoints) => {
+  SP.renderSummary = (career, finalLeaguePoints, vtd) => {
     const { totals, matchCount, days } = career;
     const first = days[0];
     const last = days[days.length - 1];
@@ -50,6 +50,8 @@
     byId("stat-lp").textContent = formatNumber(points);
     const peak = Math.max(points, ...days.map(day => day.highestPoints));
     byId("stat-lp-sub").textContent = first ? `${formatSigned(points - first.firstPoints)} since match 1 · peak ${formatNumber(peak)}` : "No matches yet";
+    // Whole dollars; a dash when TE has no value (the preview data has none).
+    byId("stat-vtd").textContent = vtd == null ? "–" : `$${formatNumber(Math.round(vtd))}`;
   };
 
   // The career strip: every UTC day from first to last activity, with the picked period shaded. Clicking a day picks it.

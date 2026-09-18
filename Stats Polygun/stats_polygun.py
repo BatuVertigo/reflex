@@ -1,7 +1,8 @@
 """Stats Polygun: serves the page and answers its two API calls with fixed ThinkingData (TE) queries.
 
 Runs on the office Mac (port 3800 unless STATS_POLYGUN_PORT says otherwise), reads TE_MCP_URL and TE_MCP_TOKEN
-from reflex/.env, and stores nothing: no disk writes, no cache, no request log. One TE job runs at a time, so the
+from reflex/.env, and stores nothing: no disk writes, no cache. The console gets one line per API call (time, the
+teammate's address, what was searched, how it ended; Batuhan's call, 2026-09-18). One TE job runs at a time, so the
 shared TE account never sees more than 2 queries at once. All times are UTC+0 (phone clock shifted by #zone_offset).
 """
 
@@ -11,7 +12,6 @@ import json
 import os
 import re
 import socket
-import sys
 import threading
 import time
 import urllib.error
@@ -33,7 +33,10 @@ ROW_LIMIT = int(os.environ.get("STATS_POLYGUN_ROW_LIMIT") or "20000")
 STATIC = os.path.join(FOLDER, "static")
 PROJECT_ID = 4
 LOCK_WAIT_SECONDS = 120
-PLAYFAB_ID = re.compile(r"[0-9A-F]{16}")
+# PlayFab IDs are hex numbers without leading zeros: 16 characters for most accounts, 11 to 15 for about 6% (TE, 2026-09-18).
+PLAYFAB_ID = re.compile(r"[0-9A-F]{11,16}")
+# Player names are 1 to 10 characters (the longest among players active in the 30 days before 2026-09-18); control characters are refused.
+PLAYER_NAME = re.compile(r"[^\x00-\x1f\x7f]{1,10}")
 DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
 UTC = 'date_add(\'minute\', -cast(round(coalesce("#zone_offset", 0) * 60) as integer), "#event_time")'
 UTC_DAY = f"substr(cast({UTC} as varchar), 1, 10)"
@@ -115,16 +118,20 @@ def run_sql(name, sql, limit=None):
     raise ApiError(503, "TE stayed busy. Try again in a moment.")
 
 
-def run_all(queries):
-    """Runs the queries 2 at a time (TE's concurrency limit). The first failure cancels the rest."""
+def run_all(queries, finished):
+    """Runs the queries 2 at a time (TE's concurrency limit) and calls finished() as each one ends. The first failure cancels the rest."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
-        futures = {name: pool.submit(run_sql, name, sql) for name, sql in queries.items()}
+        futures = {pool.submit(run_sql, name, sql): name for name, sql in queries.items()}
+        rows = {}
         try:
-            return {name: future.result() for name, future in futures.items()}
+            for future in concurrent.futures.as_completed(futures):
+                rows[futures[future]] = future.result()
+                finished()
         except BaseException:
-            for future in futures.values():
+            for future in futures:
                 future.cancel()
             raise
+        return rows
 
 
 def number(value):
@@ -142,14 +149,28 @@ def shift_day(day, days):
 
 
 def player_row(playfab_id):
+    # vtd: value to date, the player's purchase total in US dollars.
     rows = run_sql("player", f"""select "#user_id", user_name, league_point,
-        substr(cast(date_add('day', -2, created_time) as varchar), 1, 10), substr(cast(date_add('day', 2, last_login_time) as varchar), 1, 10)
+        substr(cast(date_add('day', -2, created_time) as varchar), 1, 10), substr(cast(date_add('day', 2, last_login_time) as varchar), 1, 10), vtd
         from ta.v_user_4 where "#account_id" = '{playfab_id}'""")
     if not rows:
         raise ApiError(404, f"No player found for {playfab_id}.")
-    user_id, name, league_points, first_day, last_day = rows[0]
+    user_id, name, league_points, first_day, last_day, vtd = rows[0]
     # Profile times use the phone's clock; two days of margin on each side cover any time zone.
-    return int(user_id), name, number(league_points), first_day or "2025-01-01", last_day or time.strftime("%Y-%m-%d", time.gmtime())
+    return int(user_id), name, number(league_points), first_day or "2025-01-01", last_day or time.strftime("%Y-%m-%d", time.gmtime()), number(vtd)
+
+
+def find_player(name):
+    """The account with this name: the same spelling first, then any case, then the one who played last. Names under 10 characters
+    are almost all unique (339 of 984k shared, 2026-09-18); shared ones are mostly 10-character default names, so the answer says how many share it."""
+    literal = name.replace("'", "''")
+    rows = run_sql("find", f"""select "#account_id", user_name, count(*) over ()
+        from ta.v_user_4 where lower(user_name) = lower('{literal}') and "#account_id" is not null
+        order by user_name = '{literal}' desc, last_login_time desc""", limit=1)
+    if not rows:
+        raise ApiError(404, f"No player named {name}.")
+    playfab_id, found_name, shared = rows[0]
+    return {"playfabId": playfab_id, "name": found_name, "shared": number(shared)}
 
 
 def bounds(user_id, first_day, last_day):
@@ -198,11 +219,11 @@ def currency_row(row):
     return [row[0], row[1], number(row[2]), number(row[3]), number(row[4])]
 
 
-def all_time(playfab_id):
-    user_id, name, league_points, first_day, last_day = player_row(playfab_id)
+def all_time(playfab_id, step):
+    user_id, name, league_points, first_day, last_day, vtd = player_row(playfab_id)
     base = bounds(user_id, first_day, last_day)
     matches = f"\"$part_event\" = 'battle_end' and {base} and {MATCH}"
-    rows = run_all({
+    queries = {
         "meta": f"""select substr(cast(min({UTC}) as varchar), 1, 19), substr(cast(max({UTC}) as varchar), 1, 19),
             max_by("#os", if("#os" is not null, "#event_time")), max_by("#device_model", if("#device_model" is not null, "#event_time")),
             max_by("#country_code", if("#country_code" is not null, "#event_time")), array_join(array_sort(array_agg(distinct "#app_version")), ',')
@@ -234,7 +255,11 @@ def all_time(playfab_id):
         "balances": f"""with d as ({currency_days_sql(base, 'true')}),
             r as (select *, row_number() over (partition by item_name order by utc_day desc) as recency from d)
             select utc_day, item_name, earned, spent, final_amount from r where recency = 1 order by 1, 2""",
-    })
+    }
+    # The player query, then these: the page's loading bar counts them.
+    total = 1 + len(queries)
+    step(total)
+    rows = run_all(queries, lambda: step(total))
     meta = rows["meta"][0] if rows["meta"] else [None] * 6
     days, modes, maps, buckets = [], [], [], []
     for day, mode, map_name, bucket, count, wins, losses, kills, deaths, first_points, top_points, version, mask in rows["career"]:
@@ -256,6 +281,7 @@ def all_time(playfab_id):
         },
         # The profile holds the current league points, which is the value after the last match.
         "finalLeaguePoints": league_points,
+        "vtd": vtd,
         "career": {"days": days, "modes": modes, "maps": maps, "buckets": buckets},
         "weaponTotals": [[row[0], row[1], number(row[2]), number(row[3]), number(row[4]), number(row[5])] for row in rows["weapon_totals"]],
         "resources": [[row[0], row[1], row[2], row[3], number(row[4]), number(row[5])] for row in rows["resources"]],
@@ -263,8 +289,8 @@ def all_time(playfab_id):
     }
 
 
-def period(playfab_id, from_day, to_day, with_matches):
-    user_id, name, league_points, first_day, last_day = player_row(playfab_id)
+def period(playfab_id, from_day, to_day, with_matches, step):
+    user_id, name, league_points, first_day, last_day, vtd = player_row(playfab_id)
     # Partitions are in the phone's local day, so one extra day on each side covers any time zone; the UTC filter does the exact cut.
     base = bounds(user_id, shift_day(from_day, -1), shift_day(to_day, 1))
     inside = f"{UTC_DAY} between '{from_day}' and '{to_day}'"
@@ -286,12 +312,17 @@ def period(playfab_id, from_day, to_day, with_matches):
             order by 1"""
         queries["search_fails"] = f"""select substr(cast({UTC} as varchar), 1, 19), coalesce(fail_reason, '')
             from ta.v_event_4 where "$part_event" = 'battle_search' and action = 'fail' and {base} and {inside} order by 1"""
+    # The player query, battle_after when matches load, then the queries above: the page's loading bar counts them.
+    total = (2 if with_matches else 1) + len(queries)
+    step(total)
+    if with_matches:
         # The first battle_end row after the period gives the last match its "after" league points.
         after_base = bounds(user_id, to_day, max(last_day, shift_day(to_day, 2)))
         after_day = UTC_DAY.replace('"#', 'b."#')
         after_rows = run_sql("battle_after", battles_sql(after_base, f"{after_day} > '{to_day}'"), limit=1)
         battle_after = battle_row(after_rows[0]) if after_rows else None
-    rows = run_all(queries)
+        step(total)
+    rows = run_all(queries, lambda: step(total))
     return {
         "battles": [battle_row(row) for row in rows.get("battles", [])],
         "battleAfter": battle_after,
@@ -303,21 +334,19 @@ def period(playfab_id, from_day, to_day, with_matches):
     }
 
 
-def with_te_lock(job):
-    if not te_lock.acquire(timeout=LOCK_WAIT_SECONDS):
-        raise ApiError(503, "Another search is still running. Try again in a moment.")
-    try:
-        return job()
-    finally:
-        te_lock.release()
-
-
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC, **kwargs)
 
+    def handle(self):
+        # Browsers open spare connections and drop them unused (tab closed, phone locked); that is no error worth a traceback.
+        try:
+            super().handle()
+        except ConnectionError:
+            pass
+
     def log_message(self, format, *args):
-        # No request log: PlayFab IDs never reach the console.
+        # Raw request lines and static files stay quiet; stream_job prints one readable line per API call instead.
         pass
 
     def end_headers(self):
@@ -351,29 +380,80 @@ class Handler(SimpleHTTPRequestHandler):
         self.wfile.write(body)
 
     def handle_api(self, url):
+        if url.path == "/api/find":
+            name = parse_qs(url.query).get("name", [""])[0].strip()
+            if not PLAYER_NAME.fullmatch(name):
+                self.send_json(400, {"error": "A player name has 1 to 10 characters."})
+                return
+            self.stream_job(lambda step: find_player(name), f'find "{name}"')
+            return
         try:
             match = re.fullmatch(r"/api/player/([^/]+)(/period)?", url.path)
             if not match:
                 raise ApiError(404, "Unknown API path.")
             playfab_id = match.group(1).upper()
             if not PLAYFAB_ID.fullmatch(playfab_id):
-                raise ApiError(400, "A PlayFab ID has 16 characters: digits 0–9 and letters A–F.")
+                raise ApiError(400, "A PlayFab ID has 11 to 16 characters: digits 0–9 and letters A–F.")
             query = parse_qs(url.query)
             if match.group(2):
                 from_day, to_day = query.get("from", [""])[0], query.get("to", [""])[0]
                 if not (DAY.fullmatch(from_day) and DAY.fullmatch(to_day)) or from_day > to_day:
                     raise ApiError(400, "Dates must be YYYY-MM-DD, with from on or before to.")
                 with_matches = query.get("matches", ["1"])[0] != "0"
-                payload = with_te_lock(lambda: period(playfab_id, from_day, to_day, with_matches))
+                job = lambda step: period(playfab_id, from_day, to_day, with_matches, step)
+                what = f"period {playfab_id} {from_day}..{to_day}"
             else:
-                payload = with_te_lock(lambda: all_time(playfab_id))
-            self.send_json(200, payload)
+                job = lambda step: all_time(playfab_id, step)
+                what = f"career {playfab_id}"
         except ApiError as error:
             self.send_json(error.status, {"error": str(error)})
-        except Exception as error:
-            # The class name only: no IDs, no query text on the console.
-            print(f"search failed: {error.__class__.__name__}", file=sys.stderr, flush=True)
-            self.send_json(502, {"error": "Stats Polygun hit an unexpected error. Try again."})
+            return
+        self.stream_job(job, what)
+
+    def stream_job(self, job, what):
+        """Answers with one JSON line per event, so the page can show progress: waiting in line, each finished TE query, then the result or the error.
+        When the call ends, prints one console line: time, the teammate's address, what was asked, and OK, FAILED or STOPPED."""
+        started = time.monotonic()
+        outcome = "OK"
+        self.send_response(HTTPStatus.OK)
+        self.send_header("Content-Type", "application/x-ndjson; charset=utf-8")
+        self.end_headers()
+        write = lambda event: self.wfile.write(json.dumps(event, separators=(",", ":")).encode() + b"\n")
+        done = 0
+
+        def step(total):
+            nonlocal done
+            done += 1
+            write({"done": done, "total": total})
+
+        try:
+            try:
+                waited = not te_lock.acquire(blocking=False)
+                if waited:
+                    write({"waiting": True})
+                    if not te_lock.acquire(timeout=LOCK_WAIT_SECONDS):
+                        raise ApiError(503, "Another search is still running. Try again in a moment.")
+                try:
+                    if waited:
+                        write({"waiting": False})
+                    result = job(step)
+                finally:
+                    te_lock.release()
+                write({"result": result})
+            except ApiError as error:
+                outcome = f"FAILED {error}"
+                write({"error": str(error)})
+            except ConnectionError:
+                raise
+            except Exception as error:
+                # The class name only, never the query text.
+                outcome = f"FAILED unexpected {error.__class__.__name__}"
+                write({"error": "Stats Polygun hit an unexpected error. Try again."})
+        except ConnectionError:
+            # The page closed or reloaded mid-search: nobody is left to answer, and the lock is already free.
+            outcome = "STOPPED the page closed before the answer"
+        status, _, detail = outcome.partition(" ")
+        print(f"{time.strftime('%H:%M:%S')}  {self.client_address[0]}  {what}  {status} {time.monotonic() - started:.1f} s  {detail}".rstrip(), flush=True)
 
     def send_json(self, status, payload):
         body = json.dumps(payload, separators=(",", ":")).encode()
