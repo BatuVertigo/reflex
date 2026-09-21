@@ -98,9 +98,16 @@ def run_sql(name, sql, limit=None):
             }}})
         except urllib.error.HTTPError as error:
             cancel(request_id)
+            # TE's gateway drops a slow query with a 5xx of its own; the same query goes through on the next try.
+            if error.code >= 500 and attempt < 2:
+                time.sleep(3 + attempt * 2)
+                continue
             raise ApiError(504 if error.code == 504 else 502, f"TE answered HTTP {error.code} on the {name} query. Try again.")
         except (urllib.error.URLError, TimeoutError, OSError):
             cancel(request_id)
+            if attempt < 2:
+                time.sleep(3 + attempt * 2)
+                continue
             raise ApiError(504, f"TE did not answer the {name} query in time. Try again.")
         result = (message or {}).get("result", {})
         text = next((part.get("text", "") for part in result.get("content", []) if part.get("type") == "text"), "")
