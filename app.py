@@ -39,6 +39,14 @@ QA_CHANNEL_IDS = {
 }
 CLAUDE_BIN = os.environ.get("CLAUDE_BIN", "claude")
 
+# Channel -> Slack user group to tag on Version Check questions ("C123:S456,C789:S012").
+# Unmapped channels fall back to tagging the message writer.
+PRODUCT_GROUP_BY_CHANNEL = dict(
+    pair.strip().split(":", 1)
+    for pair in os.environ.get("PRODUCT_GROUP_BY_CHANNEL", "").split(",")
+    if pair.strip()
+)
+
 # --- Version Check: fast + cheap classification ---
 VERSION_CHECK_MODEL = os.environ.get("VERSION_CHECK_MODEL", "haiku")
 VERSION_CHECK_TIMEOUT = int(os.environ.get("VERSION_CHECK_TIMEOUT", "60"))
@@ -218,8 +226,14 @@ def handle_message(event, client):
     if not question:
         return
 
+    group = PRODUCT_GROUP_BY_CHANNEL.get(channel)
     user = event.get("user")
-    mention = f"<@{user}> " if user else ""
+    if group:
+        mention = f"<!subteam^{group}> "
+    elif user:
+        mention = f"<@{user}> "
+    else:
+        mention = ""
     client.chat_postMessage(
         channel=channel,
         thread_ts=ts,

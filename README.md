@@ -14,7 +14,7 @@ history tablosunu güncel tutar.
 Asana'ya geçirmeye hazır formata uygun bir text üretir → sonucu **sadece tıklayan kişiye** görünen bir **modal**'da gösterir. Kişi kopyalayıp Asana'ya yapıştırabilir.
 
 **5. Version Check.** CRITICAL bir bug raporunun ve ortam/sürüm bilgisi eksikse,
-kişiyi etiketleyip aynı thread'e kısa bir soru atar: "Bu bug yayında var mı? Eğer yoksa sürüm bilgisi veya build numarası paylaşabilir misin?" gibi.
+kanalın product grubunu (@pa-product / @cs-product; eşleşme yoksa mesajı yazanı) etiketleyip aynı thread'e kısa bir soru atar: "Bu bug yayında var mı? Eğer yoksa sürüm bilgisi veya build numarası paylaşabilir misin?" gibi.
 
 **6. Task Move.** Asana UI'ının yapamadığı toplu taşıma: Slack'te herhangi bir chatte "/"
 kullanılarak **Move Asana tasks** açılır. Bot her task'ı Asana API'siyle parent'ın altına
