@@ -1,11 +1,11 @@
 # Polygun Arena (PA) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 13 Ekim 2026 18:45
+> **Son güncelleme:** 14 Ekim 2026 14:03
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v1.6100](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1791892870611759)** | 1180 / 1210 | — | 🟢 Yayın (🤖 %1, 🍎 review'da) |
+| **[v1.6100](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1791892870611759)** | 1180 / 1210 | — | 🟢 Yayın (🤖 %20, 🍎 review'da) |
 | **[v1.6000](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1790701178150799)** | 1160 / 1180 | - 🍎🤖 %100: 30 Eyl 20:55<br>- 🍎🤖 Force: 1 Eki 11:40 | 🟢👊🏻 Yayın (son force) |
 | **[v1.5100](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1789563403032699)** | 1140 / 1170 | - 🍎🤖 %100: 17 Eyl 16:15<br>- 🍎🤖 Force: 18 Eyl 11:29 | 🔵👊🏻 Forcelanmıştı → v1.6000 forcelandı |
 | **[v1.5010](https://vertigohq.slack.com/archives/C0AT9U4UYF2/p1788779697877829)** | 890 / 1050 | - 🤖 %100: 8 Eyl 09:57<br>- 🍎 %100: 8 Eyl 10:00<br>- 🍎🤖 Force: 8 Eyl 18:25 | 🔵👊🏻 Forcelanmıştı → v1.5100 forcelandı |
