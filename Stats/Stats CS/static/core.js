@@ -293,8 +293,21 @@
     const lastMatchDay = days.length ? days[days.length - 1].key : seenLast;
     const firstDay = [seenFirst, days.length ? days[0].key : ""].filter(Boolean).sort()[0] || "";
     const lastDay = [seenLast, lastMatchDay].filter(Boolean).sort().pop() || "";
+    // null means the server's purchases query failed; a server older than the Purchases panel sends nothing (undefined).
+    const purchases = (allTime.purchases || []).map(([utc, store, product, price, currency, usd, placement, popup, windowName, trigger,
+      resultBefore, secondsSinceMatch, secondsToMatch]) => ({
+      utc, store, product, price, currency, usd, placement, popup, windowName, trigger,
+      outcomeBefore: resultBefore ? SP.OUTCOMES[resultBefore] || "draw" : null, secondsSinceMatch, secondsToMatch,
+    }));
+    const purchaseDays = new Map();
+    for (const purchase of purchases) {
+      const day = purchaseDays.get(purchase.utc.slice(0, 10)) || { count: 0, usd: 0 };
+      day.count += 1;
+      day.usd += purchase.usd || 0;
+      purchaseDays.set(purchase.utc.slice(0, 10), day);
+    }
     return {
-      days, totals, firstDay, lastDay, lastMatchDay,
+      days, totals, firstDay, lastDay, lastMatchDay, purchases, purchaseDays, purchasesFailed: allTime.purchases == null,
       matchCount: totals.win + totals.loss + totals.draw,
       modes: groups(allTime.career.modes),
       maps: groups(allTime.career.maps),

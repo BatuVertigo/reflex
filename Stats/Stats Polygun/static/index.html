@@ -37,6 +37,7 @@
   --tip-border: rgba(16, 21, 28, 0.12);
   --tip-shadow: 0 8px 28px rgba(16, 21, 28, 0.14);
   --focus: #2a78d6;
+  --money: #b26b00;
   --font-display: "Archivo", "Arial Narrow", "Roboto Condensed", sans-serif;
   --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-data: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
@@ -71,6 +72,7 @@
     --tip-border: rgba(255, 255, 255, 0.12);
     --tip-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
     --focus: #3987e5;
+    --money: #e3a336;
   }
 }
 :root[data-theme="dark"] {
@@ -102,6 +104,7 @@
   --tip-border: rgba(255, 255, 255, 0.12);
   --tip-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
   --focus: #3987e5;
+  --money: #e3a336;
 }
 
 * { box-sizing: border-box; }
@@ -370,6 +373,8 @@ details.panel > summary:hover .card-arrow { fill: var(--ink); }
 .key-ink-line { width: 16px; height: 2px; border-radius: 2px; background: var(--ink-2); }
 .key-muted { background: var(--muted); opacity: 0.55; }
 .key-period { background: var(--accent); opacity: 0.3; }
+.key-buy, .strip-buy { background: var(--money); fill: var(--money); }
+.key-buy { width: 8px; height: 8px; transform: rotate(45deg); }
 .panel[id], .panel h2[id], .group-head, .scoreboard[id] { scroll-margin-top: 16px; }
 .zone-period .panel[id], .zone-period .panel h2[id] { scroll-margin-top: 24px; }
 .lede { font-size: 14px; color: var(--ink-2); margin-top: 6px; max-width: 70ch; }
@@ -549,6 +554,15 @@ th.num, td.num { text-align: right; font-family: var(--font-data); font-variant-
 th.num { font-family: var(--font-body); }
 td.muted-cell { color: var(--muted); }
 tbody tr.is-active td { background: var(--wash); }
+/* Every match filters: plain selects and the period chip buttons, one row that wraps on phones. */
+.match-filters { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; font-size: 13px; color: var(--ink-2); }
+.match-filters label { display: inline-flex; align-items: center; gap: 6px; }
+.match-filters select { font: inherit; font-size: 13.5px; color: var(--ink); background: var(--surface); border: 1px solid var(--baseline); border-radius: 8px; padding: 5px 8px; max-width: 190px; }
+.match-filters select:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.match-filters select.is-set { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.purchase-scroll { max-height: 420px; overflow-y: auto; }
+.purchase-scroll th { position: sticky; top: 0; background: var(--surface); }
+.money-value { color: var(--money); font-weight: 600; }
 .table-compact td { padding: 4px 10px; }
 .result { display: inline-flex; align-items: center; gap: 8px; }
 .result .chip { width: 18px; height: 20px; font-size: 10.5px; }
@@ -826,6 +840,22 @@ code { font-family: var(--font-data); font-size: 0.92em; }
     </details>
   </div>
 
+  <details class="panel" id="purchases" data-card="purchases" open>
+    <summary class="panel-head">
+      <div><h2 id="h-purchases"><svg class="title-icon" aria-hidden="true"><use href="#icon-cart"></use></svg>Purchases</h2><p class="lede" id="purchases-lede"></p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="mini-stats" id="purchase-stats"></div>
+      <div class="table-scroll purchase-scroll">
+        <table>
+          <thead><tr><th scope="col">When (UTC)</th><th scope="col">Product</th><th scope="col">Store</th><th class="num" scope="col">Paid</th><th class="num" scope="col">USD</th><th scope="col">Where</th><th scope="col">Match before</th><th scope="col">Next match</th></tr></thead>
+          <tbody id="purchase-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
   <details class="panel" id="economy" data-card="economy" open>
     <summary class="panel-head">
       <div><h2 id="h-economy"><svg class="title-icon" aria-hidden="true"><use href="#icon-coins"></use></svg>Earnings &amp; spending</h2><p class="lede">Currency and rewards the player got, and what they spent them on.</p></div>
@@ -868,6 +898,7 @@ code { font-family: var(--font-data); font-size: 0.92em; }
         <li><span class="key key-ink-line"></span>League points at day end</li>
         <li><span class="key key-rect key-muted"></span>Matches per day</li>
         <li><span class="key key-rect key-period"></span>Picked period</li>
+        <li><span class="key key-buy"></span>Purchase</li>
         <li><span class="key key-version"></span>New game version</li>
       </ul>
     </div>
@@ -1008,6 +1039,7 @@ code { font-family: var(--font-data); font-size: 0.92em; }
       <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
     </summary>
     <div class="panel-body">
+      <div class="match-filters" id="match-filters" role="group" aria-label="Filter the matches"></div>
       <div class="table-scroll">
         <table>
           <thead><tr><th class="num" scope="col">#</th><th scope="col">When (UTC)</th><th scope="col">Version</th><th scope="col">Mode</th><th scope="col">Map</th><th scope="col">Result</th><th class="num" scope="col">Score</th><th class="num" scope="col">K</th><th class="num" scope="col">D</th><th class="num" scope="col">KD</th><th class="num" scope="col">Humans</th><th class="num" scope="col">League points</th></tr></thead>
@@ -1114,6 +1146,7 @@ code { font-family: var(--font-data); font-size: 0.92em; }
 <symbol id="icon-map" viewBox="0 0 300 300"><path d="M259 15 258 14 224 3Q206 -3 188 2L118 22Q105 26 93 20L87 17Q72 11 56.5 12.5Q41 14 28 23Q15 32 7.5 45.5Q0 59 0 75V226Q0 247 12.5 263.5Q25 280 45 286L81 297Q90 300 99 300Q108 300 116 298L189 278Q199 275 209 278L238 286Q249 289 260.5 286.5Q272 284 281 277Q290 270 295 259.5Q300 249 300 238V73Q300 54 288.5 37.5Q277 21 259 15ZM52 262Q40 259 32.5 248.5Q25 238 25 226V75Q25 66 29.5 57.5Q34 49 42.5 43Q51 37 63 38Q70 38 76 40L87 45V273ZM113 273V48Q119 48 125 47L188 28V252ZM275 238Q275 250 265.5 257.5Q256 265 245 262L213 253V26L250 38Q261 42 268 52Q275 62 275 73Z"/></symbol>
 <symbol id="icon-balance-scale-left" viewBox="0 0 300 300"><path d="M299 133 261 29Q257 18 247 13Q237 8 226 11L163 27V12Q163 7 159 3.5Q155 0 150 0Q145 0 141.5 3.5Q138 7 138 13V34L72 52Q60 55 51 63Q42 71 38 83L1 183Q0 185 0 191Q0 207 7.5 220.5Q15 234 28 242Q41 250 56 250Q79 250 95 235Q103 227 107.5 216Q112 205 112 194V183L73 78L78 76L138 60V275H63Q57 275 53.5 278.5Q50 282 50 287.5Q50 293 53.5 296.5Q57 300 62 300H238Q243 300 246.5 296.5Q250 293 250 287.5Q250 282 246.5 278.5Q243 275 237 275H163V53L224 37L188 133L187 141Q188 165 203 182Q218 199 241.5 200Q265 201 282 185Q291 177 295.5 166Q300 155 300 144ZM55 225Q45 224 37 217Q29 210 26 200H87Q85 210 78 216Q68 226 55 225ZM82 175H30L56 104ZM244 55 270 125H218ZM242 175Q232 174 224 167Q216 160 214 150H274Q272 160 265 166Q256 176 242 175Z"/></symbol>
 <symbol id="icon-target" viewBox="0 0 300 300"><path d="M150 0Q109 0 74.5 20Q40 40 20 74.5Q0 109 0 150Q0 191 20 225.5Q40 260 74.5 280Q109 300 150 300Q191 300 225.5 280Q260 260 280 225.5Q300 191 300 150Q300 109 280 74.5Q260 40 225.5 20Q191 0 150 0ZM163 274V250Q163 245 159 241.5Q155 238 150 237.5Q145 237 141 241Q137 245 137 250V274Q108 271 83.5 256Q59 241 44 216.5Q29 192 26 163H50Q55 163 59 159Q63 155 63 150Q63 145 59 141Q55 137 50 137H26Q29 108 44 83.5Q59 59 83.5 44Q108 29 137 26V50Q137 55 141 59Q145 63 150 62.5Q155 62 159 58.5Q163 55 163 50V26Q192 29 216.5 44Q241 59 256 83.5Q271 108 274 137H250Q245 137 241 141Q237 145 237 150Q237 155 241 159Q245 163 250 163H274Q271 192 256 216.5Q241 241 216.5 256Q192 271 162 274ZM200 150Q200 155 196.5 159Q193 163 188 163H163V187Q163 193 159 196.5Q155 200 150 200Q145 200 141 196.5Q137 193 137 187V162H113Q107 162 103.5 158.5Q100 155 100 150Q100 145 103.5 141Q107 137 113 137H138V112Q138 107 141.5 103.5Q145 100 150 100Q155 100 159 103.5Q163 107 163 112V137H188Q193 137 196.5 141Q200 145 200 150Z"/></symbol>
+<symbol id="icon-cart" viewBox="0 0 300 300"><path d="M0 25Q0 13 12 13H45Q60 13 64 27L70 50H282Q300 50 296 68L274 160Q270 175 254 175H104L110 200H260Q272 200 272 212Q272 225 260 225H100Q86 225 82 211L42 38H12Q0 38 0 25Z"/><circle cx="115" cy="262" r="25"/><circle cx="240" cy="262" r="25"/></symbol>
 <symbol id="icon-coins" viewBox="0 0 300 300"><path d="M206 0Q180 0 158.5 7.5Q137 15 125 28Q113 41 113 56V89Q103 87 94 87Q68 87 46.5 94.5Q25 102 12.5 115Q0 128 0 144V244Q0 259 12.5 272Q25 285 46.5 292.5Q68 300 94 300Q125 300 149.5 289Q174 278 183 261Q195 263 206 262Q232 262 253.5 255Q275 248 287.5 235Q300 222 300 206V56Q300 41 287.5 28Q275 15 253.5 7.5Q232 0 206 0ZM275 156Q275 164 266 171Q257 178 241 183Q225 188 206 187Q197 187 188 186V161Q197 162 206 162Q226 162 244 157.5Q262 153 275 145ZM25 182Q38 191 56 195.5Q74 200 94 200Q114 200 132 195.5Q150 191 163 182V194Q163 201 153.5 208.5Q144 216 128.5 220.5Q113 225 94 225Q75 225 59 220.5Q43 216 34 208.5Q25 201 25 194ZM275 106Q275 114 266 121Q257 128 241 133Q225 138 206 137Q196 137 187 136Q183 120 165 107Q184 112 205 112Q226 112 244 107.5Q262 103 275 95ZM206 25Q225 25 241 29.5Q257 34 266 41.5Q275 49 275 56.5Q275 64 266 71Q257 78 241 82.5Q225 87 206 87Q187 87 171.5 82.5Q156 78 146.5 71Q137 64 137.5 56.5Q138 49 147 41.5Q156 34 171.5 29.5Q187 25 206 25ZM94 112Q113 112 128.5 117Q144 122 153.5 129Q163 136 163 143.5Q163 151 153.5 158.5Q144 166 128.5 170.5Q113 175 94 175Q75 175 59 170.5Q43 166 34 158.5Q25 151 25 143.5Q25 136 34 129Q43 122 59 117Q75 112 94 112ZM94 275Q75 275 59 270.5Q43 266 34 258.5Q25 251 25 244V232Q38 241 56 245.5Q74 250 94 250Q114 250 132 245.5Q150 241 163 232V244Q163 251 153.5 258.5Q144 266 128.5 270.5Q113 275 94 275ZM206 237Q197 237 188 236V211Q197 212 206 212Q226 212 244 207.5Q262 203 275 195V206Q275 214 266 221Q257 228 241 232.5Q225 237 206 237Z"/></symbol>
 <symbol id="icon-list-check" viewBox="0 0 300 300"><path d="M50 75Q34 75 23 64L4 47Q0 43 0 38Q0 33 3.5 29Q7 25 12 25Q17 25 21 28L41 46Q44 50 49.5 50Q55 50 59 46L104 3Q108 0 113 0.5Q118 1 121.5 4.5Q125 8 125 13Q125 18 121 22L76 64Q65 75 50 75ZM300 50Q300 45 296.5 41Q293 37 288 37H163Q157 37 153.5 41Q150 45 150 50Q150 55 153.5 59Q157 63 162 63H288Q293 62 296.5 58.5Q300 55 300 50ZM76 164 121 122Q127 117 125 109.5Q123 102 116 100Q109 98 104 103L59 146Q55 150 50 150Q45 150 41 146L21 127Q18 123 12.5 123Q7 123 3.5 126.5Q0 130 0 135.5Q0 141 4 144L23 164Q34 175 49.5 175Q65 175 76 164ZM300 150Q300 145 296.5 141Q293 137 288 137H163Q157 137 153.5 141Q150 145 150 150Q150 155 153.5 159Q157 163 162 163H288Q293 163 296.5 159Q300 155 300 150ZM76 264 121 222Q127 217 125 209.5Q123 202 116 200Q109 198 104 203L59 246Q55 250 49.5 250Q44 250 41 246L21 228Q17 225 12 225Q7 225 3.5 229Q0 233 0 238Q0 243 4 247L23 264Q34 275 49.5 275Q65 275 76 264ZM300 250Q300 245 296.5 241.5Q293 238 288 238H163Q157 237 153.5 241Q150 245 150 250Q150 255 153.5 258.5Q157 262 162 262H288Q293 262 296.5 258.5Q300 255 300 250Z"/></symbol>
 <symbol id="icon-trophy" viewBox="0 0 300 300"><path d="M189 200Q227 200 254 187Q277 176 289 156Q300 139 300 119Q300 103 290.5 91Q281 79 265 76L270 63Q273 52 271 40.5Q269 29 262 20Q255 11 244 5.5Q233 0 222 0H78Q67 0 56 5.5Q45 11 38 20Q31 29 29 40.5Q27 52 30 63L35 76Q19 79 9.5 91Q0 103 0 119Q0 139 11 156Q23 176 46 187Q73 200 111 200Q112 206 112 212V250Q113 261 105.5 268.5Q98 276 87 275H75Q70 275 66.5 278.5Q63 282 63 287.5Q63 293 66.5 296.5Q70 300 75 300H225Q230 300 234 296.5Q238 293 238 287.5Q238 282 234 278.5Q230 275 225 275H213Q202 276 194.5 268.5Q187 261 187 250V211Q188 206 189 200ZM256 100Q264 100 269.5 105.5Q275 111 275 119Q275 140 258 155Q238 172 200 175Q204 169 209 164Q239 137 256 100ZM25 119Q25 111 30.5 105.5Q36 100 44 100Q61 137 91 164Q96 169 100 175Q62 172 42 155Q25 140 25 119ZM131 275Q138 263 138 250V212Q138 192 130 175Q122 158 107 145Q68 108 54 56Q51 45 58.5 35Q66 25 78 25H222Q234 25 241.5 35Q249 45 246 56Q232 108 193 145Q178 158 170 175Q162 192 162 212V250Q162 263 169 275Z"/></symbol>

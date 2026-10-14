@@ -106,6 +106,13 @@
       svgElement("rect", { x: xLeft(day.key) + (band - barWidth) / 2, y: barsTop + barsHeight - barHeight, width: barWidth, height: barHeight, class: "strip-bar" }, svg);
     });
     SP.drawVersionRules(svg, rules, margin.top - 8, barsTop + barsHeight, 14);
+    // A diamond in the gap between the line and the bars marks each day with a purchase.
+    for (const key of career.purchaseDays.keys()) {
+      if (key < career.firstDay || key > career.lastDay) continue;
+      const centerX = xLeft(key) + band / 2;
+      const centerY = barsTop - 6;
+      svgElement("path", { d: `M${centerX},${centerY - 4.5} L${centerX + 4.5},${centerY} L${centerX},${centerY + 4.5} L${centerX - 4.5},${centerY} Z`, class: "strip-buy" }, svg);
+    }
     const pathData = career.days.map((day, index) => `${index ? "L" : "M"}${xLeft(day.key) + band / 2},${yFor(day.endPoints)}`).join(" ");
     svgElement("path", { d: pathData, class: "lp-line" }, svg);
     const lastDay = career.days[career.days.length - 1];
@@ -132,12 +139,15 @@
       wash.setAttribute("visibility", "visible");
       wash.setAttribute("x", xLeft(key));
       const day = dayByKey.get(key);
+      const bought = career.purchaseDays.get(key);
+      const buyLines = bought ? [`${SP.plural(bought.count, "purchase", "purchases")} · $${formatNumber(Math.round(bought.usd * 100) / 100)}`] : [];
       SP.showLines(day ? [
         `${SP.dayLabelWithYear(key)} (UTC)`,
         `${SP.plural(day.count, "match", "matches")} · ${day.wins}–${day.losses}–${day.draws} · KD ${(day.kills / Math.max(day.deaths, 1)).toFixed(2)}`,
         `League points at day end: ${formatNumber(day.endPoints)} · v${day.version}`,
+        ...buyLines,
         "Click to open this day",
-      ] : [`${SP.dayLabelWithYear(key)} (UTC)`, "No matches", "Click to open this day"], event.clientX, event.clientY);
+      ] : [`${SP.dayLabelWithYear(key)} (UTC)`, "No matches", ...buyLines, "Click to open this day"], event.clientX, event.clientY);
     });
     svg.addEventListener("pointerleave", () => {
       wash.setAttribute("visibility", "hidden");
@@ -464,7 +474,8 @@
 
   SP.renderMatchTable = report => {
     const { shown } = report;
-    byId("table-lede").textContent = "Every match in the period. Point at a row to find the match in the charts. Humans are players at match start, your team v enemy team. A KD marked * had no deaths.";
+    const lede = byId("table-lede");
+    const ledeText = "Every match in the period. Point at a row to find the match in the charts. Humans are players at match start, your team v enemy team. A KD marked * had no deaths.";
     const body = byId("match-rows");
     const rowByPosition = new Map();
     const addCell = (row, text, className) => {
@@ -472,32 +483,110 @@
       cell.textContent = text;
       return cell;
     };
-    if (!shown.length) {
-      const cell = addCell(htmlElement("tr", "", body), report.matchesNote, "muted-cell");
-      cell.colSpan = 12;
-    }
-    for (const match of shown) {
-      const row = htmlElement("tr", "", body);
-      row.dataset.position = String(match.position);
-      addCell(row, `#${match.number}`, "num");
-      addCell(row, `${SP.dayLabel(match.utc)}, ${SP.clockLabel(match.utc)}`);
-      addCell(row, match.version);
-      addCell(row, match.modeName);
-      addCell(row, SP.words(match.map));
-      const result = htmlElement("span", "result", htmlElement("td", "", row));
-      const chip = htmlElement("span", `chip chip-${match.outcome}`, result);
-      chip.textContent = SP.OUTCOME_LETTERS[match.outcome];
-      chip.setAttribute("aria-hidden", "true");
-      result.append(SP.OUTCOME_WORDS[match.outcome]);
-      addCell(row, match.scoreText, match.scoreText === "–" ? "num muted-cell" : "num");
-      addCell(row, String(match.kills), "num");
-      addCell(row, String(match.deaths), "num");
-      addCell(row, match.deaths === 0 ? `${match.kills}*` : match.kd.toFixed(2), "num");
-      addCell(row, `${match.teamHumans} v ${match.enemyHumans}`, "num");
-      const lpCell = addCell(row, `${formatNumber(match.lpStart)} → ${formatNumber(match.lpEnd)}`, "num");
-      htmlElement("span", "lp-delta", lpCell).textContent = formatSigned(match.lpEnd - match.lpStart);
-      rowByPosition.set(match.position, row);
-    }
+
+    // Filters narrow this table only; the charts above keep the whole period. A new period or player renders afresh,
+    // so the filters start empty again.
+    const filters = { mode: "", map: "", weapon: "", outcome: "" };
+    const usedWeapon = (match, weapon) => match.weapons.some(entry => entry.name === weapon);
+    const fits = match => (!filters.mode || match.mode === filters.mode) && (!filters.map || match.map === filters.map)
+      && (!filters.outcome || match.outcome === filters.outcome) && (!filters.weapon || usedWeapon(match, filters.weapon));
+
+    const drawRows = () => {
+      body.replaceChildren();
+      rowByPosition.clear();
+      const visible = shown.filter(fits);
+      const filtered = visible.length !== shown.length;
+      lede.textContent = filtered ? `Showing ${SP.formatNumber(visible.length)} of ${SP.plural(shown.length, "match", "matches")}. ${ledeText}` : ledeText;
+      if (!visible.length) {
+        const cell = addCell(htmlElement("tr", "", body), shown.length ? "No match fits these filters." : report.matchesNote, "muted-cell");
+        cell.colSpan = 12;
+      }
+      for (const match of visible) {
+        const row = htmlElement("tr", "", body);
+        row.dataset.position = String(match.position);
+        addCell(row, `#${match.number}`, "num");
+        addCell(row, `${SP.dayLabel(match.utc)}, ${SP.clockLabel(match.utc)}`);
+        addCell(row, match.version);
+        addCell(row, match.modeName);
+        addCell(row, SP.words(match.map));
+        const result = htmlElement("span", "result", htmlElement("td", "", row));
+        const chip = htmlElement("span", `chip chip-${match.outcome}`, result);
+        chip.textContent = SP.OUTCOME_LETTERS[match.outcome];
+        chip.setAttribute("aria-hidden", "true");
+        result.append(SP.OUTCOME_WORDS[match.outcome]);
+        addCell(row, match.scoreText, match.scoreText === "–" ? "num muted-cell" : "num");
+        addCell(row, String(match.kills), "num");
+        addCell(row, String(match.deaths), "num");
+        addCell(row, match.deaths === 0 ? `${match.kills}*` : match.kd.toFixed(2), "num");
+        addCell(row, `${match.teamHumans} v ${match.enemyHumans}`, "num");
+        const lpCell = addCell(row, `${formatNumber(match.lpStart)} → ${formatNumber(match.lpEnd)}`, "num");
+        htmlElement("span", "lp-delta", lpCell).textContent = formatSigned(match.lpEnd - match.lpStart);
+        rowByPosition.set(match.position, row);
+      }
+    };
+
+    const filterHost = byId("match-filters");
+    filterHost.hidden = !shown.length;
+    const counted = values => {
+      const counts = new Map();
+      for (const value of values) counts.set(value, (counts.get(value) || 0) + 1);
+      return [...counts.entries()].sort((left, right) => right[1] - left[1]);
+    };
+    const selects = [];
+    const addSelect = (key, label, allText, entries, name) => {
+      const wrapper = htmlElement("label", "", filterHost);
+      wrapper.append(label);
+      const select = htmlElement("select", "", wrapper);
+      htmlElement("option", "", select).textContent = allText;
+      select.options[0].value = "";
+      for (const [value, count] of entries) {
+        const option = htmlElement("option", "", select);
+        option.value = value;
+        option.textContent = `${name(value)} (${count})`;
+      }
+      select.addEventListener("change", () => {
+        filters[key] = select.value;
+        select.classList.toggle("is-set", Boolean(select.value));
+        drawRows();
+      });
+      selects.push([key, select]);
+    };
+    const modeNames = new Map(shown.map(match => [match.mode, match.modeName]));
+    addSelect("mode", "Mode", "All modes", counted(shown.map(match => match.mode)), mode => modeNames.get(mode));
+    addSelect("map", "Map", "All maps", counted(shown.map(match => match.map)), SP.words);
+    // A weapon counts once per match it was used in; options run most used first.
+    addSelect("weapon", "Weapon", "All weapons", counted(shown.flatMap(match => [...new Set(match.weapons.map(entry => entry.name))])), SP.itemName);
+
+    const outcomeGroup = htmlElement("div", "preset-group", filterHost);
+    outcomeGroup.setAttribute("role", "group");
+    outcomeGroup.setAttribute("aria-label", "Result");
+    const outcomeButtons = [["", "All results"], ["win", "Win"], ["loss", "Loss"], ["draw", "Draw"]].map(([outcome, label]) => {
+      const button = htmlElement("button", "chip-button", outcomeGroup);
+      button.type = "button";
+      button.textContent = label;
+      button.setAttribute("aria-pressed", String(outcome === ""));
+      button.addEventListener("click", () => {
+        filters.outcome = outcome;
+        for (const [other, element] of outcomeButtons) element.setAttribute("aria-pressed", String(other === outcome));
+        drawRows();
+      });
+      return [outcome, button];
+    });
+    const clear = htmlElement("button", "chip-button", filterHost);
+    clear.type = "button";
+    clear.textContent = "Clear filters";
+    clear.addEventListener("click", () => {
+      for (const [key, select] of selects) {
+        filters[key] = "";
+        select.value = "";
+        select.classList.remove("is-set");
+      }
+      filters.outcome = "";
+      for (const [outcome, element] of outcomeButtons) element.setAttribute("aria-pressed", String(outcome === ""));
+      drawRows();
+    });
+
+    drawRows();
     body.addEventListener("pointerover", event => {
       const row = event.target.closest("tr");
       if (row && row.dataset.position) SP.setActive(Number(row.dataset.position));

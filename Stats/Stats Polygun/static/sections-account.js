@@ -127,6 +127,79 @@
     }
   };
 
+  // --- purchases ---
+
+  // A buy this close to a match counts as right after it or right before the next one (Batuhan, 2026-10-14).
+  const NEAR_MATCH_SECONDS = 15 * 60;
+  // The game logs these where it has no placement.
+  const NO_PLACEMENT = new Set(["NO_DATA", "NONE", "None", "none", ""]);
+  const money = value => `$${formatNumber(Math.round(value * 100) / 100)}`;
+  const gapLabel = seconds => (seconds < 3600 ? `${Math.max(1, Math.round(seconds / 60))} min`
+    : seconds < 48 * 3600 ? `${Math.round(seconds / 3600)} h` : `${formatNumber(Math.round(seconds / 86400))} days`);
+
+  SP.renderPurchases = (career, vtd) => {
+    const purchases = career.purchases;
+    const usdTotal = purchases.reduce((sum, purchase) => sum + (purchase.usd || 0), 0);
+    const afterMatch = purchases.filter(purchase => purchase.outcomeBefore && purchase.secondsSinceMatch !== null && purchase.secondsSinceMatch <= NEAR_MATCH_SECONDS);
+    const beforeMatch = purchases.filter(purchase => !afterMatch.includes(purchase) && purchase.secondsToMatch !== null && purchase.secondsToMatch <= NEAR_MATCH_SECONDS);
+    const afterCount = outcome => afterMatch.filter(purchase => purchase.outcomeBefore === outcome).length;
+    const share = count => (purchases.length ? `${Math.round((count / purchases.length) * 100)}%` : "–");
+    const webCount = purchases.filter(purchase => purchase.store === "web").length;
+
+    byId("purchases-lede").textContent = career.purchasesFailed ? "Purchases did not load this time. Search the player again in a moment."
+      : `Real-money buys logged in TE, in the app stores and the web store. USD is the price paid in dollars, or today's dollar price of the product when paid in another currency. `
+        // VTD also counts buys TE never logged (before TE started, or lost); it leaves subscriptions out.
+        + (vtd && usdTotal < vtd - 1 ? `TE logged ${money(usdTotal)} of the player's ${money(vtd)} VTD; the rest was bought before TE logged buys, or the event was lost. ` : "")
+        + "Near a match means within 15 minutes.";
+
+    const statsHost = byId("purchase-stats");
+    const tiles = [
+      ["Purchases", formatNumber(purchases.length), `${money(usdTotal)} · ${formatNumber(purchases.length - webCount)} app store, ${formatNumber(webCount)} web`],
+      ["First and last", purchases.length ? SP.dayLabelWithYear(purchases[0].utc) : "–", purchases.length ? `last ${SP.dayLabelWithYear(purchases[purchases.length - 1].utc)}` : "No purchases"],
+      ["Right after a match", share(afterMatch.length), `${afterCount("win")} after a win · ${afterCount("loss")} after a loss · ${afterCount("draw")} after a draw`],
+      ["Right before a match", share(beforeMatch.length), `${formatNumber(purchases.length - afterMatch.length - beforeMatch.length)} not near a match`],
+    ];
+    for (const [label, value, sub] of tiles) {
+      const tile = htmlElement("div", "mini-stat", statsHost);
+      htmlElement("p", "stat-label", tile).textContent = label;
+      htmlElement("p", "mini-value", tile).textContent = value;
+      htmlElement("p", "mini-sub", tile).textContent = sub;
+    }
+
+    const body = byId("purchase-rows");
+    const addCell = (row, text, className) => {
+      const cell = htmlElement("td", className || "", row);
+      cell.textContent = text;
+      return cell;
+    };
+    if (!purchases.length) {
+      addCell(htmlElement("tr", "", body), career.purchasesFailed ? "Purchases did not load." : "No purchases logged.", "muted-cell").colSpan = 8;
+    }
+    // Newest first: the latest buys are what someone looking at a whale asks about.
+    for (const purchase of [...purchases].reverse()) {
+      const row = htmlElement("tr", "", body);
+      addCell(row, `${SP.dayLabelWithYear(purchase.utc)}, ${SP.clockLabel(purchase.utc)}`);
+      addCell(row, purchase.product);
+      addCell(row, purchase.store === "web" ? "Web" : "App store");
+      addCell(row, purchase.price === null ? "–" : `${formatNumber(purchase.price)} ${purchase.currency || ""}`.trim(), "num");
+      addCell(row, purchase.usd === null ? "–" : money(purchase.usd), purchase.usd === null ? "num muted-cell" : "num money-value");
+      const where = [purchase.placement, purchase.windowName].filter(part => part && !NO_PLACEMENT.has(part)).map(SP.words);
+      addCell(row, purchase.store === "web" ? "Web store" : where.join(" · ") || "–", where.length || purchase.store === "web" ? "" : "muted-cell");
+      const near = seconds => seconds !== null && seconds <= NEAR_MATCH_SECONDS;
+      if (purchase.outcomeBefore && purchase.secondsSinceMatch !== null) {
+        const cell = htmlElement("td", near(purchase.secondsSinceMatch) ? "" : "muted-cell", row);
+        const result = htmlElement("span", "result", cell);
+        const chip = htmlElement("span", `chip chip-${purchase.outcomeBefore}`, result);
+        chip.textContent = SP.OUTCOME_LETTERS[purchase.outcomeBefore];
+        chip.setAttribute("aria-hidden", "true");
+        result.append(`${SP.OUTCOME_WORDS[purchase.outcomeBefore]}, ${gapLabel(purchase.secondsSinceMatch)} before`);
+      } else {
+        addCell(row, "None", "muted-cell");
+      }
+      addCell(row, purchase.secondsToMatch === null ? "None" : `${gapLabel(purchase.secondsToMatch)} later`, near(purchase.secondsToMatch) ? "" : "muted-cell");
+    }
+  };
+
   // --- upgrades & loadout ---
 
   const matchesBefore = (matches, time) => {

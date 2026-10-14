@@ -344,6 +344,7 @@
     SP.renderPowerBuckets(careerReport);
     SP.renderWeapons(careerReport);
     SP.renderEconomy(careerReport);
+    SP.renderPurchases(career, allTime.vtd);
     renderPresets(entry.options);
     bindDates();
     renderPeriod();

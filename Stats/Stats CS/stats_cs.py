@@ -283,6 +283,47 @@ def currency_row(row):
     return [row[0], row[1], number(row[2]), number(row[3]), number(row[4])]
 
 
+def purchases_sql(base, matches):
+    """One row per real-money purchase, with the match that ended before it and the one that started after it.
+
+    Store buys are iap_verify, one row per order_id (TE logs some orders twice). Web store buys are the server's
+    webshop_purchase row (webshop_item_sku set, payment time, one per webshop_order_id); the row the game adds when the
+    buy reaches it only exists since 2026-08 and is left out, so nothing counts twice. USD is the price paid when it was
+    paid in USD; otherwise the product's median USD price over the last 90 days (so a price that changed since reads at
+    today's price), else what the row itself says."""
+    book_from = shift_day(time.strftime("%Y-%m-%d", time.gmtime()), -90)
+    return f"""with raw as (
+            select {UTC} as utc_time, "$part_event" as event_name, coalesce(product_id, webshop_item_sku) as product_id,
+                if("$part_event" = 'webshop_purchase', try_cast(webshop_amount_decimal as double), try_cast(price as double)) as price,
+                if("$part_event" = 'webshop_purchase', webshop_currency, currency) as currency,
+                if("$part_event" = 'webshop_purchase', try_cast(webshop_total_amount_decimal_usd as double), nullif(vtd_addition, 0)) as fallback_usd,
+                placement, popup, "window" as window_name, "trigger" as trigger_name,
+                row_number() over (partition by "$part_event", coalesce(nullif(order_id, ''), nullif(webshop_order_id, ''), cast("#event_time" as varchar))
+                    order by "#event_time") as copy
+            from ta.v_event_7 where ("$part_event" = 'iap_verify' or ("$part_event" = 'webshop_purchase' and webshop_item_sku is not null)) and {base}
+        ), p as (select *, row_number() over (order by utc_time) as id from raw where copy = 1
+        ), book as (
+            select product_id, approx_percentile(try_cast(price as double), 0.5) as usd
+            from ta.v_event_7 where "$part_event" in ('iap_verify', 'webshop_purchase') and "$part_date" >= '{book_from}'
+                and currency = 'USD' and product_id in (select product_id from p)
+            group by 1
+        ), m as (
+            select {UTC} as end_time, date_add('second', -cast(coalesce(passed_duration, 0) as integer), {UTC}) as start_time, result
+            from ta.v_event_7 where {matches}
+        ), before as (
+            select p.id, max_by(m.result, m.end_time) as result, max(m.end_time) as end_time from p join m on m.end_time <= p.utc_time group by 1
+        ), after as (
+            select p.id, min(m.start_time) as start_time from p join m on m.start_time >= p.utc_time group by 1
+        )
+        select substr(cast(p.utc_time as varchar), 1, 19), case when p.event_name = 'webshop_purchase' then 'web' else 'store' end,
+            p.product_id, p.price, p.currency,
+            round(if(p.currency = 'USD', p.price, coalesce(book.usd, p.fallback_usd)), 2),
+            p.placement, p.popup, p.window_name, p.trigger_name, before.result,
+            date_diff('second', before.end_time, p.utc_time), date_diff('second', p.utc_time, after.start_time)
+        from p left join book on book.product_id = p.product_id left join before on before.id = p.id left join after on after.id = p.id
+        order by p.utc_time"""
+
+
 def all_time(playfab_id, step):
     user_id, name, league_points, level, first_day, last_day, vtd = player_row(playfab_id)
     base = bounds(user_id, first_day, last_day)
@@ -320,11 +361,13 @@ def all_time(playfab_id, step):
         "balances": f"""with d as ({currency_days_sql(base, 'true')}),
             r as (select *, row_number() over (partition by item_name order by utc_day desc) as recency from d)
             select utc_day, item_name, earned, spent, final_amount from r where recency = 1 order by 1, 2""",
+        "purchases": purchases_sql(base, matches),
     }
     # The player query, then these: the page's loading bar counts them.
     total = 1 + len(queries)
     step(total)
-    rows = run_all(queries, lambda: step(total))
+    # A failed purchases query leaves the panel empty instead of throwing away the whole career.
+    rows = run_all(queries, lambda: step(total), optional=("purchases",))
     meta = rows["meta"][0] if rows["meta"] else [None] * 6
     days, modes, maps, buckets = [], [], [], []
     for (day, mode, map_name, bucket, count, wins, losses, kills, deaths, first_points, top_points, version, mask,
@@ -354,6 +397,10 @@ def all_time(playfab_id, step):
         "weaponTotals": [[row[0], row[1], number(row[2]), number(row[3]), number(row[4]), number(row[5])] for row in rows["weapon_totals"]],
         "resources": [[row[0], row[1], row[2], row[3], number(row[4]), number(row[5])] for row in rows["resources"]],
         "balances": [currency_row(row) for row in rows["balances"]],
+        # None when the query failed, so the page can say so instead of showing a player who never paid.
+        "purchases": None if rows["purchases"] is None else [
+            [row[0], row[1], row[2], number(row[3]), row[4], number(row[5]), row[6], row[7], row[8], row[9], row[10], number(row[11]), number(row[12])]
+            for row in rows["purchases"]],
     }
 
 
