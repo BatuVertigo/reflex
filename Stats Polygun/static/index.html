@@ -571,8 +571,29 @@ code { font-family: var(--font-data); font-size: 0.92em; }
   font-size: 13px;
   line-height: 1.45;
 }
+/* A pinned timeline dot: its details stay open and take the pointer so the text can be selected. */
+.tooltip.tip-pinned { pointer-events: auto; user-select: text; }
 .tip-head { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
 .tip-key { width: 14px; height: 3px; border-radius: 2px; flex: none; }
+/* Match timeline: one line, dots stacked into rows only where they would overlap. */
+.timeline { position: relative; margin: 4px 8px 0; }
+.tl-track { position: relative; }
+.tl-track::before { content: ""; position: absolute; left: 0; right: 0; top: 8px; height: 2px; background: var(--baseline); }
+.tl-band { position: absolute; top: 0; bottom: 0; background: var(--band); border-inline: 1px solid var(--hairline); }
+.tl-dot { position: absolute; width: 16px; height: 16px; margin-left: -8px; padding: 0; border-radius: 50%; border: 2px solid var(--surface); cursor: pointer; }
+.tl-dot:hover, .tl-dot:focus-visible { transform: scale(1.35); z-index: 1; }
+.tl-dot:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.tl-match { background: var(--accent); }
+.tl-trouble { background: var(--loss); }
+.tl-other { background: var(--surface); border-color: var(--draw); }
+.key.tl-other { border: 2px solid var(--draw); }
+/* A dot logged for a different match ID: shown for context, faded so it does not read as this match. */
+.tl-elsewhere { opacity: 0.35; }
+.key-band { background: var(--band); border: 1px solid var(--hairline); }
+.tl-axis { position: relative; height: 18px; margin-top: 6px; font-size: 12px; color: var(--muted); font-family: var(--font-data); }
+.tl-axis span { position: absolute; transform: translateX(-50%); white-space: nowrap; }
+.tl-axis span:first-child { transform: none; }
+.tl-axis span:last-child { transform: translateX(-100%); }
 .tip-key-win { background: var(--win); }
 .tip-key-loss { background: var(--loss); }
 .tip-key-draw { background: var(--draw); }
@@ -606,6 +627,74 @@ code { font-family: var(--font-data); font-size: 0.92em; }
   .split-row { grid-template-columns: 96px minmax(0, 1fr) auto; gap: 10px; }
   .bar-row { grid-template-columns: minmax(90px, 120px) minmax(0, 1fr) auto; gap: 8px; }
 }
+.zone-match { display: grid; gap: 16px; }
+/* Two panes sharing one hairline, the same tile language as the scoreboard right below them. */
+.match-heading {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--hairline);
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  overflow: hidden;
+}
+.match-part { display: flex; align-items: center; gap: 18px; min-width: 0; padding: 16px 20px; background: var(--surface); container-type: inline-size; }
+.match-part div { min-width: 0; }
+.match-part-label { font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+/* Each name sizes itself to its own pane (cqi), so "Team Deathmatch" and "Push" both fill theirs. */
+.match-heading .player-name { font-size: clamp(22px, 9.5cqi, 44px); line-height: 0.92; overflow-wrap: anywhere; }
+/* The game ships mode icons at 200x200 and map renders at 256x128, so they share a height but not a width. */
+.match-icon { width: 72px; height: 72px; flex: none; object-fit: contain; }
+.match-icon.map { width: 144px; height: 72px; object-fit: cover; border-radius: 8px; box-shadow: inset 0 0 0 1px var(--hairline); }
+/* Two panes only while they have room for one line each. The rail steals 290px, so this follows the heading's
+   own width rather than the window's. */
+@container (max-width: 699px) {
+  .match-heading { grid-template-columns: 1fr; }
+}
+/* A match ID is far too long for the rail, so it is cut in the middle where nothing distinguishing lives. */
+.rail-player-name { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.rail-player-name span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* A number next to a bar of its own share of the match's biggest, so two rows compare without arithmetic. */
+.cell-bar { display: block; height: 4px; margin-top: 5px; border-radius: 999px; background: var(--wash); }
+.cell-bar span { display: block; height: 100%; border-radius: inherit; background: var(--accent); }
+/* One bar per figure, split between the two sides: the longer half is the bigger side, and the ratio spells it out. */
+.versus { display: grid; gap: 14px; }
+.versus-head { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 10px 20px; }
+.versus-side { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--ink-2); }
+.versus-side b { font-family: var(--font-display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 17px; text-transform: uppercase; color: var(--ink); letter-spacing: 0.02em; }
+.versus-names { font-size: 12.5px; color: var(--muted); }
+.versus-row { display: grid; grid-template-columns: minmax(96px, max-content) minmax(58px, auto) minmax(90px, 1fr) minmax(58px, auto) minmax(52px, max-content); align-items: center; gap: 10px; }
+.versus-label { font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.versus-value { font-family: var(--font-data); font-size: 14px; font-weight: 600; text-align: right; }
+.versus-value.right { text-align: left; }
+.versus-bar { display: flex; height: 14px; border-radius: 999px; overflow: hidden; background: var(--band); }
+.versus-bar span { display: block; height: 100%; }
+.versus-bar .win { background: var(--win); }
+.versus-bar .loss { background: var(--loss); }
+.versus-bar .draw { background: var(--draw); }
+/* Free For All: one small bar chart per figure, one bar per player. */
+.ffa-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 32px; }
+.ffa-figure { display: grid; gap: 6px; align-content: start; }
+.ffa-row { display: grid; grid-template-columns: minmax(70px, 120px) minmax(60px, 1fr) minmax(44px, max-content); align-items: center; gap: 10px; }
+.ffa-name { font-size: 13.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 760px) { .ffa-grid { grid-template-columns: minmax(0, 1fr); } }
+.versus-gap { font-size: 12.5px; font-weight: 600; color: var(--ink-2); text-align: right; }
+@container (max-width: 559px) {
+  .versus-row { grid-template-columns: minmax(58px, auto) 1fr minmax(58px, auto); }
+  .versus-label, .versus-gap { grid-column: 1 / -1; text-align: left; }
+}
+/* The heading panes are wider than the content column would like; this keeps them inside it, and makes the
+   column a container so the heading can count its own width. */
+#match-top { min-width: 0; container-type: inline-size; }
+.zone-match .group-title { color: var(--accent); }
+.zone-match .panel[id], .zone-match .panel h2[id] { scroll-margin-top: 24px; }
+.match-player span { display: block; }
+.id-button { display: block; padding: 0; border: 0; background: none; font-family: var(--font-data); font-size: 12px; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.id-button:hover { text-decoration-thickness: 2px; }
+/* Without this the widest loadout table stretches the panel, and with it the whole page. */
+.loadout { min-width: 0; }
+.loadout h3 { margin: 20px 0 6px; font-family: var(--font-display); font-size: 14px; }
+.loadout h3:first-child { margin-top: 0; }
 </style>
 
 <div class="page">
@@ -615,8 +704,8 @@ code { font-family: var(--font-data); font-size: 0.92em; }
       <p class="wordmark">Stats<br><span>Polygun</span></p>
     </div>
     <form class="search" id="search-form" autocomplete="off">
-      <label class="sr-only" for="playfab-id">Player name or PlayFab ID</label>
-      <input id="playfab-id" name="playfab-id" maxlength="16" spellcheck="false" placeholder="Player name or PlayFab ID">
+      <label class="sr-only" for="playfab-id">Player name, PlayFab ID or match ID</label>
+      <input id="playfab-id" name="playfab-id" maxlength="120" spellcheck="false" placeholder="Player name, PlayFab ID or match ID">
       <button type="submit">Search</button>
     </form>
     <p class="status" id="status" aria-live="polite"></p>
@@ -628,14 +717,14 @@ code { font-family: var(--font-data); font-size: 0.92em; }
       <p class="wordmark">Stats<br><span>Polygun</span></p>
       <span class="pill" id="badge" hidden></span>
     </div>
-    <section class="rail-group" aria-label="Players">
-      <h2 class="rail-label">Players</h2>
+    <section class="rail-group" id="rail-players-group" aria-label="Searches">
+      <h2 class="rail-label">Searches</h2>
       <ul class="rail-players" id="rail-players"></ul>
     </section>
-    <nav class="rail-group" aria-label="Career">
+    <nav class="rail-group" id="rail-career" aria-label="Career">
       <a class="rail-head" href="#career"><svg class="rail-icon" aria-hidden="true"><use href="#icon-id-badge"></use></svg>Career</a>
     </nav>
-    <nav class="rail-group" aria-label="Period">
+    <nav class="rail-group" id="rail-period" aria-label="Period">
       <a class="rail-head" href="#period"><svg class="rail-icon" aria-hidden="true"><use href="#icon-calendar-clock"></use></svg>Period</a>
       <a class="rail-sub" href="#h-form"><svg class="rail-icon" aria-hidden="true"><use href="#icon-list-check"></use></svg>Form</a>
       <a class="rail-sub" href="#h-lp"><svg class="rail-icon" aria-hidden="true"><use href="#icon-trophy"></use></svg>League points</a>
@@ -647,6 +736,14 @@ code { font-family: var(--font-data); font-size: 0.92em; }
       <a class="rail-sub" href="#days"><svg class="rail-icon" aria-hidden="true"><use href="#icon-calendar-days"></use></svg>Day by day</a>
       <a class="rail-sub" href="#h-table"><svg class="rail-icon" aria-hidden="true"><use href="#icon-table-list"></use></svg>Every match</a>
     </nav>
+    <nav class="rail-group" id="rail-match" aria-label="Match" hidden>
+      <a class="rail-head" href="#match"><svg class="rail-icon" aria-hidden="true"><use href="#icon-gamepad"></use></svg>Match</a>
+      <a class="rail-sub" href="#match-sides"><svg class="rail-icon" aria-hidden="true"><use href="#icon-balance-scale-left"></use></svg>Side by side</a>
+      <a class="rail-sub" href="#match-players"><svg class="rail-icon" aria-hidden="true"><use href="#icon-id-badge"></use></svg>Players</a>
+      <a class="rail-sub" href="#match-timeline"><svg class="rail-icon" aria-hidden="true"><use href="#icon-clock"></use></svg>Timeline</a>
+      <a class="rail-sub" href="#match-gear"><svg class="rail-icon" aria-hidden="true"><use href="#icon-target"></use></svg>Loadout</a>
+      <a class="rail-sub" href="#match-related"><svg class="rail-icon" aria-hidden="true"><use href="#icon-table-list"></use></svg>Related matches</a>
+    </nav>
   </aside>
 
   <div class="content">
@@ -654,6 +751,9 @@ code { font-family: var(--font-data); font-size: 0.92em; }
     <section class="zone-period" id="period-zone" aria-label="Period" hidden>
       <div id="period-top"></div>
       <main id="report"></main>
+    </section>
+    <section class="zone-match" id="match-zone" aria-label="Match" hidden>
+      <div id="match-top"></div>
     </section>
   </div>
 </div>
@@ -913,6 +1013,91 @@ code { font-family: var(--font-data); font-size: 0.92em; }
 
 </template>
 
+<template id="match-template">
+  <section class="player" aria-label="Match">
+    <h1 class="sr-only" id="match-title"></h1>
+    <div class="match-heading">
+      <div class="match-part">
+        <img class="match-icon" id="match-mode-icon" alt="" width="200" height="200" hidden>
+        <div><p class="match-part-label">Mode</p><p class="player-name" id="match-mode"></p></div>
+      </div>
+      <div class="match-part">
+        <img class="match-icon map" id="match-map-icon" alt="" width="256" height="128" hidden>
+        <div><p class="match-part-label">Map</p><p class="player-name" id="match-map"></p></div>
+      </div>
+    </div>
+    <p class="meta" id="match-meta"></p>
+  </section>
+
+  <header class="group-head" id="match">
+    <h2 class="group-title" id="h-match"><svg class="title-icon" aria-hidden="true"><use href="#icon-gamepad"></use></svg>Match</h2>
+    <span class="scope">One match</span>
+  </header>
+
+  <section class="scoreboard" id="match-totals" aria-label="Match totals"></section>
+
+  <details class="panel" id="match-sides" data-card="match-sides" open>
+    <summary class="panel-head">
+      <div><h2 id="h-match-sides"><svg class="title-icon" aria-hidden="true"><use href="#icon-balance-scale-left"></use></svg>Side by side</h2><p class="lede" id="match-sides-lede"></p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="versus" id="match-versus"></div>
+    </div>
+  </details>
+
+  <details class="panel" id="match-players" data-card="match-players" open>
+    <summary class="panel-head">
+      <div><h2 id="h-match-players"><svg class="title-icon" aria-hidden="true"><use href="#icon-id-badge"></use></svg>Players</h2><p class="lede" id="match-players-lede"></p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Side</th><th scope="col">Player</th><th scope="col">Result</th><th class="num" scope="col">K</th><th class="num" scope="col">D</th><th class="num" scope="col">KD</th><th scope="col">Character</th><th class="num" scope="col">Power</th><th class="num" scope="col">League points</th><th scope="col">Version</th><th scope="col">Device</th><th scope="col">OS</th><th scope="col">Country</th><th scope="col">Network</th><th scope="col">Notes</th></tr></thead>
+          <tbody id="match-player-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+
+  <details class="panel" id="match-timeline" data-card="match-timeline" open>
+    <summary class="panel-head">
+      <div><h2 id="h-match-timeline"><svg class="title-icon" aria-hidden="true"><use href="#icon-clock"></use></svg>Timeline</h2><p class="lede" id="match-timeline-lede"></p></div>
+      <ul class="legend"><li><span class="key key-dot tl-match"></span>Search, start, end</li><li><span class="key key-dot tl-trouble"></span>Error, crash, leave</li><li><span class="key key-dot tl-other"></span>Reconnect, app</li><li><span class="key key-rect key-band"></span>The match</li><li><span class="key key-dot tl-other tl-elsewhere"></span>Another match</li></ul>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="timeline" id="match-timeline-chart"></div>
+    </div>
+  </details>
+
+  <details class="panel" id="match-gear" data-card="match-gear" open>
+    <summary class="panel-head">
+      <div><h2 id="h-match-gear"><svg class="title-icon" aria-hidden="true"><use href="#icon-target"></use></svg>Loadout</h2><p class="lede">What each player carried and what it did. A weapon with no kills and no time is left out.</p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="loadout" id="match-loadout"></div>
+    </div>
+  </details>
+
+  <details class="panel" id="match-related" data-card="match-related" open>
+    <summary class="panel-head">
+      <div><h2 id="h-match-related"><svg class="title-icon" aria-hidden="true"><use href="#icon-table-list"></use></svg>Related matches</h2><p class="lede" id="match-related-lede"></p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="table-scroll">
+        <table>
+          <thead><tr><th scope="col">Match ID</th><th scope="col">Why</th><th scope="col">First seen (UTC)</th><th scope="col">Last seen</th><th scope="col">Mode</th><th scope="col">Map</th><th class="num" scope="col">Players</th></tr></thead>
+          <tbody id="match-related-rows"></tbody>
+        </table>
+      </div>
+    </div>
+  </details>
+</template>
+
 <button class="to-top" id="to-top" type="button" aria-label="Back to top" hidden><svg aria-hidden="true"><use href="#icon-angle-small-down"></use></svg></button>
 <div id="tooltip" class="tooltip" hidden></div>
 <p id="announcer" class="sr-only" aria-live="polite"></p>
@@ -941,4 +1126,5 @@ code { font-family: var(--font-data); font-size: 0.92em; }
 <script src="sections-matches.js"></script>
 <script src="sections-more.js"></script>
 <script src="sections-account.js"></script>
+<script src="sections-match.js"></script>
 <script src="main.js"></script>

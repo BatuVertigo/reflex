@@ -20,7 +20,7 @@ kanalın product grubunu (@pa-product / @cs-product; eşleşme yoksa mesajı yaz
 kullanılarak **Move Asana tasks** açılır. Bot her task'ı Asana API'siyle parent'ın altına
 subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
 
-**7. Stats Polygun.** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu açtığı web sayfası. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
+**7. Stats Polygun.** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
 (disk yok, cache yok, log'da ID yok). Aranan her oyuncu sayfada bir chip olarak kalır; chip'e tıklayınca yeniden sorgu
 atılmaz, aynı ID'yi tekrar yazmak veriyi tazeler, sayfa yenilenince chip'ler gider.
 Mac'in Wi-Fi adresi değişebildiği için Slack'te **Stats Polygun** kısayolu ("/" menüsü) güncel linki (`http://<Mac IP>:3800`)

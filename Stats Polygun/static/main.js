@@ -6,6 +6,9 @@
   const PLAYFAB_ID = /^[0-9A-F]{11,16}$/;
   // Batuhan's rule: up to 10 characters is a player name (the longest in TE is 10), 11 to 16 hex characters is a PlayFab ID, anything else is refused.
   const NAME_MAX = 10;
+  // A match ID is anything longer than a name that is not a PlayFab ID: F-<uuid>, the same with a _<hex> tail,
+  // F-SquadLocalMatch<PlayFabID><digits> or Unknown_<PlayFabID>_<n>_<digits>_<hex>. The server checks it again.
+  const MATCH_ID = /^[A-Za-z0-9_-]{8,120}$/;
   const SHORT_MATCH_WINDOW = 100;
 
   const page = document.querySelector(".page");
@@ -18,18 +21,26 @@
   const rail = SP.byId("rail");
   const playersHost = SP.byId("rail-players");
   const top = SP.byId("player-top");
+  const matchZone = SP.byId("match-zone");
+  const matchTop = SP.byId("match-top");
   const periodTop = SP.byId("period-top");
   const zone = SP.byId("period-zone");
   const host = SP.byId("report");
   const playerTemplate = SP.byId("player-template");
   const periodTemplate = SP.byId("period-template");
   const reportTemplate = SP.byId("report-template");
+  const matchTemplate = SP.byId("match-template");
+  const railGroups = { player: ["rail-career", "rail-period"], match: ["rail-match"] };
 
   const chartRenderers = [SP.renderLeagueChart, SP.renderKdChart, SP.renderWeaponHeat, SP.renderPowerGap, SP.renderSearchTimeline, SP.renderTimePerDay, SP.renderHourGrid];
   // Open or closed per card for this visit, so a card keeps its state when the period or the player changes.
   const cardOpen = new Map();
-  // Every player searched this visit, by PlayFab ID, in search order. Page memory only, so a refresh clears it.
+  // Everything searched this visit, players and matches together, in search order, so the rail moves between both.
+  // The key carries the kind, so a match ID can never collide with a PlayFab ID. Page memory only; a refresh clears it.
   const held = new Map();
+  const heldKey = (kind, id) => `${kind}:${id}`;
+  // A match ID is far longer than the rail is wide, and the tail is the part that tells two of them apart.
+  const shortId = id => (id.length > 24 ? `${id.slice(0, 12)}…${id.slice(-9)}` : id);
   let current = null;
   let allTime = null;
   let career = null;
@@ -174,14 +185,18 @@
     for (const control of [input, searchButton, ...document.querySelectorAll(".chip-button, .rail-player, .period-dates input")]) control.disabled = value;
   }
 
-  function renderPlayers() {
+  function renderHeld() {
     playersHost.replaceChildren();
     for (const entry of held.values()) {
       const button = SP.htmlElement("button", "rail-player", SP.htmlElement("li", "", playersHost));
       button.type = "button";
       button.setAttribute("aria-pressed", String(entry === current));
-      SP.htmlElement("span", "", button).textContent = entry.allTime.player.name || "Unknown";
-      SP.htmlElement("code", "", button).textContent = entry.id;
+      const name = SP.htmlElement("span", "rail-player-name", button);
+      SP.svgElement("use", { href: entry.kind === "match" ? "#icon-gamepad" : "#icon-id-badge" },
+        SP.svgElement("svg", { class: "rail-icon", "aria-hidden": "true" }, name));
+      SP.htmlElement("span", "", name).textContent = entry.label;
+      SP.htmlElement("code", "", button).textContent = shortId(entry.id);
+      button.title = `${entry.kind === "match" ? "Match" : "Player"} ${entry.id}`;
       button.addEventListener("click", () => {
         if (busy || entry === current) return;
         switchTo(entry);
@@ -192,7 +207,8 @@
   // Marks the rail link of the last section whose top is within 40 px of the window top; anchor jumps land 16 to 24 px down.
   function markSection() {
     let currentLink = null;
-    const links = [...rail.querySelectorAll("a[href^='#']")];
+    // Only the rail groups on screen count: the other report's links still point at elements that are merely hidden.
+    const links = [...rail.querySelectorAll("a[href^='#']")].filter(link => !link.closest(".rail-group").hidden);
     for (const link of links) {
       const target = document.querySelector(link.getAttribute("href"));
       if (target && target.getBoundingClientRect().top <= 40) currentLink = link;
@@ -255,17 +271,61 @@
     renderPeriod();
   }
 
-  function switchTo(entry) {
-    status.textContent = "";
-    current = entry;
+  // The page shows one report at a time, a player's or a match's, and the rail shows only that report's links.
+  function showZone(which) {
+    rail.hidden = false;
+    top.hidden = which !== "player";
+    zone.hidden = which !== "player";
+    matchZone.hidden = which !== "match";
+    SP.byId("rail-players-group").hidden = held.size === 0;
+    for (const [name, ids] of Object.entries(railGroups)) {
+      for (const id of ids) SP.byId(id).hidden = name !== which;
+    }
+  }
+
+  // What the rail calls a match: its mode and map, the two facts the heading shows.
+  function matchLabel(match) {
+    const first = match.players[0];
+    if (!first || !first.mode) return "Match";
+    return `${SP.MODE_NAMES[first.mode] || SP.words(first.mode)} · ${SP.words(first.map || "")}`.trim();
+  }
+
+  // Typing a match ID always asks the server again and replaces the held copy, exactly like a player ID;
+  // a rail click never does, because it goes straight to switchTo.
+  async function showMatch(matchId) {
+    if (busy) return;
+    setBusy(true);
+    const progress = ticker(status);
+    try {
+      const data = await SP.source.match(matchId, event => progress.step(event, 0, 1));
+      const key = heldKey("match", matchId);
+      const entry = { kind: "match", key, id: matchId, data, label: matchLabel(data), scrollY: 0 };
+      held.set(key, entry);
+      progress.stop();
+      setBusy(false);
+      switchTo(entry);
+    } catch (error) {
+      progress.stop();
+      setBusy(false);
+      status.textContent = error.message;
+    }
+  }
+
+  function showHeldMatch(entry) {
+    matchTop.replaceChildren(matchTemplate.content.cloneNode(true));
+    prepareCards(matchTop);
+    showZone("match");
+    SP.renderMatch(entry.data, search, showMatch);
+  }
+
+  function showHeldPlayer(entry) {
     allTime = entry.allTime;
     career = entry.career;
     period = entry.period;
-    input.value = entry.id;
     top.replaceChildren(playerTemplate.content.cloneNode(true));
     periodTop.replaceChildren(periodTemplate.content.cloneNode(true));
     prepareCards(top);
-    for (const element of [rail, zone]) element.hidden = false;
+    showZone("player");
     SP.renderPlayer(allTime);
     SP.renderSummary(career, allTime.finalLeaguePoints, allTime.vtd);
     // The Career group never changes with the period, so it renders once per player.
@@ -276,9 +336,21 @@
     SP.renderEconomy(careerReport);
     renderPresets(entry.options);
     bindDates();
-    renderPlayers();
     renderPeriod();
-    window.scrollTo(0, 0);
+  }
+
+  function switchTo(entry) {
+    // Where the page was left, so coming back to this player or match through the rail lands where it was.
+    if (current) current.scrollY = window.scrollY;
+    status.textContent = "";
+    current = entry;
+    input.value = entry.id;
+    if (entry.kind === "match") showHeldMatch(entry);
+    else showHeldPlayer(entry);
+    renderHeld();
+    // renderPeriod puts the old report's scroll back before this runs, so this has the last word.
+    window.scrollTo(0, entry.scrollY || 0);
+    markSection();
   }
 
   // Typing a name or an ID always asks the source again and replaces the held copy; a player click in the rail never does.
@@ -286,8 +358,13 @@
     const text = String(value || "").trim();
     // Code points, like the server and TE count them.
     const isName = text.length > 0 && [...text].length <= NAME_MAX;
-    if (!isName && !PLAYFAB_ID.test(text.toUpperCase())) {
-      status.textContent = `Type a player name (up to ${NAME_MAX} characters) or a PlayFab ID (11 to 16 characters: digits 0–9 and letters A–F).`;
+    const isPlayer = !isName && PLAYFAB_ID.test(text.toUpperCase());
+    if (!isName && !isPlayer) {
+      if (MATCH_ID.test(text)) {
+        await showMatch(text);
+        return;
+      }
+      status.textContent = `Type a player name (up to ${NAME_MAX} characters), a PlayFab ID (11 to 16 characters: digits 0–9 and letters A–F), or a match ID.`;
       return;
     }
     if (busy) return;
@@ -304,14 +381,17 @@
         if (found.shared > 1) note = `${SP.formatNumber(found.shared)} players share the name ${text}; this is the closest match. For another one, search by PlayFab ID.`;
       }
       // The career answer fills the first half of the bar, the period answer the second half.
-      const entry = { id, allTime: await SP.source.allTime(id, event => progress.step(event, 0, 0.5)), career: null, options: null, period: null, periods: new Map() };
+      const key = heldKey("player", id);
+      const entry = { kind: "player", key, id, label: "", scrollY: 0,
+        allTime: await SP.source.allTime(id, event => progress.step(event, 0, 0.5)), career: null, options: null, period: null, periods: new Map() };
+      entry.label = entry.allTime.player.name || "Unknown";
       // periodOptions and defaultPeriod read the module-level career, which switchTo sets again from the entry.
       career = entry.career = SP.buildCareer(entry.allTime);
       entry.options = periodOptions();
       const first = defaultPeriod(entry.options);
       entry.periods.set(periodKey(first), await SP.source.period(id, first.from, first.to, !first.tooMany, event => progress.step(event, 0.5, 1)));
       entry.period = first;
-      held.set(id, entry);
+      held.set(key, entry);
       progress.stop();
       setBusy(false);
       switchTo(entry);
@@ -362,7 +442,7 @@
   // The preview source lists its accounts; they load at start and the first one shows. The real page starts empty.
   (async () => {
     for (const id of SP.source.samples || []) await search(id);
-    const first = held.get((SP.source.samples || [])[0]);
+    const first = held.get(heldKey("player", (SP.source.samples || [])[0]));
     if (first && first !== current) switchTo(first);
     if (!current) input.focus();
   })();

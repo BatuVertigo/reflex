@@ -47,5 +47,6 @@
     find: (name, onProgress) => call(`/api/find?name=${encodeURIComponent(name)}`, onProgress),
     allTime: (playfabId, onProgress) => call(`/api/player/${playfabId}`, onProgress),
     period: (playfabId, from, to, withMatches, onProgress) => call(`/api/player/${playfabId}/period?from=${from}&to=${to}&matches=${withMatches ? 1 : 0}`, onProgress),
+    match: (matchId, onProgress) => call(`/api/match/${encodeURIComponent(matchId)}`, onProgress),
   };
 })();

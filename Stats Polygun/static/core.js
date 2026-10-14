@@ -3,7 +3,7 @@
 
   const SP = (window.StatsPolygun = window.StatsPolygun || {});
 
-  SP.MODE_NAMES = { TeamDeathMatch: "Team Deathmatch", DeathMatch: "Deathmatch", ControlPoint: "Control Point", Heist: "Heist", Push: "Push" };
+  SP.MODE_NAMES = { TeamDeathMatch: "Team Deathmatch", DeathMatch: "Free For All", ControlPoint: "Control Point", Heist: "Heist", Push: "Push" };
   SP.OUTCOMES = { Victory: "win", Defeat: "loss", Draw: "draw" };
   SP.OUTCOME_WORDS = { win: "Win", loss: "Loss", draw: "Draw" };
   SP.OUTCOME_LETTERS = { win: "W", loss: "L", draw: "D" };

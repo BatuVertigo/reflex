@@ -1,4 +1,7 @@
-"""Stats Polygun: serves the page and answers its two API calls with fixed ThinkingData (TE) queries.
+"""Stats Polygun: the player page plus a match report, answered with fixed ThinkingData (TE) queries.
+
+/api/match/<match_id> takes a match ID from a community report and returns that match's real players, loadout,
+matchmaking, errors and neighbouring matches.
 
 Runs on the office Mac (port 3800 unless STATS_POLYGUN_PORT says otherwise), reads TE_MCP_URL and TE_MCP_TOKEN
 from reflex/.env, and stores nothing: no disk writes, no cache. The console gets one line per API call (time, the
@@ -19,7 +22,7 @@ import urllib.request
 import uuid
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
-from urllib.parse import parse_qs, urlparse
+from urllib.parse import parse_qs, unquote, urlparse
 
 from dotenv import load_dotenv
 
@@ -38,6 +41,9 @@ PLAYFAB_ID = re.compile(r"[0-9A-F]{11,16}")
 # Player names are 1 to 10 characters (the longest among players active in the 30 days before 2026-09-18); control characters are refused.
 PLAYER_NAME = re.compile(r"[^\x00-\x1f\x7f]{1,10}")
 DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
+# Match IDs come in four shapes: F-<uuid>, F-<uuid>_<hex>, F-SquadLocalMatch<PlayFabID><digits> and
+# Unknown_<PlayFabID>_<n>_<digits>_<hex>. Only these characters appear in any of them, so no quote can reach the SQL.
+MATCH_ID = re.compile(r"[A-Za-z0-9_-]{8,120}")
 UTC = 'date_add(\'minute\', -cast(round(coalesce("#zone_offset", 0) * 60) as integer), "#event_time")'
 UTC_DAY = f"substr(cast({UTC} as varchar), 1, 10)"
 # A match: any non-tutorial, non-trial mode that ended normally. Everything else is a mark on the charts.
@@ -45,6 +51,25 @@ MATCH = "game_mode not in ('TutorialMap', 'TrialMap') and game_mode not like 'Tu
 GUNS = "('Primary', 'Backup', 'Ranged', 'Support', 'Melee')"
 WEAPON_COLUMNS = "weapon(w_id, w_name, w_cat, w_lvl, w_pow, w_kill, w_sec, w_acc, w_boost, w_dmg)"
 BATTLE_NUMBER_COLUMNS = (6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21)
+ARMOR_COLUMNS = "armor(a_id, a_name, a_cat, a_lvl, a_pow, a_boost)"
+GADGET_COLUMNS = "gadget(g_id, g_name, g_cat, g_lvl, g_pow, g_fill, g_use, g_boost)"
+# The events that carry a match_id, so a match can be found from its ID alone.
+MATCH_EVENTS = "('battle_start', 'battle_end', 'battle_search', 'player_left', 'match_reconnect')"
+# The events that tell what went wrong. Only player_left and match_reconnect carry a match_id, so the whole
+# timeline is read by player and time window instead (TE, 2026-09-21).
+TIMELINE_EVENTS = ("('error', 'player_left', 'match_reconnect', 'match_reconnect_pawn', 'reconnect_start',"
+    " 'reconnect_attempt', 'reconnect_failed', 'reconnect_success', 'ta_app_crash', 'ta_app_bg_start', 'ta_app_end')")
+# Minutes on each side of the match: enough for the search before it and the lobby after it.
+TROUBLE_MINUTES = 5
+# Minutes on each side for neighbouring matches: the derived-ID pattern the team hunts shows up inside this window.
+NEIGHBOUR_MINUTES = 15
+# LIKE reads _ and % as wildcards, so a match ID prefix needs an explicit escape character.
+LIKE_ESCAPE = "escape '\\'"
+# TE's warehouse drops a read now and then: a split goes missing, a worker dies mid-query. The same query goes
+# through on the next try, so these read like "busy", not like "wrong query". A plain timeout is left out on
+# purpose: the query already had its ten minutes, and running it again would only spend ten more.
+TRANSIENT_REASONS = ("error reading from", "no more splits", "connection reset", "connection refused",
+                     "server refused connection", "remote page", "worker node", "page transport", "corrupted")
 
 # ponytail: one global lock, so two teammates' searches run one after the other; revisit if TE ever allows more than 2 queries.
 te_lock = threading.Lock()
@@ -82,6 +107,22 @@ def cancel(request_id):
         pass
 
 
+def short_reason(reason):
+    """TE answers a broken query with a whole Java trace; the page only needs the sentence a person can act on."""
+    text = reason
+    if reason.startswith("{"):
+        try:
+            text = json.loads(reason).get("message") or reason
+        except ValueError:
+            pass
+    text = text.replace("java.sql.SQLException:", "").strip()
+    # The query id and the warehouse path mean nothing to whoever is looking at the page.
+    text = re.sub(r"\s*\(#[\w]+\)", "", text)
+    text = re.sub(r"hdfs://\S+", "the warehouse", text)
+    text = text.splitlines()[0].strip()[:160].rstrip(". ")
+    return f"{text}." if text else "TE gave no reason."
+
+
 def run_sql(name, sql, limit=None):
     """Runs one query through query_adhoc and returns its rows. Retries while TE is busy; a full result set means it was cut off."""
     row_limit = limit or ROW_LIMIT
@@ -114,10 +155,14 @@ def run_sql(name, sql, limit=None):
         payload = json.loads(text) if text.startswith("{") else {}
         if result.get("isError") or not payload.get("success"):
             reason = text or json.dumps(message)
-            if "concurrency" in reason.lower() and attempt < 5:
+            lowered = reason.lower()
+            # Waiting out a busy TE is cheap, so that gets five tries; a dropped warehouse read costs a whole
+            # query's running time, so it gets two.
+            tries = 5 if "concurrency" in lowered else 2 if any(mark in lowered for mark in TRANSIENT_REASONS) else 0
+            if attempt < tries:
                 time.sleep(3 + attempt * 2)
                 continue
-            raise ApiError(502, f"TE rejected the {name} query: {reason[:200]}")
+            raise ApiError(502, f"TE could not run the {name} query. {short_reason(reason)} Try again.")
         rows = (payload.get("data") or {}).get("rows") or []
         if limit is None and len(rows) >= ROW_LIMIT:
             raise ApiError(502, f"The {name} query was cut off at {ROW_LIMIT:,} rows, so the report would be wrong. This player has too much data for one report.")
@@ -125,14 +170,22 @@ def run_sql(name, sql, limit=None):
     raise ApiError(503, "TE stayed busy. Try again in a moment.")
 
 
-def run_all(queries, finished):
-    """Runs the queries 2 at a time (TE's concurrency limit) and calls finished() as each one ends. The first failure cancels the rest."""
+def run_all(queries, finished, optional=()):
+    """Runs the queries 2 at a time (TE's concurrency limit) and calls finished() as each one ends. A query named in
+    `optional` leaves None behind when it fails, so one flaky panel does not throw away a report that took minutes;
+    any other failure cancels the rest."""
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:
         futures = {pool.submit(run_sql, name, sql): name for name, sql in queries.items()}
         rows = {}
         try:
             for future in concurrent.futures.as_completed(futures):
-                rows[futures[future]] = future.result()
+                name = futures[future]
+                try:
+                    rows[name] = future.result()
+                except ApiError:
+                    if name not in optional:
+                        raise
+                    rows[name] = None
                 finished()
         except BaseException:
             for future in futures:
@@ -341,6 +394,203 @@ def period(playfab_id, from_day, to_day, with_matches, step):
     }
 
 
+def like_prefix(text):
+    """A LIKE pattern for every ID starting with this one; _ and % are wildcards in LIKE, so they are escaped."""
+    return text.replace("\\", "\\\\").replace("_", "\\_").replace("%", "\\%") + "%"
+
+
+def shift_minutes(stamp, minutes):
+    return (datetime.datetime.fromisoformat(stamp) + datetime.timedelta(minutes=minutes)).isoformat(sep=" ")
+
+
+def booster_list(text):
+    """boosters holds one JSON object per booster; the page only needs each name and how many were carried."""
+    try:
+        items = json.loads(text) if text else []
+    except ValueError:
+        return []
+    names = []
+    for item in items:
+        entry = json.loads(item) if isinstance(item, str) else item
+        names.append([entry.get("name"), number(entry.get("amount"))] if isinstance(entry, dict) else [str(item), None])
+    return names
+
+
+def flag(value):
+    """TE answers a boolean as the text 'true' or 'false', and leaves it out entirely when the client never sent it."""
+    if value is None or value == "":
+        return None
+    return str(value).lower() in ("true", "1")
+
+
+def match_detail(match_id, step):
+    """Everything TE holds about one match: its real players, their loadout, matchmaking, what went wrong, and the matches around it."""
+    # No date filter on purpose: a community report never says which day the match was on, and match_id is selective
+    # enough that TE answers this one in seconds even across the whole history (measured 2026-09-21).
+    found = run_sql("match", f"""select min("$part_date"), max("$part_date"),
+        substr(cast(min({UTC}) as varchar), 1, 19), substr(cast(max({UTC}) as varchar), 1, 19)
+        from ta.v_event_4 where "$part_event" in {MATCH_EVENTS} and match_id = '{match_id}'""", limit=1)
+    first_date, last_date, first_time, last_time = found[0] if found else (None, None, None, None)
+    if not first_date or not first_time:
+        raise ApiError(404, f"No match found for {match_id}. Check the ID; TE only holds matches real players logged.")
+    # The locator, then six match queries, then three player queries: the page's loading bar counts them.
+    total = 10
+    step(total)
+    # Partitions are in the phone's local day, so one extra day on each side covers any time zone.
+    days = f"\"$part_date\" between '{shift_day(first_date, -1)}' and '{shift_day(last_date, 1)}'"
+    base = f"{days} and match_id = '{match_id}'"
+    queries = {
+        "ends": f"""select "#user_id", "#account_id", substr(cast({UTC} as varchar), 1, 19), result, end_reason, placement,
+                kill_count, deaths_count, team_score, enemy_team_score, passed_duration,
+                league_point, league_index, mm_league_point, mm_trophy_point, game_mode, map,
+                team_power_avg, enemy_team_power_avg, team_player_count, enemy_team_player_count, player_count,
+                "equipped_character"."name", "equipped_character"."lvl", "equipped_character"."power", inventory_elo,
+                "#app_version", "#os", "#os_version", "#device_model", "#country_code",
+                coalesce(nullif(network_type, ''), "#network_type"), "#fps", "#zone_offset",
+                is_custom_match, is_private_lobby, is_squad_mm, squad_player_count, isprivatematch, auto_aim,
+                array_join(bot_difficulties, ', ')
+            from ta.v_event_4 where "$part_event" = 'battle_end' and {base} order by 3""",
+        "starts": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), game_mode, map,
+                team_player_count, enemy_team_player_count, team_power_avg, enemy_team_power_avg,
+                league_point, mm_league_point, "#app_version", cast(boosters as json), inventory_elo
+            from ta.v_event_4 where "$part_event" = 'battle_start' and {base} order by 2""",
+        "searches": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), action, coalesce(fail_reason, ''),
+                cast(round(elapsed_time) as integer), coalesce(matchmaking_id, ''), game_mode,
+                team_player_count, enemy_team_player_count, team_power_avg, enemy_team_power_avg,
+                is_squad_mm, squad_player_count, is_private_lobby, mm_league_point, mm_trophy_point
+            from ta.v_event_4 where "$part_event" = 'battle_search' and {base} order by 2""",
+        "leaves": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), coalesce(left_user_id, ''),
+                cast(round(exit_time) as integer), reconnect_started, kill_count, deaths_count
+            from ta.v_event_4 where "$part_event" = 'player_left' and {base} order by 2""",
+        "weapons": f"""select b."#user_id", weapon.w_name, weapon.w_cat, weapon.w_lvl, weapon.w_pow, weapon.w_kill,
+                cast(round(weapon.w_sec) as integer), round(weapon.w_dmg), weapon.w_boost
+            from ta.v_event_4 b cross join unnest(b.match_end_weapons) as {WEAPON_COLUMNS}
+            where b."$part_event" = 'battle_end' and b.{base} and (weapon.w_kill > 0 or weapon.w_sec > 0)
+            order by 1, 6 desc, 7 desc""",
+        "gear": f"""select b."#user_id", 'Armor', armor.a_name, armor.a_cat, armor.a_lvl, armor.a_pow, armor.a_boost, null, null
+                from ta.v_event_4 b cross join unnest(b.match_end_armors) as {ARMOR_COLUMNS}
+                where b."$part_event" = 'battle_end' and b.{base}
+            union all
+            select b."#user_id", 'Gadget', gadget.g_name, gadget.g_cat, gadget.g_lvl, gadget.g_pow, gadget.g_boost, gadget.g_use, gadget.g_fill
+                from ta.v_event_4 b cross join unnest(b.match_end_gadgets) as {GADGET_COLUMNS}
+                where b."$part_event" = 'battle_end' and b.{base}
+            order by 1, 2, 3""",
+    }
+    # battle_end carries the players, so it has to work; the other five are panels the report can go without.
+    rows = run_all(queries, lambda: step(total), optional=("starts", "searches", "leaves", "weapons", "gear"))
+
+    # Only real players log events, so every list here is a real account.
+    user_ids = sorted({str(row[0]) for name in ("ends", "starts", "searches", "leaves")
+                       for row in (rows[name] or []) if row[0]})
+    if not all(user_id.isdigit() for user_id in user_ids):
+        raise ApiError(502, "TE answered with a user ID that is not a number.")
+    if not user_ids:
+        raise ApiError(404, f"No player events found for {match_id}.")
+    people = ", ".join(user_ids)
+    inside = lambda start, end: f"{UTC} between timestamp '{start}' and timestamp '{end}'"
+    more = {
+        "names": f"""select "#user_id", "#account_id", user_name, vtd, league_point
+            from ta.v_user_4 where "#user_id" in ({people})""",
+        "timeline": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), "$part_event",
+                coalesce(nullif(error_type, ''), ''), coalesce(nullif(reason, ''), ''), coalesce(nullif(action, ''), ''),
+                coalesce(nullif(game_state, ''), ''), coalesce(nullif("function", ''), ''), coalesce(nullif(region, ''), ''),
+                ping, ping_max, coalesce(nullif(phase, ''), ''), coalesce(nullif(left_user_id, ''), ''),
+                cast(round(exit_time) as integer), reconnect_started, cast(round("#duration") as integer),
+                coalesce(nullif(match_id, ''), '')
+            from ta.v_event_4 where "$part_event" in {TIMELINE_EVENTS} and {days} and "#user_id" in ({people})
+                and {inside(shift_minutes(first_time, -TROUBLE_MINUTES), shift_minutes(last_time, TROUBLE_MINUTES))}
+            order by 2""",
+    }
+    extra = run_all(more, lambda: step(total), optional=("timeline",))
+    # The widest scan in the report: the prefix branch reads every match of those days, not just these players'.
+    # It runs on the match's own partition days, so a neighbour that fell on the next local day can be missed.
+    related_sql = f"""select match_id, substr(cast(min({UTC}) as varchar), 1, 19), substr(cast(max({UTC}) as varchar), 1, 19),
+            count(*), count(distinct "#user_id"), arbitrary(game_mode), arbitrary(map)
+        from ta.v_event_4 where "$part_event" in ('battle_start', 'battle_end')
+            and "$part_date" between '{first_date}' and '{last_date}'
+            and match_id <> '{match_id}' and match_id is not null and match_id <> ''
+            and (match_id like '{like_prefix(match_id)}' {LIKE_ESCAPE}
+                or ("#user_id" in ({people})
+                    and {inside(shift_minutes(first_time, -NEIGHBOUR_MINUTES), shift_minutes(last_time, NEIGHBOUR_MINUTES))}))
+        group by 1 order by 2"""
+    try:
+        related = run_sql("related", related_sql, limit=200)
+    except ApiError:
+        # Everything else in the report is already in hand, and this panel is the only one that can be left out.
+        related = None
+    step(total)
+    profiles = {str(row[0]): {"playfabId": row[1], "name": row[2], "vtd": number(row[3]), "leaguePoints": number(row[4])}
+                for row in extra["names"]}
+
+    def listed(source, name, build):
+        """A query TE gave up on stays None all the way to the page, so a panel can say so instead of looking empty."""
+        return None if source.get(name) is None else [build(row) for row in source[name]]
+
+    def player_row_of(row):
+        profile = profiles.get(str(row[0]), {})
+        return {
+            "userId": str(row[0]), "playfabId": row[1], "name": profile.get("name"), "vtd": profile.get("vtd"),
+            "time": row[2], "result": row[3], "endReason": row[4], "placement": row[5],
+            "kills": number(row[6]) or 0, "deaths": number(row[7]) or 0,
+            "teamScore": number(row[8]), "enemyScore": number(row[9]), "duration": number(row[10]),
+            "leaguePoints": number(row[11]), "leagueIndex": number(row[12]),
+            "mmLeaguePoints": number(row[13]), "mmTrophyPoints": number(row[14]),
+            "mode": row[15], "map": row[16],
+            "teamPower": number(row[17]), "enemyPower": number(row[18]),
+            "teamCount": number(row[19]), "enemyCount": number(row[20]), "playerCount": number(row[21]),
+            "character": row[22], "characterLevel": number(row[23]), "characterPower": number(row[24]),
+            "inventoryElo": number(row[25]), "version": row[26], "os": row[27], "osVersion": row[28],
+            "device": row[29], "country": row[30], "network": row[31], "fps": number(row[32]),
+            "zoneOffset": number(row[33]),
+            "custom": flag(row[34]), "privateLobby": flag(row[35]), "squad": flag(row[36]),
+            "squadCount": number(row[37]), "privateMatch": flag(row[38]), "autoAim": flag(row[39]),
+            "bots": row[40] or "",
+        }
+
+    return {
+        "matchId": match_id,
+        "firstSeen": first_time,
+        "lastSeen": last_time,
+        "players": [player_row_of(row) for row in rows["ends"]],
+        # A player who never reached battle_end still appears here, in the searches, the leaves and the timeline.
+        "profiles": profiles,
+        "starts": listed(rows, "starts", lambda row: {
+            "userId": str(row[0]), "time": row[1], "mode": row[2], "map": row[3],
+            "teamCount": number(row[4]), "enemyCount": number(row[5]),
+            "teamPower": number(row[6]), "enemyPower": number(row[7]),
+            "leaguePoints": number(row[8]), "mmLeaguePoints": number(row[9]),
+            "version": row[10], "boosters": booster_list(row[11]), "inventoryElo": number(row[12])}),
+        "searches": listed(rows, "searches", lambda row: {
+            "userId": str(row[0]), "time": row[1], "action": row[2], "failReason": row[3],
+            "seconds": number(row[4]), "matchmakingId": row[5], "mode": row[6],
+            "teamCount": number(row[7]), "enemyCount": number(row[8]),
+            "teamPower": number(row[9]), "enemyPower": number(row[10]),
+            "squad": flag(row[11]), "squadCount": number(row[12]), "privateLobby": flag(row[13]),
+            "mmLeaguePoints": number(row[14]), "mmTrophyPoints": number(row[15])}),
+        "leaves": listed(rows, "leaves", lambda row: {
+            "userId": str(row[0]), "time": row[1], "leftUserId": row[2], "exitSeconds": number(row[3]),
+            "reconnectStarted": number(row[4]), "kills": number(row[5]), "deaths": number(row[6])}),
+        "weapons": listed(rows, "weapons", lambda row: {
+            "userId": str(row[0]), "name": row[1], "category": row[2], "level": number(row[3]),
+            "power": number(row[4]), "kills": number(row[5]) or 0, "seconds": number(row[6]) or 0,
+            "damage": number(row[7]) or 0, "boost": row[8]}),
+        "gear": listed(rows, "gear", lambda row: {
+            "userId": str(row[0]), "kind": row[1], "name": row[2], "category": row[3], "level": number(row[4]),
+            "power": number(row[5]), "boost": row[6], "used": number(row[7]), "filled": number(row[8])}),
+        "timeline": listed(extra, "timeline", lambda row: {
+            "userId": str(row[0]), "time": row[1], "event": row[2], "errorType": row[3], "reason": row[4],
+            "action": row[5], "gameState": row[6], "function": row[7], "region": row[8],
+            "ping": number(row[9]), "pingMax": number(row[10]), "phase": row[11], "leftUserId": row[12],
+            "exitSeconds": number(row[13]), "reconnectStarted": number(row[14]),
+            "seconds": number(row[15]), "matchId": row[16]}),
+        # None, not an empty list: TE gave up on this one query and the page says so instead of "nothing found".
+        "related": None if related is None else [
+            {"matchId": row[0], "firstSeen": row[1], "lastSeen": row[2], "events": number(row[3]),
+             "players": number(row[4]), "mode": row[5], "map": row[6]}
+            for row in related],
+    }
+
+
 class Handler(SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=STATIC, **kwargs)
@@ -393,6 +643,13 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json(400, {"error": "A player name has 1 to 10 characters."})
                 return
             self.stream_job(lambda step: find_player(name), f'find "{name}"')
+            return
+        if url.path.startswith("/api/match/"):
+            match_id = unquote(url.path[len("/api/match/"):])
+            if not MATCH_ID.fullmatch(match_id):
+                self.send_json(400, {"error": "A match ID is 8 to 120 characters: letters, digits, - and _."})
+                return
+            self.stream_job(lambda step: match_detail(match_id, step), f"match {match_id}")
             return
         try:
             match = re.fullmatch(r"/api/player/([^/]+)(/period)?", url.path)
