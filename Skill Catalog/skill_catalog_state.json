@@ -1,10 +1,11 @@
 {
-  "vertigo_commit": "66901c247a1ba39c5e7bcbcb0b1d110452595739",
+  "vertigo_commit": "fd27ff798f2edf7ff2f0f9e4f87b8f2842e17a81",
   "external_versions": {
-    "superpowers@claude-plugins-official": "6.2.0",
-    "caveman@caveman": "0d95a81d35a9",
-    "mattpocock-skills@mattpocock": "1.2.0",
-    "ponytail@ponytail": "4.8.4"
+    "superpowers@claude-plugins-official": "6.4.1",
+    "caveman@caveman": "4.0.1",
+    "mattpocock-skills@mattpocock": "1.3.1",
+    "ponytail@ponytail": "5.2.0",
+    "unity@claude-plugins-official": "0.1.6-beta"
   },
-  "last_sync": "2026-08-03T11:12:39+03:00"
+  "last_sync": "2026-10-14T11:07:00+03:00"
 }
