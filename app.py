@@ -572,15 +572,15 @@ def handle_task_move_submit(ack, body, view, client):
 
 
 # =============================================================================
-# FEATURE - STATS POLYGUN LINK
+# FEATURE - STATS LINK (Stats Polygun + Stats CS on one site, Stats/stats.py)
 # =============================================================================
 
 # The page runs on this same Mac; its Wi-Fi address changes, so it is read on every call.
-STATS_POLYGUN_PORT = int(os.environ.get("STATS_POLYGUN_PORT") or "3800")
+STATS_PORT = int(os.environ.get("STATS_PORT") or "3800")
 
 
 def _lan_address() -> str | None:
-    """Same probe as Stats Polygun/stats_polygun.py: the interface of the default route."""
+    """Same probe as Stats/stats.py: the interface of the default route."""
     try:
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as probe:
             probe.connect(("8.8.8.8", 80))
@@ -589,16 +589,18 @@ def _lan_address() -> str | None:
         return None
 
 
+# The callback ID is still the old name: Slack does not let an existing shortcut change it (2026-10-14); users only see "Stats".
 @app.shortcut("stats_polygun")
-def handle_stats_polygun_shortcut(ack, body, client):
+def handle_stats_shortcut(ack, body, client):
     ack()
     address = _lan_address()
     if address:
-        url = f"http://{address}:{STATS_POLYGUN_PORT}"
-        text = f"*Stats Polygun:*\n<{url}>\n\nGirebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin."
+        url = f"http://{address}:{STATS_PORT}"
+        text = (f"*Stats CS ve Stats Polygun:*\n<{url}>\n\n"
+                "Girebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin.")
     else:
         text = "Mac'in Wi-Fi adresi okunamadı. Mac ağa bağlı mı?"
-    client.views_open(trigger_id=body["trigger_id"], view=_result_view(text, title="Stats Polygun"))
+    client.views_open(trigger_id=body["trigger_id"], view=_result_view(text, title="Stats"))
 
 
 # =============================================================================

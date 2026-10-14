@@ -4,8 +4,9 @@
   const SP = window.StatsPolygun;
   // PlayFab IDs are hex numbers without leading zeros: 16 characters for most accounts, 11 to 15 for about 6% (TE, 2026-09-18).
   const PLAYFAB_ID = /^[0-9A-F]{11,16}$/;
-  // Batuhan's rule: up to 10 characters is a player name (the longest in TE is 10), 11 to 16 hex characters is a PlayFab ID, anything else is refused.
-  const NAME_MAX = 10;
+  // Critical Strike names run up to 23 characters (TE, 2026-10-14), so they overlap PlayFab IDs in length: a PlayFab ID is
+  // checked first, and an F- or Bot_ match ID is never read as a name.
+  const NAME_MAX = 23;
   // A match ID is anything longer than a name that is not a PlayFab ID: F-<uuid>, the same with a _<hex> tail,
   // F-SquadLocalMatch<PlayFabID><digits> or Unknown_<PlayFabID>_<n>_<digits>_<hex>. The server checks it again.
   const MATCH_ID = /^[A-Za-z0-9_-]{8,120}$/;
@@ -32,7 +33,7 @@
   const matchTemplate = SP.byId("match-template");
   const railGroups = { player: ["rail-career", "rail-period"], match: ["rail-match"] };
 
-  const chartRenderers = [SP.renderLeagueChart, SP.renderKdChart, SP.renderWeaponHeat, SP.renderPowerGap, SP.renderSearchTimeline, SP.renderTimePerDay, SP.renderHourGrid];
+  const chartRenderers = [SP.renderLevelChart, SP.renderLeagueChart, SP.renderKdChart, SP.renderWeaponHeat, SP.renderPowerGap, SP.renderSearchTimeline, SP.renderTimePerDay, SP.renderHourGrid];
   // Open or closed per card for this visit, so a card keeps its state when the period or the player changes.
   const cardOpen = new Map();
   // Everything searched this visit, players and matches together, in search order, so the rail moves between both.
@@ -147,8 +148,11 @@
   // Shows "Reflex verileri getiriyor · N s" and a loading bar in an element while a request runs. The server's finished queries
   // move the bar; while another search holds the server, the bar stands still and a chip says this one is in line.
   // The texts are Turkish (Batuhan's call) on an English page, so they carry lang="tr" for screen readers.
-  function ticker(element) {
+  // `firstLabel` replaces the usual label until the first {done, total} line: a match search spends its first ~5 s
+  // finding the match across the whole history, and the bar cannot move before that.
+  function ticker(element, firstLabel) {
     const started = Date.now();
+    let opening = firstLabel;
     element.replaceChildren();
     const label = SP.htmlElement("span", "", element);
     const inLine = SP.htmlElement("span", "in-line", element);
@@ -160,7 +164,7 @@
     track.setAttribute("aria-label", "Yükleniyor");
     for (const part of [label, inLine, track]) part.lang = "tr";
     const fill = SP.htmlElement("span", "loading-fill", track);
-    const paint = () => { label.textContent = `Reflex verileri getiriyor · ${Math.round((Date.now() - started) / 1000)} s`; };
+    const paint = () => { label.textContent = `${opening || "Reflex verileri getiriyor"} · ${Math.round((Date.now() - started) / 1000)} s`; };
     const fillTo = fraction => {
       fill.style.width = `${fraction * 100}%`;
       track.setAttribute("aria-valuenow", String(Math.round(fraction * 100)));
@@ -172,7 +176,13 @@
       // One server event: {waiting} shows or hides the chip, {done, total} fills this request's share of the bar, from `from` to `to`.
       step(event, from, to) {
         inLine.hidden = !event.waiting;
-        if (event.total) fillTo(from + (to - from) * event.done / event.total);
+        if (event.total) {
+          fillTo(from + (to - from) * event.done / event.total);
+          if (opening) {
+            opening = "";
+            paint();
+          }
+        }
       },
       stop() { clearInterval(timer); },
     };
@@ -242,7 +252,7 @@
     SP.renderUpgrades(report);
     SP.renderDayTable(report);
     renderCharts();
-    for (const [id, view] of [["lp-chart", "lp"], ["kd-chart", "kd"], ["weapon-heat", "weapons"], ["power-gap", "power"]]) SP.attachKeyboard(SP.byId(id), view);
+    for (const [id, view] of [["level-chart", "level"], ["lp-chart", "lp"], ["kd-chart", "kd"], ["weapon-heat", "weapons"], ["power-gap", "power"]]) SP.attachKeyboard(SP.byId(id), view);
     lastWidth = SP.byId("career-strip").clientWidth;
     window.scrollTo(0, scroll);
     markSection();
@@ -295,7 +305,7 @@
   async function showMatch(matchId) {
     if (busy) return;
     setBusy(true);
-    const progress = ticker(status);
+    const progress = ticker(status, "Maç aranıyor");
     try {
       const data = await SP.source.match(matchId, event => progress.step(event, 0, 1));
       const key = heldKey("match", matchId);
@@ -327,7 +337,7 @@
     prepareCards(top);
     showZone("player");
     SP.renderPlayer(allTime);
-    SP.renderSummary(career, allTime.finalLeaguePoints, allTime.vtd);
+    SP.renderSummary(career, allTime.finalLeaguePoints, allTime.vtd, allTime.level);
     // The Career group never changes with the period, so it renders once per player.
     const careerReport = { career, raw: { resources: allTime.resources, currencyDays: allTime.balances } };
     SP.renderBreakdowns(careerReport);
@@ -357,8 +367,8 @@
   async function search(value) {
     const text = String(value || "").trim();
     // Code points, like the server and TE count them.
-    const isName = text.length > 0 && [...text].length <= NAME_MAX;
-    const isPlayer = !isName && PLAYFAB_ID.test(text.toUpperCase());
+    const isPlayer = PLAYFAB_ID.test(text.toUpperCase());
+    const isName = !isPlayer && text.length > 0 && [...text].length <= NAME_MAX && !/^(F-|Bot_)/.test(text);
     if (!isName && !isPlayer) {
       if (MATCH_ID.test(text)) {
         await showMatch(text);
@@ -378,7 +388,7 @@
       if (isName) {
         const found = await SP.source.find(text, event => progress.step(event, 0, 0));
         id = found.playfabId;
-        if (found.shared > 1) note = `${SP.formatNumber(found.shared)} players share the name ${text}; this is the closest match. For another one, search by PlayFab ID.`;
+        if (found.shared > 1) note = `${SP.formatNumber(found.shared)} accounts have used the name ${text}; this is the one that played last. For another one, search by PlayFab ID.`;
       }
       // The career answer fills the first half of the bar, the period answer the second half.
       const key = heldKey("player", id);
@@ -435,6 +445,13 @@
     cancelAnimationFrame(frame);
     frame = requestAnimationFrame(renderCharts);
   }).observe(page);
+
+  // The home page opens the last game picked here; storage can be blocked, and then it just shows the cards again.
+  try {
+    localStorage.setItem("stats-game", "cs");
+  } catch (error) {
+    // Nothing to keep.
+  }
 
   badge.textContent = SP.source.badge || "";
   badge.hidden = !SP.source.badge;

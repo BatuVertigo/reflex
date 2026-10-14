@@ -46,9 +46,13 @@
 
   // Players with the same result and the same score pair were on the same side. In a free-for-all every player has
   // their own result, so each one gets their own letter, which is what the scoreboard shows too.
+  // A draw gives both sides the same result and score, so there the side is told apart by its team power pair instead
+  // (each side logs its own average first; Critical Strike F-a06c8283-…, 2026-10-13: 3,601 v 4,720 and 4,720 v 3,601).
   function sideLetters(players) {
     const keys = [];
-    const keyOf = player => `${player.result}|${player.teamScore}|${player.enemyScore}`;
+    const byResult = player => `${player.result}|${player.teamScore}|${player.enemyScore}`;
+    const draw = players.length > 1 && players.every(player => byResult(player) === byResult(players[0]) && player.result === "Draw");
+    const keyOf = draw ? player => `${player.teamPower}|${player.enemyPower}` : byResult;
     for (const player of players) if (!keys.includes(keyOf(player))) keys.push(keyOf(player));
     return new Map(players.map(player => [player.userId, String.fromCharCode(65 + keys.indexOf(keyOf(player)))]));
   }
@@ -181,7 +185,7 @@
     SP.htmlElement("span", total ? right.outcome : "draw", bar).style.width = `${(1 - share) * 100}%`;
     SP.htmlElement("p", "versus-value right", row).textContent = numberText(right.value);
     const gap = SP.htmlElement("p", "versus-gap", row);
-    gap.textContent = !left.value || !right.value ? ""
+    gap.textContent = !left.value || !right.value || left.value === right.value ? ""
       : `${left.value >= right.value ? left.letter : right.letter} ${(Math.max(left.value, right.value) / Math.min(left.value, right.value)).toFixed(1)}×`;
   }
 

@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Stats Polygun</title>
+<title>Stats CS</title>
 <link rel="icon" type="image/png" href="logo-web.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -25,14 +25,15 @@
   --on-win: #ffffff;
   --on-loss: #ffffff;
   --on-draw: #10151c;
-  --accent: #4a3aa7;
+  /* Critical Strike gold, from the logo's goggles; dark enough here that white text on it reads (4.7:1). */
+  --accent: #9a6b00;
   --on-accent: #ffffff;
-  --rarity-1: #a79fe0;
-  --rarity-2: #8d82d4;
-  --rarity-3: #7466c6;
-  --rarity-4: #5b4db5;
-  --rarity-5: #45389c;
-  --rarity-6: #32287a;
+  --rarity-1: #f0d48a;
+  --rarity-2: #e3bd5c;
+  --rarity-3: #d1a43a;
+  --rarity-4: #b8891c;
+  --rarity-5: #9a6b00;
+  --rarity-6: #745000;
   --tip-bg: #ffffff;
   --tip-border: rgba(16, 21, 28, 0.12);
   --tip-shadow: 0 8px 28px rgba(16, 21, 28, 0.14);
@@ -59,14 +60,14 @@
     --on-win: #0b0e12;
     --on-loss: #0b0e12;
     --on-draw: #0b0e12;
-    --accent: #9085e9;
+    --accent: #e8b53c;
     --on-accent: #0b0e12;
-    --rarity-1: #4b40a3;
-    --rarity-2: #5f53bb;
-    --rarity-3: #7568d2;
-    --rarity-4: #8c81e2;
-    --rarity-5: #a59cee;
-    --rarity-6: #c1baf5;
+    --rarity-1: #6b4f0c;
+    --rarity-2: #8a6612;
+    --rarity-3: #a8801c;
+    --rarity-4: #c99b2c;
+    --rarity-5: #e3b545;
+    --rarity-6: #f2d17e;
     --tip-bg: #1f242c;
     --tip-border: rgba(255, 255, 255, 0.12);
     --tip-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
@@ -90,14 +91,14 @@
   --on-win: #0b0e12;
   --on-loss: #0b0e12;
   --on-draw: #0b0e12;
-  --accent: #9085e9;
+  --accent: #e8b53c;
   --on-accent: #0b0e12;
-  --rarity-1: #4b40a3;
-  --rarity-2: #5f53bb;
-  --rarity-3: #7568d2;
-  --rarity-4: #8c81e2;
-  --rarity-5: #a59cee;
-  --rarity-6: #c1baf5;
+  --rarity-1: #6b4f0c;
+  --rarity-2: #8a6612;
+  --rarity-3: #a8801c;
+  --rarity-4: #c99b2c;
+  --rarity-5: #e3b545;
+  --rarity-6: #f2d17e;
   --tip-bg: #1f242c;
   --tip-border: rgba(255, 255, 255, 0.12);
   --tip-shadow: 0 8px 28px rgba(0, 0, 0, 0.5);
@@ -159,6 +160,12 @@ ul { padding: 0; list-style: none; }
   border-radius: 999px;
   padding: 2px 9px;
 }
+/* The two games share one site (Stats/stats.py): the logo and the wordmark switch to the other game. */
+a.brand { color: inherit; text-decoration: none; border-radius: 10px; padding: 2px 6px 2px 2px; transition: background 120ms ease; }
+a.brand:hover { background: var(--band); }
+.brand-swap { font-size: 18px; line-height: 1; color: var(--muted); }
+a.brand:hover .brand-swap { color: var(--accent); }
+a.brand:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .search { flex: 0 1 540px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .search input {
   flex: 1 1 260px;
@@ -433,6 +440,7 @@ details.panel > summary:hover .card-arrow { fill: var(--ink); }
 .lp-line { fill: none; stroke: var(--ink-2); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
 .dot { stroke: var(--surface); stroke-width: 2; }
 .dot-start { fill: var(--surface); stroke: var(--ink-2); stroke-width: 2; }
+.dot-level { fill: var(--accent); stroke: var(--surface); stroke-width: 2; }
 .dot-win, .bar-win { fill: var(--win); }
 .dot-loss, .bar-loss { fill: var(--loss); }
 .dot-draw, .bar-draw { fill: var(--draw); }
@@ -699,10 +707,10 @@ code { font-family: var(--font-data); font-size: 0.92em; }
 
 <div class="page">
   <header class="topbar">
-    <div class="brand">
+    <a class="brand" href="../polygun/" title="Switch to Stats Polygun" aria-label="Switch to Stats Polygun">
       <img class="brand-logo" src="logo-web.png" alt="" width="52" height="52">
-      <p class="wordmark">Stats<br><span>Polygun</span></p>
-    </div>
+      <p class="wordmark">Stats<br><span>CS</span></p><span class="brand-swap" aria-hidden="true">⇄</span>
+    </a>
     <form class="search" id="search-form" autocomplete="off">
       <label class="sr-only" for="playfab-id">Player name, PlayFab ID or match ID</label>
       <input id="playfab-id" name="playfab-id" maxlength="120" spellcheck="false" placeholder="Player name, PlayFab ID or match ID">
@@ -712,11 +720,11 @@ code { font-family: var(--font-data); font-size: 0.92em; }
   </header>
 
   <aside class="rail" id="rail" hidden>
-    <div class="brand">
+    <a class="brand" href="../polygun/" title="Switch to Stats Polygun" aria-label="Switch to Stats Polygun">
       <img class="brand-logo" src="logo-web.png" alt="" width="52" height="52">
-      <p class="wordmark">Stats<br><span>Polygun</span></p>
+      <p class="wordmark">Stats<br><span>CS</span></p><span class="brand-swap" aria-hidden="true">⇄</span>
       <span class="pill" id="badge" hidden></span>
-    </div>
+    </a>
     <section class="rail-group" id="rail-players-group" aria-label="Searches">
       <h2 class="rail-label">Searches</h2>
       <ul class="rail-players" id="rail-players"></ul>
@@ -727,6 +735,7 @@ code { font-family: var(--font-data); font-size: 0.92em; }
     <nav class="rail-group" id="rail-period" aria-label="Period">
       <a class="rail-head" href="#period"><svg class="rail-icon" aria-hidden="true"><use href="#icon-calendar-clock"></use></svg>Period</a>
       <a class="rail-sub" href="#h-form"><svg class="rail-icon" aria-hidden="true"><use href="#icon-list-check"></use></svg>Form</a>
+      <a class="rail-sub" href="#h-level"><svg class="rail-icon" aria-hidden="true"><use href="#icon-level-up"></use></svg>Level</a>
       <a class="rail-sub" href="#h-lp"><svg class="rail-icon" aria-hidden="true"><use href="#icon-trophy"></use></svg>League points</a>
       <a class="rail-sub" href="#h-kd"><svg class="rail-icon" aria-hidden="true"><use href="#icon-skull"></use></svg>KD per match</a>
       <a class="rail-sub" href="#weapon-heat-panel"><svg class="rail-icon" aria-hidden="true"><use href="#icon-bullet"></use></svg>Kills in each match</a>
@@ -773,7 +782,7 @@ code { font-family: var(--font-data); font-size: 0.92em; }
     <div class="stat"><p class="stat-label">Matches</p><p class="stat-value" id="stat-matches"></p><p class="stat-sub" id="stat-matches-sub"></p></div>
     <div class="stat"><p class="stat-label">Win rate</p><p class="stat-value" id="stat-win-rate"></p><div class="record-bar" id="record-bar" aria-hidden="true"></div><p class="stat-sub" id="stat-win-rate-sub"></p></div>
     <div class="stat"><p class="stat-label">KD</p><p class="stat-value" id="stat-kd"></p><p class="stat-sub" id="stat-kd-sub"></p></div>
-    <div class="stat"><p class="stat-label">League points</p><p class="stat-value" id="stat-lp"></p><p class="stat-sub" id="stat-lp-sub"></p></div>
+    <div class="stat"><p class="stat-label">Level</p><p class="stat-value" id="stat-lp"></p><p class="stat-sub" id="stat-lp-sub"></p></div>
     <div class="stat"><p class="stat-label">VTD</p><p class="stat-value" id="stat-vtd"></p><p class="stat-sub">Value to date, USD</p></div>
   </section>
 
@@ -879,6 +888,17 @@ code { font-family: var(--font-data); font-size: 0.92em; }
     <div class="panel-body">
       <div id="form-strip" class="form-strip scrub" tabindex="0" aria-label="Match results by day. Use the left and right arrow keys to step through matches."></div>
       <p class="streaks" id="streaks"></p>
+    </div>
+  </details>
+
+  <details class="panel" data-card="level" open>
+    <summary class="panel-head">
+      <div><h2 id="h-level"><svg class="title-icon" aria-hidden="true"><use href="#icon-level-up"></use></svg>Level</h2><p class="lede">Level after each match. A dot marks a level-up.</p></div>
+      <svg class="card-arrow" aria-hidden="true"><use href="#icon-angle-small-down"></use></svg>
+    </summary>
+    <div class="panel-body">
+      <div class="chart-scroll"><div id="level-chart" class="chart scrub" tabindex="0" role="group" aria-label="Level chart. Use the left and right arrow keys to step through matches."></div></div>
+      <p class="footnote" id="level-summary"></p>
     </div>
   </details>
 

@@ -20,10 +20,10 @@ kanalın product grubunu (@pa-product / @cs-product; eşleşme yoksa mesajı yaz
 kullanılarak **Move Asana tasks** açılır. Bot her task'ı Asana API'siyle parent'ın altına
 subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
 
-**7. Stats Polygun.** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
+**7. Stats (Polygun + Critical Strike).** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. İki oyun tek sitede: `/polygun/` ve `/cs/`; üst bardaki seçiciyle geçilir, ana sayfa ilk ziyarette iki kart gösterir, sonra son seçilen oyunu açar. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
 (disk yok, cache yok, log'da ID yok). Aranan her oyuncu sayfada bir chip olarak kalır; chip'e tıklayınca yeniden sorgu
 atılmaz, aynı ID'yi tekrar yazmak veriyi tazeler, sayfa yenilenince chip'ler gider.
-Mac'in Wi-Fi adresi değişebildiği için Slack'te **Stats Polygun** kısayolu ("/" menüsü) güncel linki (`http://<Mac IP>:3800`)
+Mac'in Wi-Fi adresi değişebildiği için Slack'te **Stats** kısayolu ("/" menüsü) güncel linki (`http://<Mac IP>:3800`)
 sadece çalıştırana görünen bir popup'ta verir.
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
@@ -31,9 +31,10 @@ yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Versio
 **Haiku**, Bug Details **Opus** kullanır; her iki çağrı da MCP'siz/araçsız izole
 çalışır. **Anthropic API anahtarı gerekmez.** Bug Watcher, Release Summary ve Skill Catalog ise
 zamanlanmış Claude Routine'leridir; davranışları
-kendi klasörlerindeki prompt dosyalarından yönetilir. Stats Polygun ayrı bir süreçtir
-(`Stats Polygun/stats_polygun.py`, Python `http.server`, port 3800): Slack'e ve `app.py`'ye dokunmaz, TE'ye paylaşılan
-MCP token'ıyla bağlanır. Sayfası `Stats Polygun/static/`, artifact önizlemesinin veri üreticisi `Stats Polygun/preview/` altındadır.
+kendi klasörlerindeki prompt dosyalarından yönetilir. Stats ayrı bir süreçtir
+(`Stats/stats.py`, Python `http.server`, port 3800): iki oyunun sunucusunu (`Stats/Stats Polygun/stats_polygun.py`,
+`Stats/Stats CS/stats_cs.py`) tek portta açar, tek TE kilidiyle. Slack'e ve `app.py`'ye dokunmaz, TE'ye paylaşılan
+MCP token'ıyla bağlanır. Sayfalar `Stats/Stats Polygun/static/` ve `Stats/Stats CS/static/`, artifact önizlemesinin veri üreticisi `Stats/Stats Polygun/preview/` altındadır.
 
 ---
 
@@ -68,9 +69,9 @@ MCP token'ıyla bağlanır. Sayfası `Stats Polygun/static/`, artifact önizleme
      Taşımalar Asana'da token sahibinin adına görünür.
    Üçüncü kısayol — **Create New Shortcut**:
    - Tür: **Global**
-   - Name: `Stats Polygun`
-   - Short description: `Stats Polygun'un güncel linki`
-   - **Callback ID: `stats_polygun`**  *(kodla birebir aynı olmalı)*
+   - Name: `Stats`
+   - Short description: `Stats Polygun ve Stats CS'nin güncel linkleri`
+   - **Callback ID: `stats_polygun`**  *(kodla birebir aynı olmalı; eski adı kaldı, Slack mevcut kısayolda değiştirmiyor)*
 5. **Install App** (veya scope/shortcut ekledikten sonra **Reinstall**) →
    *Bot User OAuth Token* `xoxb-...` → `SLACK_BOT_TOKEN`.
 6. Botu izlenecek her kanala ekle: kanal içinde `/invite @<bot-adı>`
@@ -124,27 +125,28 @@ sessiz kalmalı.
 Task Move testi: ⚡ → **Move Asana tasks** → parent linki + 1-2 kobay task linki →
 task'lar Asana'da parent'ın altında subtask olarak görünmeli.
 
-## 4. Stats Polygun'u başlat
+## 4. Stats'ı başlat
 
 `.env`'e üç anahtar ekle (`.env.example`'a bak): `TE_MCP_URL`, `TE_MCP_TOKEN` (TE MCP token'ı; paylaşılan
-"Gizem" hesabı) ve `STATS_POLYGUN_PORT` (boşsa 3800). Yeni bağımlılık yok; botun `.venv`'i yeter.
+"Gizem" hesabı) ve `STATS_PORT` (boşsa 3800). Yeni bağımlılık yok; botun `.venv`'i yeter.
 
 ```bash
 cd reflex
 source .venv/bin/activate
-python "Stats Polygun/stats_polygun.py"     # "Stats Polygun is up: http://192.168.x.x:3800 (Ctrl+C stops it)"
+python Stats/stats.py     # "Stats is up: http://192.168.x.x:3800 (Polygun at /polygun/, Critical Strike at /cs/; ...)"
 ```
 
-Ekip arkadaşı aynı Wi-Fi'da `http://<Mac'in adresi>:3800` açar, PlayFab ID yapıştırır, 5–15 sn bekler.
+Ekip arkadaşı aynı Wi-Fi'da `http://<Mac'in adresi>:3800` açar, oyunu seçer, PlayFab ID yapıştırır, 5–15 sn bekler.
+Bir oyunu tek başına denemek için kendi dosyası hâlâ çalışır (`STATS_POLYGUN_PORT` / `STATS_CS_PORT`).
 Test: `D6B0E21AF503CBDA` → 69 maç, %64 win rate, KD 2.48, 1.144 lig puanı görünmeli.
 
 Bilinmesi gerekenler:
 
-- Aynı anda tek arama çalışır; ikinci arama sıra bekler (sayfadaki "Looking up…" sayacı akmaya devam eder).
+- İki oyunda toplam aynı anda tek arama çalışır; ikinci arama sıra bekler (sayfadaki "Looking up…" sayacı akmaya devam eder).
   120 sn'den uzun bekleyen istek "busy" cevabı alır.
 - Sayfa yalnız Mac uyanıkken ve script çalışırken açıktır. Ctrl+C kapatır.
 - Mac'in Wi-Fi adresi değişebilir; script açılışta güncel adresi yazar.
 - Aynı Wi-Fi'daki herkes (misafirler dahil) her oyuncunun harcama, cihaz ve ülke bilgisini görebilir. Bilinen ve kabul edilen risk.
 - 20.000 satırı aşan bir sorgu rapor yerine hata döner ("cut off"); o oyuncu için sorguyu aya bölmek gerekir.
-- Artifact önizlemesinin verisi `Stats Polygun/preview/build_preview_data.py` ile üretilir. `data-*.js` dosyaları oyuncu verisi
+- Artifact önizlemesinin verisi `Stats/Stats Polygun/preview/build_preview_data.py` ile üretilir. `data-*.js` dosyaları oyuncu verisi
   içerir; `.gitignore`'dadır.

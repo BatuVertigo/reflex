@@ -1,9 +1,9 @@
 (() => {
   "use strict";
 
-  // Real page: the two Stats Polygun API calls, answered by stats_polygun.py on the Mac. Error messages come from the server, ready to show.
+  // Real page: the two Stats CS API calls, answered by stats_polygun.py on the Mac. Error messages come from the server, ready to show.
   const SP = window.StatsPolygun;
-  const UNREACHABLE = "Stats Polygun is not reachable. Is the script running on the Mac?";
+  const UNREACHABLE = "Stats CS is not reachable. Is the script running on the Mac?";
 
   // The server answers with one JSON line per event: {waiting}, {done, total} after each TE query, then {result} or {error}.
   // onProgress gets every event before the last one.
@@ -18,7 +18,7 @@
     if (!response.ok || !(response.headers.get("Content-Type") || "").includes("ndjson")) {
       const payload = await response.json().catch(() => null);
       if (response.ok && payload) return payload;
-      throw new Error((payload && payload.error) || `Stats Polygun answered HTTP ${response.status}. Try again.`);
+      throw new Error((payload && payload.error) || `Stats CS answered HTTP ${response.status}. Try again.`);
     }
     const reader = response.body.pipeThrough(new TextDecoderStream()).getReader();
     let buffer = "";
@@ -44,9 +44,9 @@
   }
 
   SP.source = {
-    find: (name, onProgress) => call(`/api/find?name=${encodeURIComponent(name)}`, onProgress),
-    allTime: (playfabId, onProgress) => call(`/api/player/${playfabId}`, onProgress),
-    period: (playfabId, from, to, withMatches, onProgress) => call(`/api/player/${playfabId}/period?from=${from}&to=${to}&matches=${withMatches ? 1 : 0}`, onProgress),
-    match: (matchId, onProgress) => call(`/api/match/${encodeURIComponent(matchId)}`, onProgress),
+    find: (name, onProgress) => call(`api/find?name=${encodeURIComponent(name)}`, onProgress),
+    allTime: (playfabId, onProgress) => call(`api/player/${playfabId}`, onProgress),
+    period: (playfabId, from, to, withMatches, onProgress) => call(`api/player/${playfabId}/period?from=${from}&to=${to}&matches=${withMatches ? 1 : 0}`, onProgress),
+    match: (matchId, onProgress) => call(`api/match/${encodeURIComponent(matchId)}`, onProgress),
   };
 })();

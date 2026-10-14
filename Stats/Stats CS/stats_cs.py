@@ -1,9 +1,11 @@
-"""Stats Polygun: the player page plus a match report, answered with fixed ThinkingData (TE) queries.
+"""Stats CS: Stats Polygun for Critical Strike. The player page plus a match report, answered with fixed ThinkingData
+(TE) queries against Critical Strike's project (7). A copy of Stats Polygun/stats_polygun.py; PLAN.md lists every
+difference in Critical Strike's data.
 
 /api/match/<match_id> takes a match ID from a community report and returns that match's real players, loadout,
 matchmaking, errors and neighbouring matches.
 
-Runs on the office Mac (port 3800 unless STATS_POLYGUN_PORT says otherwise), reads TE_MCP_URL and TE_MCP_TOKEN
+Runs on the office Mac (port 3810 unless STATS_CS_PORT says otherwise), reads TE_MCP_URL and TE_MCP_TOKEN
 from reflex/.env, and stores nothing: no disk writes, no cache. The console gets one line per API call (time, the
 teammate's address, what was searched, how it ended; Batuhan's call, 2026-09-18). One TE job runs at a time, so the
 shared TE account never sees more than 2 queries at once. All times are UTC+0 (phone clock shifted by #zone_offset).
@@ -27,38 +29,38 @@ from urllib.parse import parse_qs, unquote, urlparse
 from dotenv import load_dotenv
 
 FOLDER = os.path.dirname(os.path.abspath(__file__))
-load_dotenv(os.path.join(os.path.dirname(FOLDER), ".env"))
+# This folder sits in reflex/Stats/, and the .env is reflex's.
+load_dotenv(os.path.join(os.path.dirname(os.path.dirname(FOLDER)), ".env"))
 TE_URL = os.environ.get("TE_MCP_URL", "")
 TE_TOKEN = os.environ.get("TE_MCP_TOKEN", "")
-PORT = int(os.environ.get("STATS_POLYGUN_PORT") or "3800")
+PORT = int(os.environ.get("STATS_CS_PORT") or "3810")
 # 20,000 is TE's cap. A lower value only serves to test the cut-off error.
-ROW_LIMIT = int(os.environ.get("STATS_POLYGUN_ROW_LIMIT") or "20000")
+ROW_LIMIT = int(os.environ.get("STATS_CS_ROW_LIMIT") or "20000")
 STATIC = os.path.join(FOLDER, "static")
-PROJECT_ID = 4
+PROJECT_ID = 7
 LOCK_WAIT_SECONDS = 120
 # PlayFab IDs are hex numbers without leading zeros: 16 characters for most accounts, 11 to 15 for about 6% (TE, 2026-09-18).
 PLAYFAB_ID = re.compile(r"[0-9A-F]{11,16}")
-# Player names are 1 to 10 characters (the longest among players active in the 30 days before 2026-09-18); control characters are refused.
-PLAYER_NAME = re.compile(r"[^\x00-\x1f\x7f]{1,10}")
+# Player names are 1 to 23 characters (the longest among players active in the 30 days before 2026-10-14); control characters are refused.
+PLAYER_NAME = re.compile(r"[^\x00-\x1f\x7f]{1,23}")
 DAY = re.compile(r"\d{4}-\d{2}-\d{2}")
-# Match IDs come in four shapes: F-<uuid>, F-<uuid>_<hex>, F-SquadLocalMatch<PlayFabID><digits> and
-# Unknown_<PlayFabID>_<n>_<digits>_<hex>. Only these characters appear in any of them, so no quote can reach the SQL.
+# Match IDs look like F-<uuid> or Bot_<PlayFabID>_<digits>. Only these characters appear in them, so no quote can reach the SQL.
 MATCH_ID = re.compile(r"[A-Za-z0-9_-]{8,120}")
 UTC = 'date_add(\'minute\', -cast(round(coalesce("#zone_offset", 0) * 60) as integer), "#event_time")'
 UTC_DAY = f"substr(cast({UTC} as varchar), 1, 10)"
 # A match: any non-tutorial, non-trial mode that ended normally. Everything else is a mark on the charts.
-MATCH = "game_mode not in ('TutorialMap', 'TrialMap') and game_mode not like 'Tutorial%' and end_reason in ('Success-objective', 'Success-timeout')"
-GUNS = "('Primary', 'Backup', 'Ranged', 'Support', 'Melee')"
-WEAPON_COLUMNS = "weapon(w_id, w_name, w_cat, w_lvl, w_pow, w_kill, w_sec, w_acc, w_boost, w_dmg)"
-BATTLE_NUMBER_COLUMNS = (6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21)
-ARMOR_COLUMNS = "armor(a_id, a_name, a_cat, a_lvl, a_pow, a_boost)"
-GADGET_COLUMNS = "gadget(g_id, g_name, g_cat, g_lvl, g_pow, g_fill, g_use, g_boost)"
+# Tutorial Team Deathmatch vs AI is a full match against bots, so it counts (Batuhan, 2026-10-14); other tutorials do not.
+MATCH = ("game_mode <> 'TrialMode' and (game_mode not like 'Tutorial%' or game_mode = 'TutorialTeamDeatchMatchAI')"
+         " and end_reason in ('Success-objective', 'Success-timeout')")
+# Critical Strike logs no damage and no boost per weapon (PLAN.md), so those read as null; the charm and skin are not shown.
+WEAPON_COLUMNS = "weapon(w_id, w_name, w_cat, w_lvl, w_pow, w_kill, w_sec, w_charm, w_skin, w_acc)"
+BATTLE_NUMBER_COLUMNS = (6, 7, 8, 9, 10, 11, 12, 14, 15, 16, 17, 18, 19, 20, 21, 23)
+GADGET_COLUMNS = "gadget(g_id, g_name, g_cat, g_lvl, g_pow, g_fill, g_use)"
 # The events that carry a match_id, so a match can be found from its ID alone.
 MATCH_EVENTS = "('battle_start', 'battle_end', 'battle_search', 'player_left', 'match_reconnect')"
 # The events that tell what went wrong. Only player_left and match_reconnect carry a match_id, so the whole
 # timeline is read by player and time window instead (TE, 2026-09-21).
-TIMELINE_EVENTS = ("('error', 'player_left', 'match_reconnect', 'match_reconnect_pawn', 'reconnect_start',"
-    " 'reconnect_attempt', 'reconnect_failed', 'reconnect_success', 'ta_app_crash', 'ta_app_bg_start', 'ta_app_end')")
+TIMELINE_EVENTS = "('error', 'player_left', 'match_reconnect', 'ta_app_crash', 'ta_app_bg_start', 'ta_app_end')"
 # Minutes on each side of the match: enough for the search before it and the lobby after it.
 TROUBLE_MINUTES = 5
 # Minutes on each side for neighbouring matches: the derived-ID pattern the team hunts shows up inside this window.
@@ -95,14 +97,14 @@ def post(payload):
 
 def initialize():
     post({"jsonrpc": "2.0", "id": 1, "method": "initialize",
-          "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "stats-polygun", "version": "0.1"}}})
+          "params": {"protocolVersion": "2025-06-18", "capabilities": {}, "clientInfo": {"name": "stats-cs", "version": "0.1"}}})
     post({"jsonrpc": "2.0", "method": "notifications/initialized"})
 
 
 def cancel(request_id):
     try:
         post({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
-              "params": {"name": "cancel_query", "arguments": {"requestId": request_id, "reason": "Stats Polygun gave up"}}})
+              "params": {"name": "cancel_query", "arguments": {"requestId": request_id, "reason": "Stats CS gave up"}}})
     except Exception:
         pass
 
@@ -210,23 +212,25 @@ def shift_day(day, days):
 
 def player_row(playfab_id):
     # vtd: value to date, the player's purchase total in US dollars.
-    rows = run_sql("player", f"""select "#user_id", user_name, league_point,
+    # TE stores the text '<null>' for a player who never set a name.
+    rows = run_sql("player", f"""select "#user_id", nullif(user_name, '<null>'), league_point, player_level,
         substr(cast(date_add('day', -2, created_time) as varchar), 1, 10), substr(cast(date_add('day', 2, last_login_time) as varchar), 1, 10), vtd
-        from ta.v_user_4 where "#account_id" = '{playfab_id}'""")
+        from ta.v_user_7 where "#account_id" = '{playfab_id}'""")
     if not rows:
         raise ApiError(404, f"No player found for {playfab_id}.")
-    user_id, name, league_points, first_day, last_day, vtd = rows[0]
+    user_id, name, league_points, level, first_day, last_day, vtd = rows[0]
     # Profile times use the phone's clock; two days of margin on each side cover any time zone.
-    return int(user_id), name, number(league_points), first_day or "2025-01-01", last_day or time.strftime("%Y-%m-%d", time.gmtime()), number(vtd)
+    return int(user_id), name, number(league_points), number(level), first_day or "2025-01-01", last_day or time.strftime("%Y-%m-%d", time.gmtime()), number(vtd)
 
 
 def find_player(name):
-    """The account with this name: the same spelling first, then any case, then the one who played last. Names under 10 characters
-    are almost all unique (339 of 984k shared, 2026-09-18); shared ones are mostly 10-character default names, so the answer says how many share it."""
+    """The account with this name in any case, the one who played last. TE keeps the last name it saw on an abandoned
+    account, so an old account can still hold a name its owner reused on a new one (seen in Polygun, 2026-10-14). The answer
+    says how many accounts have used the name."""
     literal = name.replace("'", "''")
     rows = run_sql("find", f"""select "#account_id", user_name, count(*) over ()
-        from ta.v_user_4 where lower(user_name) = lower('{literal}') and "#account_id" is not null
-        order by user_name = '{literal}' desc, last_login_time desc""", limit=1)
+        from ta.v_user_7 where lower(user_name) = lower('{literal}') and "#account_id" is not null
+        order by last_login_time desc""", limit=1)
     if not rows:
         raise ApiError(404, f"No player named {name}.")
     playfab_id, found_name, shared = rows[0]
@@ -243,19 +247,19 @@ def battles_sql(base, extra):
             select b."#event_time" as event_time, {utc_b} as utc_time, b."#app_version" as app_version, b.match_id, b.game_mode, b.map,
                 b.result, b.end_reason, b.kill_count, b.deaths_count, b.team_score, b.enemy_team_score, b.league_point, b.league_index,
                 b.passed_duration, b."equipped_character"."name" as character_name, b."equipped_character"."lvl" as character_lvl,
-                b.team_power_avg, b.enemy_team_power_avg, b.team_player_count, b.enemy_team_player_count
-            from ta.v_event_4 b where b."$part_event" = 'battle_end' and b.{base} and {extra}
+                b.team_power_avg, b.enemy_team_power_avg, b.team_player_count, b.enemy_team_player_count, b.player_level
+            from ta.v_event_7 b where b."$part_event" = 'battle_end' and b.{base} and {extra}
         ), s as (
             select match_id, max(team_player_count) as start_team, max(enemy_team_player_count) as start_enemies
-            from ta.v_event_4 where "$part_event" = 'battle_start' and {base} group by 1
+            from ta.v_event_7 where "$part_event" = 'battle_start' and {base} group by 1
         ), q as (
-            select match_id, max(elapsed_time) as search_seconds
-            from ta.v_event_4 where "$part_event" = 'battle_search' and action = 'success' and {base} group by 1
+            select match_id, round(max(elapsed_time)) as search_seconds
+            from ta.v_event_7 where "$part_event" = 'battle_search' and action = 'success' and {base} group by 1
         )
         select substr(cast(e.utc_time as varchar), 1, 19), e.app_version, e.game_mode, e.map, e.result, e.end_reason, e.kill_count, e.deaths_count,
             e.team_score, e.enemy_team_score, e.league_point, e.league_index, e.passed_duration, e.character_name, e.character_lvl,
             e.team_power_avg, e.enemy_team_power_avg, e.team_player_count, e.enemy_team_player_count, s.start_team, s.start_enemies,
-            q.search_seconds, substr(cast(e.event_time as varchar), 1, 23)
+            q.search_seconds, substr(cast(e.event_time as varchar), 1, 23), e.player_level
         from e left join s on s.match_id = e.match_id and e.match_id <> '' left join q on q.match_id = e.match_id and e.match_id <> ''
         order by e.utc_time, e.event_time"""
 
@@ -265,8 +269,8 @@ def battle_row(row):
 
 
 def currency_days_sql(base, extra):
-    return f"""with e as (select {UTC} as utc_time, "$part_event" as event_name, resources
-            from ta.v_event_4 where "$part_event" in ('resource_earn', 'resource_spend') and {base} and {extra})
+    return f"""with e as (select {UTC} as utc_time, "$part_event" as event_name, resources2 as resources
+            from ta.v_event_7 where "$part_event" in ('resource_earn', 'resource_spend') and {base} and {extra})
         select substr(cast(utc_time as varchar), 1, 10) as utc_day, resource.item_name,
             sum(case when event_name = 'resource_earn' then resource.quantity else 0 end) as earned,
             sum(case when event_name = 'resource_spend' then resource.quantity else 0 end) as spent,
@@ -280,34 +284,35 @@ def currency_row(row):
 
 
 def all_time(playfab_id, step):
-    user_id, name, league_points, first_day, last_day, vtd = player_row(playfab_id)
+    user_id, name, league_points, level, first_day, last_day, vtd = player_row(playfab_id)
     base = bounds(user_id, first_day, last_day)
     matches = f"\"$part_event\" = 'battle_end' and {base} and {MATCH}"
     queries = {
         "meta": f"""select substr(cast(min({UTC}) as varchar), 1, 19), substr(cast(max({UTC}) as varchar), 1, 19),
             max_by("#os", if("#os" is not null, "#event_time")), max_by("#device_model", if("#device_model" is not null, "#event_time")),
             max_by("#country_code", if("#country_code" is not null, "#event_time")), array_join(array_sort(array_agg(distinct "#app_version")), ',')
-            from ta.v_event_4 where "$part_event" in ('login', 'battle_end') and {base}""",
+            from ta.v_event_7 where "$part_event" in ('login', 'battle_end') and {base}""",
         # One scan of the real matches, grouped four ways: per UTC day (the strip), per mode, per map and per power gap bucket.
         "career": f"""with m as (
-                select {UTC} as utc_time, {UTC_DAY} as utc_day, "#app_version" as app_version, game_mode, map, result, kill_count, deaths_count, league_point,
+                select {UTC} as utc_time, {UTC_DAY} as utc_day, "#app_version" as app_version, game_mode, map, result, kill_count, deaths_count, league_point, player_level,
                     case when team_power_avg > 0 and enemy_team_power_avg > 0
                         then (cast(team_power_avg as double) - cast(enemy_team_power_avg as double)) / cast(enemy_team_power_avg as double) * 100 end as gap
-                from ta.v_event_4 where {matches}
+                from ta.v_event_7 where {matches}
             ), b as (
                 select *, case when gap < -20 then 'much_weaker' when gap < -5 then 'weaker' when gap <= 5 then 'even'
                     when gap <= 20 then 'stronger' when gap > 20 then 'much_stronger' end as bucket from m
             )
             select utc_day, game_mode, map, bucket, count(*), count_if(result = 'Victory'), count_if(result = 'Defeat'), sum(kill_count), sum(deaths_count),
-                min_by(league_point, utc_time), max(league_point), max_by(app_version, utc_time), grouping(utc_day, game_mode, map, bucket)
+                min_by(league_point, utc_time), max(league_point), max_by(app_version, utc_time), grouping(utc_day, game_mode, map, bucket),
+                max_by(league_point, utc_time), min_by(player_level, utc_time), max_by(player_level, utc_time)
             from b group by grouping sets ((utc_day), (game_mode), (map), (bucket)) order by 1, 2, 3, 4""",
         "weapon_totals": f"""select weapon.w_name, arbitrary(weapon.w_cat), sum(weapon.w_kill), count(*), sum(cast(round(weapon.w_sec) as integer)),
-                sum(case when weapon.w_cat in {GUNS} and round(weapon.w_dmg) > 0 then round(weapon.w_dmg) else 0 end)
-            from ta.v_event_4 cross join unnest(match_end_weapons) as {WEAPON_COLUMNS}
+                null
+            from ta.v_event_7 cross join unnest(match_end_weapons) as {WEAPON_COLUMNS}
             where {matches} and (weapon.w_kill > 0 or weapon.w_sec > 0)
             group by 1 order by 3 desc, 4 desc""",
-        "resources": f"""with e as (select "$part_event" as event_name, coalesce(nullif(source_type, ''), '-') as source_type, resources
-                from ta.v_event_4 where "$part_event" in ('resource_earn', 'resource_spend') and {base})
+        "resources": f"""with e as (select "$part_event" as event_name, coalesce(nullif(source_type, ''), '-') as source_type, resources2 as resources
+                from ta.v_event_7 where "$part_event" in ('resource_earn', 'resource_spend') and {base})
             select case when event_name = 'resource_earn' then 'earn' else 'spend' end, source_type, resource.item_type, resource.item_name, count(*), sum(resource.quantity)
             from e cross join unnest(e.resources) as resource(item_id, item_name, item_type, quantity, final_amount)
             group by 1, 2, 3, 4 order by 1, 6 desc""",
@@ -322,11 +327,13 @@ def all_time(playfab_id, step):
     rows = run_all(queries, lambda: step(total))
     meta = rows["meta"][0] if rows["meta"] else [None] * 6
     days, modes, maps, buckets = [], [], [], []
-    for day, mode, map_name, bucket, count, wins, losses, kills, deaths, first_points, top_points, version, mask in rows["career"]:
+    for (day, mode, map_name, bucket, count, wins, losses, kills, deaths, first_points, top_points, version, mask,
+         last_points, first_level, last_level) in rows["career"]:
         stats = [number(count), number(wins), number(losses), number(kills) or 0, number(deaths) or 0]
         mask = number(mask)
         if mask == 7:
-            days.append([day, *stats, number(first_points) or 0, number(top_points) or 0, version])
+            days.append([day, *stats, number(first_points) or 0, number(top_points) or 0, version,
+                         number(last_points) or 0, number(first_level), number(last_level)])
         elif mask == 11:
             modes.append([mode, *stats])
         elif mask == 13:
@@ -341,6 +348,7 @@ def all_time(playfab_id, step):
         },
         # The profile holds the current league points, which is the value after the last match.
         "finalLeaguePoints": league_points,
+        "level": level,
         "vtd": vtd,
         "career": {"days": days, "modes": modes, "maps": maps, "buckets": buckets},
         "weaponTotals": [[row[0], row[1], number(row[2]), number(row[3]), number(row[4]), number(row[5])] for row in rows["weapon_totals"]],
@@ -350,42 +358,44 @@ def all_time(playfab_id, step):
 
 
 def period(playfab_id, from_day, to_day, with_matches, step):
-    user_id, name, league_points, first_day, last_day, vtd = player_row(playfab_id)
+    user_id, name, league_points, level, first_day, last_day, vtd = player_row(playfab_id)
     # Partitions are in the phone's local day, so one extra day on each side covers any time zone; the UTC filter does the exact cut.
     base = bounds(user_id, shift_day(from_day, -1), shift_day(to_day, 1))
     inside = f"{UTC_DAY} between '{from_day}' and '{to_day}'"
     inside_b = inside.replace('"#', 'b."#')
     queries = {
         "sessions": f"""select substr(cast({UTC} as varchar), 1, 19), cast(round("#duration") as integer)
-            from ta.v_event_4 where "$part_event" = 'ta_app_end' and {base} and {inside} order by 1""",
+            from ta.v_event_7 where "$part_event" = 'ta_app_end' and {base} and {inside} order by 1""",
         "currency_days": f"{currency_days_sql(base, inside)} order by 1, 2",
         "inventory": f"""select substr(cast({UTC} as varchar), 1, 19), action, name, category, rarity, lvl_before, lvl
-            from ta.v_event_4 where "$part_event" = 'inventory' and {base} and {inside} order by 1""",
+            from ta.v_event_7 where "$part_event" = 'inventory' and {base} and {inside} order by 1""",
     }
-    battle_after = None
+    battle_before = None
     if with_matches:
         queries["battles"] = battles_sql(base, inside_b)
         queries["weapons"] = f"""select substr(cast(b."#event_time" as varchar), 1, 23), weapon.w_name, weapon.w_cat, weapon.w_kill,
-                cast(round(weapon.w_sec) as integer), round(weapon.w_dmg), weapon.w_boost
-            from ta.v_event_4 b cross join unnest(b.match_end_weapons) as {WEAPON_COLUMNS}
+                cast(round(weapon.w_sec) as integer), null, null
+            from ta.v_event_7 b cross join unnest(b.match_end_weapons) as {WEAPON_COLUMNS}
             where b."$part_event" = 'battle_end' and b.{base} and {inside_b} and (weapon.w_kill > 0 or weapon.w_sec > 0)
             order by 1"""
         queries["search_fails"] = f"""select substr(cast({UTC} as varchar), 1, 19), coalesce(fail_reason, '')
-            from ta.v_event_4 where "$part_event" = 'battle_search' and action = 'fail' and {base} and {inside} order by 1"""
-    # The player query, battle_after when matches load, then the queries above: the page's loading bar counts them.
+            from ta.v_event_7 where "$part_event" = 'battle_search' and action = 'fail' and {base} and {inside} order by 1"""
+    # The player query, battle_before when matches load, then the queries above: the page's loading bar counts them.
     total = (2 if with_matches else 1) + len(queries)
     step(total)
     if with_matches:
-        # The first battle_end row after the period gives the last match its "after" league points.
-        after_base = bounds(user_id, to_day, max(last_day, shift_day(to_day, 2)))
-        after_day = UTC_DAY.replace('"#', 'b."#')
-        after_rows = run_sql("battle_after", battles_sql(after_base, f"{after_day} > '{to_day}'"), limit=1)
-        battle_after = battle_row(after_rows[0]) if after_rows else None
+        # Critical Strike logs league points and level after each match (unlike Polygun; PLAN.md), so the last battle_end
+        # row before the period gives the first match its "before" values.
+        before_base = bounds(user_id, first_day, from_day)
+        before_day = UTC_DAY.replace('"#', 'b."#')
+        before_sql = battles_sql(before_base, f"{before_day} < '{from_day}'")
+        before_rows = run_sql("battle_before", f"select * from ({before_sql}) as x order by 1 desc", limit=1)
+        battle_before = battle_row(before_rows[0]) if before_rows else None
         step(total)
     rows = run_all(queries, lambda: step(total))
     return {
         "battles": [battle_row(row) for row in rows.get("battles", [])],
-        "battleAfter": battle_after,
+        "battleBefore": battle_before,
         "weapons": [[row[0], row[1], row[2], number(row[3]), number(row[4]), number(row[5]), row[6]] for row in rows.get("weapons", [])],
         "sessions": [[row[0], number(row[1])] for row in rows["sessions"]],
         "currencyDays": [currency_row(row) for row in rows["currency_days"]],
@@ -429,7 +439,7 @@ def match_detail(match_id, step):
     # enough that TE answers this one in seconds even across the whole history (measured 2026-09-21).
     found = run_sql("match", f"""select min("$part_date"), max("$part_date"),
         substr(cast(min({UTC}) as varchar), 1, 19), substr(cast(max({UTC}) as varchar), 1, 19)
-        from ta.v_event_4 where "$part_event" in {MATCH_EVENTS} and match_id = '{match_id}'""", limit=1)
+        from ta.v_event_7 where "$part_event" in {MATCH_EVENTS} and match_id = '{match_id}'""", limit=1)
     first_date, last_date, first_time, last_time = found[0] if found else (None, None, None, None)
     if not first_date or not first_time:
         raise ApiError(404, f"No match found for {match_id}. Check the ID; TE only holds matches real players logged.")
@@ -442,37 +452,33 @@ def match_detail(match_id, step):
     queries = {
         "ends": f"""select "#user_id", "#account_id", substr(cast({UTC} as varchar), 1, 19), result, end_reason, placement,
                 kill_count, deaths_count, team_score, enemy_team_score, passed_duration,
-                league_point, league_index, mm_league_point, mm_trophy_point, game_mode, map,
+                league_point, league_index, null, null, game_mode, map,
                 team_power_avg, enemy_team_power_avg, team_player_count, enemy_team_player_count, player_count,
                 "equipped_character"."name", "equipped_character"."lvl", "equipped_character"."power", inventory_elo,
                 "#app_version", "#os", "#os_version", "#device_model", "#country_code",
                 coalesce(nullif(network_type, ''), "#network_type"), "#fps", "#zone_offset",
-                is_custom_match, is_private_lobby, is_squad_mm, squad_player_count, isprivatematch, auto_aim,
-                array_join(bot_difficulties, ', ')
-            from ta.v_event_4 where "$part_event" = 'battle_end' and {base} order by 3""",
+                null, null, null, squad_player_count, null, null, null
+            from ta.v_event_7 where "$part_event" = 'battle_end' and {base} order by 3""",
         "starts": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), game_mode, map,
                 team_player_count, enemy_team_player_count, team_power_avg, enemy_team_power_avg,
-                league_point, mm_league_point, "#app_version", cast(boosters as json), inventory_elo
-            from ta.v_event_4 where "$part_event" = 'battle_start' and {base} order by 2""",
+                league_point, null, "#app_version", null, inventory_elo
+            from ta.v_event_7 where "$part_event" = 'battle_start' and {base} order by 2""",
         "searches": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), action, coalesce(fail_reason, ''),
                 cast(round(elapsed_time) as integer), coalesce(matchmaking_id, ''), game_mode,
                 team_player_count, enemy_team_player_count, team_power_avg, enemy_team_power_avg,
-                is_squad_mm, squad_player_count, is_private_lobby, mm_league_point, mm_trophy_point
-            from ta.v_event_4 where "$part_event" = 'battle_search' and {base} order by 2""",
+                null, squad_player_count, null, null, null
+            from ta.v_event_7 where "$part_event" = 'battle_search' and {base} order by 2""",
         "leaves": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), coalesce(left_user_id, ''),
-                cast(round(exit_time) as integer), reconnect_started, kill_count, deaths_count
-            from ta.v_event_4 where "$part_event" = 'player_left' and {base} order by 2""",
+                cast(round(exit_time) as integer), null, kill_count, deaths_count
+            from ta.v_event_7 where "$part_event" = 'player_left' and {base} order by 2""",
         "weapons": f"""select b."#user_id", weapon.w_name, weapon.w_cat, weapon.w_lvl, weapon.w_pow, weapon.w_kill,
-                cast(round(weapon.w_sec) as integer), round(weapon.w_dmg), weapon.w_boost
-            from ta.v_event_4 b cross join unnest(b.match_end_weapons) as {WEAPON_COLUMNS}
+                cast(round(weapon.w_sec) as integer), null, null
+            from ta.v_event_7 b cross join unnest(b.match_end_weapons) as {WEAPON_COLUMNS}
             where b."$part_event" = 'battle_end' and b.{base} and (weapon.w_kill > 0 or weapon.w_sec > 0)
             order by 1, 6 desc, 7 desc""",
-        "gear": f"""select b."#user_id", 'Armor', armor.a_name, armor.a_cat, armor.a_lvl, armor.a_pow, armor.a_boost, null, null
-                from ta.v_event_4 b cross join unnest(b.match_end_armors) as {ARMOR_COLUMNS}
-                where b."$part_event" = 'battle_end' and b.{base}
-            union all
-            select b."#user_id", 'Gadget', gadget.g_name, gadget.g_cat, gadget.g_lvl, gadget.g_pow, gadget.g_boost, gadget.g_use, gadget.g_fill
-                from ta.v_event_4 b cross join unnest(b.match_end_gadgets) as {GADGET_COLUMNS}
+        # Critical Strike logs no armor at match end, only gadgets.
+        "gear": f"""select b."#user_id", 'Gadget', gadget.g_name, gadget.g_cat, gadget.g_lvl, gadget.g_pow, null, gadget.g_use, gadget.g_fill
+                from ta.v_event_7 b cross join unnest(b.match_end_gadgets) as {GADGET_COLUMNS}
                 where b."$part_event" = 'battle_end' and b.{base}
             order by 1, 2, 3""",
     }
@@ -489,15 +495,15 @@ def match_detail(match_id, step):
     people = ", ".join(user_ids)
     inside = lambda start, end: f"{UTC} between timestamp '{start}' and timestamp '{end}'"
     more = {
-        "names": f"""select "#user_id", "#account_id", user_name, vtd, league_point
-            from ta.v_user_4 where "#user_id" in ({people})""",
+        "names": f"""select "#user_id", "#account_id", nullif(user_name, '<null>'), vtd, league_point
+            from ta.v_user_7 where "#user_id" in ({people})""",
         "timeline": f"""select "#user_id", substr(cast({UTC} as varchar), 1, 19), "$part_event",
                 coalesce(nullif(error_type, ''), ''), coalesce(nullif(reason, ''), ''), coalesce(nullif(action, ''), ''),
-                coalesce(nullif(game_state, ''), ''), coalesce(nullif("function", ''), ''), coalesce(nullif(region, ''), ''),
-                ping, ping_max, coalesce(nullif(phase, ''), ''), coalesce(nullif(left_user_id, ''), ''),
-                cast(round(exit_time) as integer), reconnect_started, cast(round("#duration") as integer),
+                '', coalesce(nullif("function", ''), ''), coalesce(nullif(region, ''), ''),
+                ping, null, '', coalesce(nullif(left_user_id, ''), ''),
+                cast(round(exit_time) as integer), null, cast(round("#duration") as integer),
                 coalesce(nullif(match_id, ''), '')
-            from ta.v_event_4 where "$part_event" in {TIMELINE_EVENTS} and {days} and "#user_id" in ({people})
+            from ta.v_event_7 where "$part_event" in {TIMELINE_EVENTS} and {days} and "#user_id" in ({people})
                 and {inside(shift_minutes(first_time, -TROUBLE_MINUTES), shift_minutes(last_time, TROUBLE_MINUTES))}
             order by 2""",
     }
@@ -506,7 +512,7 @@ def match_detail(match_id, step):
     # It runs on the match's own partition days, so a neighbour that fell on the next local day can be missed.
     related_sql = f"""select match_id, substr(cast(min({UTC}) as varchar), 1, 19), substr(cast(max({UTC}) as varchar), 1, 19),
             count(*), count(distinct "#user_id"), arbitrary(game_mode), arbitrary(map)
-        from ta.v_event_4 where "$part_event" in ('battle_start', 'battle_end')
+        from ta.v_event_7 where "$part_event" in ('battle_start', 'battle_end')
             and "$part_date" between '{first_date}' and '{last_date}'
             and match_id <> '{match_id}' and match_id is not null and match_id <> ''
             and (match_id like '{like_prefix(match_id)}' {LIKE_ESCAPE}
@@ -640,7 +646,7 @@ class Handler(SimpleHTTPRequestHandler):
         if url.path == "/api/find":
             name = parse_qs(url.query).get("name", [""])[0].strip()
             if not PLAYER_NAME.fullmatch(name):
-                self.send_json(400, {"error": "A player name has 1 to 10 characters."})
+                self.send_json(400, {"error": "A player name has 1 to 23 characters."})
                 return
             self.stream_job(lambda step: find_player(name), f'find "{name}"')
             return
@@ -712,7 +718,7 @@ class Handler(SimpleHTTPRequestHandler):
             except Exception as error:
                 # The class name only, never the query text.
                 outcome = f"FAILED unexpected {error.__class__.__name__}"
-                write({"error": "Stats Polygun hit an unexpected error. Try again."})
+                write({"error": "Stats CS hit an unexpected error. Try again."})
         except ConnectionError:
             # The page closed or reloaded mid-search: nobody is left to answer, and the lock is already free.
             outcome = "STOPPED the page closed before the answer"
@@ -742,7 +748,7 @@ def main():
         raise SystemExit("Set TE_MCP_URL and TE_MCP_TOKEN in reflex/.env first.")
     initialize()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
-    print(f"Stats Polygun is up: http://{lan_address()}:{PORT} (Ctrl+C stops it)", flush=True)
+    print(f"Stats CS is up: http://{lan_address()}:{PORT} (Ctrl+C stops it)", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
