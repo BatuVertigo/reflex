@@ -1,12 +1,22 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 18 Eylül 2026 08:06
+> **Son güncelleme:** 13 Ekim 2026 18:45
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
-| **[v14.9502](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1789671741213199)** | — / 208960 | — | 🧪 Prod'a açılmadı (🤖 CB %100) |
-| **[v14.9501](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1789060736920569)** | 1080 / 208920 | - 🍎🤖 %100: 11 Eyl 18:11<br>- 🍎🤖 Force: 12 Eyl 11:57 | 🟢👊🏻 Yayın (son force) |
+| **[v15.010](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791901202931109)** | — / 209250 | — | 🧪 Sadece test (Internal Test; yalnızca 🤖) |
+| **[v15.009](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791813609556029)** | — / 209240 | — | 🟢 Yalnızca Google Play Games on PC %100 (13 Eki; PC build'i) |
+| **[v15.008](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791813609556029)** | — / 209230 | — | 🧪 Prod'a açılmadı (🤖 CB %100) |
+| **[v15.007](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791483769823129)** | — / 209120 | — | 🟢 Yalnızca Google Play Games on PC %100 (8 Eki; mobilde değişiklik yok, force yok) |
+| **[v15.005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791221287533689)** | 1310 / 209090 | - 🤖 %100: 6 Eki 15:11<br>- 🍎 %100: 6 Eki 15:12<br>- 🍎🤖 Force: 6 Eki 18:15 | 🟢👊🏻 Yayın (son force) |
+| **[v15.004](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1790873727474889)** | 1290 / 209080 | — | 🔵 🤖 %10, 🍎 %1 → v15.005 forcelandı |
+| **[v15.003](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1790699405495419)** | 1260 / 209060 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB review'da) |
+| **[v15.002](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1790624890707889)** | 1240 / 209040 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100) |
+| **[v15.001](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1790349704574149)** | 1230 / 209030 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100) |
+| **[v15.000](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1790276100532269)** | 1220 / 209020 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100; Fallen Grace sezon build'i) |
+| **[v14.9502](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1789671741213199)** | — / 208960 | - 🤖 %100: 22 Eyl 11:55 | 🔵 🤖 %100 → v15.005 forcelandı |
+| **[v14.9501](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1789060736920569)** | 1080 / 208920 | - 🍎🤖 %100: 11 Eyl 18:11<br>- 🍎🤖 Force: 12 Eyl 11:57 | 🔵👊🏻 Forcelanmıştı → v15.005 forcelandı |
 | **[v14.9500](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1788809361374919)** | 1010 / 208880 | - 🍎 %100: 9 Eyl 18:57<br>- 🤖 %100: 9 Eyl 18:58 | 🔵 🤖 %100, 🍎 %100 → v14.9501 forcelandı |
 | **[v14.9005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1787846268440699)** | 940 / 208860 | - 🍎🤖 %100: 31 Ağu 20:48<br>- 🍎🤖 Force: 1 Eyl 12:53 | 🔵👊🏻 Forcelanmıştı → v14.9501 forcelandı (Galaxy's End sezon build'i) |
 | **[v14.9004](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1787770873348269)** | 900 / 208850 | — | 🧪 Prod'a açılmadı (🤖 CB %100, 🍎 CB %100; Galaxy's End sezon build'i) |
