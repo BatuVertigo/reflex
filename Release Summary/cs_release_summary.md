@@ -1,13 +1,13 @@
 # Critical Strike (CS) Release Summary
 
 > Bu tablo **Reflex** tarafından düzenli aralıklarla güncellenir.
-> **Son güncelleme:** 13 Ekim 2026 18:45
+> **Son güncelleme:** 15 Ekim 2026 20:02
 
 | Sürüm | Build (🍎/🤖) | %100 / Force | Durum |
 |-------|------|------|------|
 | **[v15.010](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791901202931109)** | — / 209250 | — | 🧪 Sadece test (Internal Test; yalnızca 🤖) |
 | **[v15.009](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791813609556029)** | — / 209240 | — | 🟢 Yalnızca Google Play Games on PC %100 (13 Eki; PC build'i) |
-| **[v15.008](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791813609556029)** | — / 209230 | — | 🧪 Prod'a açılmadı (🤖 CB %100) |
+| **[v15.008](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791813609556029)** | — / 209230 | — | 🧪 Prod'a açılmadı (🤖 CB %100, OB %100) |
 | **[v15.007](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791483769823129)** | — / 209120 | — | 🟢 Yalnızca Google Play Games on PC %100 (8 Eki; mobilde değişiklik yok, force yok) |
 | **[v15.005](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1791221287533689)** | 1310 / 209090 | - 🤖 %100: 6 Eki 15:11<br>- 🍎 %100: 6 Eki 15:12<br>- 🍎🤖 Force: 6 Eki 18:15 | 🟢👊🏻 Yayın (son force) |
 | **[v15.004](https://vertigohq.slack.com/archives/C05UUFSS3NY/p1790873727474889)** | 1290 / 209080 | — | 🔵 🤖 %10, 🍎 %1 → v15.005 forcelandı |
