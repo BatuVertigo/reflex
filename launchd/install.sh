@@ -31,6 +31,11 @@ for name in "${names[@]}"; do
   target="$AGENTS/$label.plist"
   [ -f "$source" ] || { echo "no such agent: $name"; exit 1; }
   launchctl bootout "$DOMAIN/$label" 2>/dev/null || true
+  # bootout returns before the job is gone; a bootstrap that follows at once fails with "5: Input/output error".
+  for _ in $(seq 1 20); do
+    launchctl print "$DOMAIN/$label" >/dev/null 2>&1 || break
+    sleep 0.5
+  done
   if [ $uninstall -eq 1 ]; then
     rm -f "$target"
     echo "removed $label"
