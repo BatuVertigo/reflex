@@ -62,7 +62,7 @@ header .meta strong { color: var(--ink); font-weight: 600; }
 .search input:focus { outline: none; border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); }
 .search kbd { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); padding: 1px 7px; border: 1px solid var(--hairline); border-radius: 6px; background: var(--surface-2); color: var(--ink-3); font-family: var(--font-mono); font-size: 12px; }
 .search input:not(:placeholder-shown) + kbd { display: none; }  /* the browser's clear button takes its place */
-.chips { display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+.chips { position: relative; display: flex; gap: 8px; margin-top: 10px; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
 .chips::-webkit-scrollbar { display: none; }
 .chip { flex: none; display: inline-flex; align-items: center; gap: 7px; padding: 6px 12px; border: 1px solid var(--hairline); border-radius: 999px; background: var(--surface); color: var(--ink-2); font-size: 13px; font-weight: 500; text-decoration: none; white-space: nowrap; transition: background 120ms ease, color 120ms ease, border-color 120ms ease; }
 .chip span { font-family: var(--font-mono); font-size: 11.5px; font-weight: 600; color: var(--ink-3); }
@@ -207,7 +207,14 @@ td a { color: var(--focus); }
       if (!section.hidden && section.getBoundingClientRect().top <= line) current = section.id;
     }
     chips.forEach((chip, id) => chip.classList.toggle("active", id === current));
-    if (current) chips.get(current)?.scrollIntoView({ block: "nearest", inline: "nearest" });
+    // Scroll only the chip row: scrollIntoView on a chip inside the sticky toolbar also scrolls the page back to the top.
+    const chip = current && chips.get(current);
+    if (chip) {
+      const row = chip.parentElement;
+      if (chip.offsetLeft < row.scrollLeft || chip.offsetLeft + chip.offsetWidth > row.scrollLeft + row.clientWidth) {
+        row.scrollTo({ left: chip.offsetLeft - 16, behavior: "smooth" });
+      }
+    }
   }
   addEventListener("scroll", () => { cancelAnimationFrame(spyFrame); spyFrame = requestAnimationFrame(spy); }, { passive: true });
   spy();
