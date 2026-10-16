@@ -32,7 +32,13 @@ fi
 for agent in "$@"; do
   if [ "$agent" = app ] && [ "$force" != 1 ]; then
     # app.py may be in the middle of a Task Move or Bug Details; the dashboard knows.
-    running="$(curl -s -m 3 http://127.0.0.1:3900/api/status | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["running"]))' 2>/dev/null || echo "?")"
+    # ops.py may itself have just been reloaded; give it a few seconds to answer.
+    running="?"
+    for _ in $(seq 1 6); do
+      running="$(curl -s -m 3 http://127.0.0.1:3900/api/status | python3 -c 'import json,sys; print(len(json.load(sys.stdin)["running"]))' 2>/dev/null || echo "?")"
+      [ "$running" != "?" ] && break
+      sleep 2
+    done
     if [ "$running" != 0 ]; then
       echo "app: $running active job(s) or dashboard unreachable - not reloaded (add --force to override)"
       continue
