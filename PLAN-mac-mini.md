@@ -7,7 +7,16 @@ push URL ayarlı), `.env` (bot token boş), `reflex-stats` + `reflex-ops` ajanla
 ve `:3900` Batuhan'ın Mac'inden açılıyor. Mini bulguları: FileVault kapalı, uyku zaten 0 (AI Tester kurulumu), 3800/3900
 boştu, `claude` CLI 2.1.299 ve mempalace-mcp zaten kuruluydu, otomatik giriş KAPALI (Batuhan açacak).
 Plan sapması: eski Mac'teki stats.py geçiş gününe kadar açık kaldı (Slack kısayolu hâlâ eski app.py'den eski IP'yi veriyor).
-Adım 4-5 TAMAM (16 Eki): push testi GUI'de geçti, otomatik giriş açık (`sysadminctl -autologin`), bot hesabı login + token `.env`'de, launchd spike Slack/Asana/mempalace-shared gördü. Sıradaki: adım 6-7 geçiş günü (Batuhan zamanı seçer).
+Adım 4-5 TAMAM (16 Eki). **Adım 6-7 TAMAM (16 Eki 14:20-14:35):** eski Mac'te app.py/stats.py kapandı, 3 scheduled task
+disable; `mac-mini` → `main` ff-merge + push; mini `main`'de, 6 ajan yüklü. Slack testleri geçti (Stats linki, Bug Details,
+Task Move 2/2; dashboard'da işler göründü). Routine'ler launchd'den koştu: release-summary exit 0 + push ok (commit
+`4b8963c`), bug-watcher dry-run exit 0 (37 sn, mantıklı kararlar), skill-catalog exit 0 ama Slack canvas güncellemesi
+`canvas_not_found` (bot Slack kullanıcısının canvas'ta düzenleme yetkisi yok → Batuhan canvas'ı Reflex kullanıcısıyla
+"can edit" paylaşacak; state dosyası bilerek yazılmadı, sonraki run tekrar dener). Karar (Batuhan): VertigoAI'daki
+`docs/SKILL_CATALOG.md`'yi de `run-routine.sh` AITesterVertigo ile commit + push eder (açık soru 3 kapandı).
+Bug Watcher dry-run `false` yapıldı. Eski Mac: `com.vertigo.bugwatcher-awake` kaldırıldı, worktree + `mac-mini` branch
+silindi; `sudo pmset repeat cancel` Batuhan'da. Açık: canvas paylaşımı + skill-catalog yeniden koşu; DHCP rezervasyonu (IT);
+pins'e `/releases/*` linkleri; eski scheduled task'lar 1 hafta sonra silinir.
 
 Routine modelleri (benim kararım, `launchd/run-routine.sh`): bug-watcher ve release-summary `opus`, skill-catalog `sonnet`.
 
@@ -172,8 +181,7 @@ Buton yok; başlat/durdur SSH ile (`launchctl kickstart -k gui/501/<label>`).
 
 1. FileVault mini'de açık mı? (adım 4'te okunur; açıksa otomatik giriş kararı Batuhan/IT.)
 2. AI Tester mini'yi yeniden başlatıyor / uyutuyor / ağır yük bindiriyor mu? (diğer developer'a sorulur.)
-3. Skill Catalog'un VertigoAI'daki `docs/SKILL_CATALOG.md` değişikliğini mini'de kim commit'ler? Bugün Batuhan
-   elle. Seçenek: `run-routine.sh` VertigoAI için de ikinci bir deploy key ile push eder (plan dışı, istenirse eklenir).
+3. ~~VertigoAI commit~~ → `run-routine.sh` `docs/SKILL_CATALOG.md`'yi de commit + push eder (AITesterVertigo, gh kimliği; 16 Eki).
 4. IT'de DHCP rezervasyonunu kim yapar?
 5. Bot Slack kullanıcısı Bug Watcher'ın izlediği kanallarda üye mi? (Değilse okuyamaz; adım 7'de görünür.)
 

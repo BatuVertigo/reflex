@@ -175,7 +175,8 @@ bash launchd/install.sh                                   # 3 servis + 3 routine
   "Active jobs" boş mu bak.
 - Routine'ler: `-bug-watcher` (08:00 pzt–cum), `-release-summary` (08/14/20), `-skill-catalog` (11:00). Elle:
   `bash launchd/run-routine.sh release-summary`. Run bitince script, routine'in kendi çıktı dosyalarını commit + push eder
-  (deploy key gerekir); her koşunun kaydı `~/Library/Logs/Reflex/routines/<ad>/`.
+  (Release Summary md'leri, Skill Catalog state'i ve VertigoAI'daki `docs/SKILL_CATALOG.md`; git kimliği `gh auth login`,
+  AITesterVertigo); her koşunun kaydı `~/Library/Logs/Reflex/routines/<ad>/`.
 - Kaldır: `bash launchd/install.sh --uninstall`.
 - Mini ayarları: uyku kapalı, `vertigoproduct` için otomatik giriş açık (LaunchAgent'lar oturum olmadan başlamaz;
   `sudo sysadminctl -autologin set -userName vertigoproduct -password …`).
