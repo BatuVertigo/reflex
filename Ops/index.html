@@ -116,7 +116,7 @@ pre { margin: 0; padding: 14px 18px; max-height: 440px; overflow: auto; backgrou
     <h2>Active requests</h2>
     <div id="banner" class="banner ok">…</div>
     <div class="panel" id="runningPanel" hidden style="margin-top:12px">
-      <table><thead><tr><th>Project</th><th>User</th><th>Started</th><th>Stages</th><th>Progress</th><th>Detail</th></tr></thead><tbody id="running"></tbody></table>
+      <table><thead><tr><th>Project</th><th>User</th><th>Started</th><th>Stages</th><th>Progress</th><th>Took</th><th>Detail</th></tr></thead><tbody id="running"></tbody></table>
     </div>
   </section>
 
@@ -152,16 +152,24 @@ pre { margin: 0; padding: 14px 18px; max-height: 440px; overflow: auto; backgrou
 const esc = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const when = iso => iso ? `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(11, 16)}` : "";
-const LOGOS = { "Stats PA": "stats-logo/pa.png", "Stats CS": "stats-logo/cs.png" };
+const LOGOS = { "Stats PA": "stats-logo/pa.png", "Stats CS": "stats-logo/cs.png", "Bug Details": "logo.webp", "Task Move": "logo.webp", "Version Check": "logo.webp" };
 const project = name => `<span class="proj">${LOGOS[name] ? `<img class="plogo" src="${LOGOS[name]}" alt="">` : ""}${esc(name)}</span>`;
 const ago = seconds => seconds == null ? "no log yet" : seconds < 60 ? `${seconds} s ago` : seconds < 3600 ? `${Math.round(seconds / 60)} min ago` : `${Math.round(seconds / 3600)} h ago`;
 const took = seconds => seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} m ${seconds % 60} s`;
 const pill = (kind, text) => `<span class="pill ${kind}"><i></i>${esc(text)}</span>`;
 const statusPill = status => status === "finished" ? pill("ok", "finished") : status === "failed" ? pill("bad", "failed") : pill("info", "running");
 const servicePill = s => s.state === "running" ? pill("ok", "running") : s.state === "not loaded" ? pill("bad", "not loaded") : pill("warn", s.state || "unknown");
-const stages = r => `<div class="stages">${r.stages.map(s => `<span class="stage ${esc(s.status)}" title="${esc(s.status)} · ${took(s.seconds)}"><i></i>${esc(s.name)}${s.progress ? " " + esc(s.progress) : ""}</span>`).join("")}</div>`;
+// A Slack job has no stages of its own (its single "stage" is the feature itself): leave the column empty.
+const stages = r => r.stages.length === 1 && r.stages[0].name === r.project ? "" : `<div class="stages">${r.stages.map(s => `<span class="stage ${esc(s.status)}" title="${esc(s.status)} · ${took(s.seconds)}"><i></i>${esc(s.name)}${s.progress ? " " + esc(s.progress) : ""}</span>`).join("")}</div>`;
 const link = r => r.link ? `<a class="ext" href="${esc(r.link)}" target="_blank" rel="noopener">${r.project === "Task Move" ? "Asana ↗" : "Slack thread ↗"}</a>${r.detail ? ` <span class="mono">${esc(r.detail)}</span>` : ""}` : esc(r.detail);
-const rowTook = r => took(Math.max(0, Math.round((new Date(r.updated) - new Date(r.started)) / 1000)));
+// Server stamps are "+0300"; Safari wants "+03:00".
+const parse = iso => new Date(iso.replace(/([+-]\d\d)(\d\d)$/, "$1:$2")).getTime();
+const rowTook = r => `<span class="took" data-start="${parse(r.started)}" ${r.status === "running" ? "" : `data-end="${parse(r.updated)}"`}>${tookText(r)}</span>`;
+const tookText = r => took(Math.max(0, Math.round(((r.status === "running" ? Date.now() : parse(r.updated)) - parse(r.started)) / 1000)));
+// Running rows count up every second between refreshes.
+setInterval(() => {
+  for (const cell of document.querySelectorAll(".took:not([data-end])")) cell.textContent = took(Math.max(0, Math.round((Date.now() - Number(cell.dataset.start)) / 1000)));
+}, 1000);
 let windowKey = "24h";
 let data = null;
 
@@ -210,7 +218,7 @@ async function refresh() {
   banner.innerHTML = running.length ? `${pill("warn", running.length + " running")} Do not stop app.py or stats.py right now.` : `${pill("ok", "idle")} No active requests — safe to stop or restart.`;
   document.getElementById("runningPanel").hidden = !running.length;
   document.getElementById("running").innerHTML = running.map(r =>
-    `<tr><td>${project(r.project)}</td><td>${esc(r.user)}</td><td class="mono">${when(r.started)}</td><td>${stages(r)}</td><td class="mono">${esc(r.stages.map(s => s.progress).filter(Boolean).slice(-1)[0] || "")}</td><td>${link(r)}</td></tr>`).join("");
+    `<tr><td>${project(r.project)}</td><td>${esc(r.user)}</td><td class="mono">${when(r.started)}</td><td>${stages(r)}</td><td class="mono">${esc(r.stages.map(s => s.progress).filter(Boolean).slice(-1)[0] || "")}</td><td class="mono">${rowTook(r)}</td><td>${link(r)}</td></tr>`).join("");
   renderProjects();
   document.getElementById("recentCount").textContent = `last ${data.recent.length}`;
   document.getElementById("recent").innerHTML = data.recent.map(r =>
