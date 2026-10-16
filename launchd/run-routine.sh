@@ -38,12 +38,16 @@ commit_owned() {
   local repo="$1"; shift
   [ $# -gt 0 ] || return 0
   if git -C "$repo" diff --quiet -- "$@"; then return 0; fi
-  if git -C "$repo" add -- "$@" && git -C "$repo" commit -q -m "$name: $(date +%Y-%m-%d\ %H:%M)" -- "$@" && git -C "$repo" push -q; then
+  # Someone else may have pushed meanwhile (VertigoAI especially): rebase our one commit onto the remote first.
+  if git -C "$repo" add -- "$@" && git -C "$repo" commit -q -m "$name: $(date +%Y-%m-%d\ %H:%M)" -- "$@" \
+     && git -C "$repo" pull -q --rebase --autostash >>"$push_log" 2>&1 && git -C "$repo" push -q 2>>"$push_log"; then
     echo ok
   else
+    git -C "$repo" rebase --abort 2>/dev/null
     echo failed
   fi
 }
+push_log="$(mktemp)"
 push="skipped"
 if [ $exit_code -eq 0 ]; then
   result="$(commit_owned "$REPO" "${owns[@]}")"
@@ -53,17 +57,18 @@ if [ $exit_code -eq 0 ]; then
 fi
 
 # One JSON per run: what the dashboard reads. The claude envelope is kept whole; stderr only when claude failed.
-python3 - "$run_file" "$name" "$started" "$exit_code" "$push" "$claude_out" <<'EOF'
+python3 - "$run_file" "$name" "$started" "$exit_code" "$push" "$claude_out" "$push_log" <<'EOF'
 import json, sys, time
-run_file, name, started, exit_code, push, claude_out = sys.argv[1:]
+run_file, name, started, exit_code, push, claude_out, push_log = sys.argv[1:]
 try:
     claude = json.load(open(claude_out, encoding="utf-8"))
 except Exception:
     claude = None
 stderr = open(claude_out + ".err", encoding="utf-8", errors="replace").read()[-4000:] if exit_code != "0" else ""
+push_error = open(push_log, encoding="utf-8", errors="replace").read()[-2000:]
 json.dump({"routine": name, "started": started, "ended": time.strftime("%Y-%m-%dT%H:%M:%S%z"), "exit_code": int(exit_code),
-           "push": push, "stderr": stderr, "claude": claude}, open(run_file, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
+           "push": push, "push_error": push_error, "stderr": stderr, "claude": claude}, open(run_file, "w", encoding="utf-8"), ensure_ascii=False, indent=1)
 EOF
-rm -f "$claude_out" "$claude_out.err"
+rm -f "$claude_out" "$claude_out.err" "$push_log"
 echo "$(date +%H:%M:%S)  $name  exit=$exit_code  push=$push  $run_file"
 exit $exit_code

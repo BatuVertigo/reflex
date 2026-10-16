@@ -100,7 +100,7 @@ def latest_run(name):
     result = (claude.get("result") or "").strip()
     return {
         "file": files[-1], "started": run.get("started"), "ended": run.get("ended"), "exit_code": run.get("exit_code"),
-        "push": run.get("push"), "is_error": claude.get("is_error"), "duration_s": round((claude.get("duration_ms") or 0) / 1000),
+        "push": run.get("push"), "push_error": (run.get("push_error") or "")[-300:], "is_error": claude.get("is_error"), "duration_s": round((claude.get("duration_ms") or 0) / 1000),
         "cost_usd": claude.get("total_cost_usd"), "result": result[:400], "runs": len(files),
     }
 

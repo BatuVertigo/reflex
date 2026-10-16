@@ -116,7 +116,7 @@ async function refresh() {
     const last = r.last;
     const ok = last && !last.is_error && last.exit_code === 0;
     const summary = !last ? `<span class="muted">never ran here</span>`
-      : `<span class="dot ${ok ? "ok" : "bad"}"></span>${ok ? "ok" : "failed"} · ${last.duration_s} s · push: ${esc(last.push ?? "-")}<br><span class="muted">${esc(last.result.split("\n")[0])}</span>`;
+      : `<span class="dot ${ok ? "ok" : "bad"}"></span>${ok ? "ok" : "failed"} · ${last.duration_s} s · push: ${esc(last.push ?? "-")}${last.push_error ? ` <span class="muted">(${esc(last.push_error.trim().split("\n").slice(-1)[0])})</span>` : ""}<br><span class="muted">${esc(last.result.split("\n")[0])}</span>`;
     return `<tr><td>${esc(r.name)}<br><span class="muted">${esc(r.state)}</span></td><td>${esc(r.schedule)}</td><td>${last ? when(last.started) : ""}</td><td>${summary}</td></tr>`;
   }).join("");
   document.getElementById("recent").innerHTML = data.recent.map(j =>

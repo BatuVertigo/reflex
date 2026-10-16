@@ -15,7 +15,13 @@ Task Move 2/2; dashboard'da işler göründü). Routine'ler launchd'den koştu: 
 "can edit" paylaşacak; state dosyası bilerek yazılmadı, sonraki run tekrar dener). Karar (Batuhan): VertigoAI'daki
 `docs/SKILL_CATALOG.md`'yi de `run-routine.sh` AITesterVertigo ile commit + push eder (açık soru 3 kapandı).
 Bug Watcher dry-run `false` yapıldı. Eski Mac: `com.vertigo.bugwatcher-awake` kaldırıldı, worktree + `mac-mini` branch
-silindi; `sudo pmset repeat cancel` Batuhan'da. Açık: canvas paylaşımı + skill-catalog yeniden koşu; DHCP rezervasyonu (IT);
+silindi; `sudo pmset repeat cancel` Batuhan'da. Skill-catalog 2. koşu (14:35, canvas AITester Slack kullanıcısıyla "can edit" paylaşıldıktan sonra): yine
+`canvas_not_found` (okuma çalışıyor; section id'lerin `temp:C:` öneki normal, Batuhan'ın okumasında da aynı). VertigoAI
+commit'i oldu ama push "fetch first" ile düştü → `run-routine.sh` artık push'tan önce `pull --rebase --autostash` yapar ve
+push hatasını run dosyasına (`push_error`) yazar; dashboard gösterir. Katalog metni kararı (Batuhan): dosya kaynak, canvas
+ezilir (prompt'un mevcut mantığı). Açık: canvas erişimi — Batuhan Slack'te canvas → Share'de AITester'ın "Can edit"
+olduğunu ve canvas bir kanala bağlıysa AITester'ın o kanalda üye olduğunu doğrulayacak; yarın 11:00 koşusu tekrar dener.
+Açık: DHCP rezervasyonu (IT);
 pins'e `/releases/*` linkleri; eski scheduled task'lar 1 hafta sonra silinir.
 
 Routine modelleri (benim kararım, `launchd/run-routine.sh`): bug-watcher ve release-summary `opus`, skill-catalog `sonnet`.
