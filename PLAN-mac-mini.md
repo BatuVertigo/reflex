@@ -211,3 +211,7 @@ Buton yok; başlat/durdur SSH ile (`launchctl kickstart -k gui/501/<label>`).
   ThinkingData MCP HTTP ucuna doğrudan JSON-RPC atar (ae-cli değil). ae-cli'ye geçiş ayrı iş.
 - Slack **Stats** metninden Windows/IP satırı kaldırıldı.
 - `ASANA_PAT` AITester hesabının token'ı ile değiştirilecek (Batuhan mini'de `.env`'e girer, `deploy.sh app`).
+- Tur 2b: Release sayfasında oyunların orijinal logoları (`Stats/icons/pa-logo.webp`, `cs-logo.png`, Batuhan verdi), logo = diğer
+  oyuna geçiş toggle'ı (⇄, Stats'taki gibi), Stats'a buton yok, 🧪 yerine çizgi flask ikonu, sürüm linklerinde ↗ ikonu,
+  başlıklar `lang="en"` (CRİTİCAL → CRITICAL). Slack Stats metni `/stats/pa/` ve `/stats/cs/` linklerini verir.
+  `.env.example`: tüm anahtarlar normal satır, gruplu.

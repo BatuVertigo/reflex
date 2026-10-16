@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><!--TITLE--></title>
-<link rel="icon" href="/stats/<!--KEY-->/logo-web.png">
+<link rel="icon" href="<!--LOGO-->">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&display=swap">
@@ -51,14 +51,17 @@ body { margin: 0; padding: 28px 20px 56px; background: var(--ground); color: var
 main { width: min(1180px, 100%); margin: 0 auto; }
 
 header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
-header img { width: 64px; height: 64px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgba(15, 20, 27, 0.08); }
+/* The logo is the switch to the other game's table, like the Stats pages: hover shows the arrows. */
+a.brand { display: flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; padding: 4px 10px 4px 4px; border-radius: 16px; transition: background 120ms ease; }
+a.brand:hover { background: var(--surface); }
+a.brand:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.brand img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; box-shadow: 0 1px 2px rgba(15, 20, 27, 0.12); }
+.brand-swap { font-size: 22px; line-height: 1; color: var(--ink-3); align-self: center; }
+a.brand:hover .brand-swap { color: var(--accent); }
 header .eyebrow { margin: 0 0 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 header h1 { margin: 0; font-family: var(--font-display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 40px; line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; }
 header .meta { margin: 6px 0 0; color: var(--ink-2); font-size: 13px; }
 header .meta strong { color: var(--ink); font-weight: 600; }
-header nav { margin-left: auto; display: flex; gap: 8px; }
-header nav a { padding: 8px 12px; border: 1px solid var(--hairline); border-radius: 10px; background: var(--surface); color: var(--ink-2); font-size: 13px; font-weight: 500; text-decoration: none; }
-header nav a:hover { color: var(--ink); border-color: var(--ink-3); }
 
 .legend { display: flex; flex-wrap: wrap; gap: 14px 22px; margin: 0 0 14px; padding: 0 4px; color: var(--ink-2); font-size: 12.5px; }
 .legend span { display: inline-flex; align-items: center; gap: 6px; }
@@ -86,11 +89,13 @@ td a { color: var(--focus); }
 .dot { display: inline-block; width: 10px; height: 10px; margin-right: 7px; border-radius: 50%; vertical-align: 0; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
 .dot.live { background: var(--live); color: var(--live); }
 .dot.past { background: var(--past); color: var(--past); }
-.dot.test { background: var(--test); color: var(--test); }
+.flask { width: 15px; height: 15px; margin-right: 6px; vertical-align: -2px; fill: none; stroke: var(--test); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.ext { width: 11px; height: 11px; margin-left: 4px; vertical-align: 1px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; opacity: 0.55; }
+td:nth-child(1) a:hover .ext { opacity: 1; }
 
 @media (max-width: 720px) {
   body { padding: 18px 12px 40px; font-size: 13.5px; }
-  header { gap: 12px; } header img { width: 48px; height: 48px; } header h1 { font-size: 30px; } header nav { display: none; }
+  header { gap: 12px; } .brand img { width: 48px; height: 48px; } header h1 { font-size: 30px; }
   thead th, tbody td { padding: 10px 12px; }
 }
 </style>
@@ -99,28 +104,29 @@ td a { color: var(--focus); }
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <symbol id="icon-apple" viewBox="0 0 24 24"><path d="<!--APPLE-->"/></symbol>
   <symbol id="icon-android" viewBox="0 0 24 24"><path d="<!--ANDROID-->"/></symbol>
+  <symbol id="icon-flask" viewBox="0 0 24 24"><path d="M9 3h6M10 3v6.2L4.6 18.4A2 2 0 0 0 6.3 21.5h11.4a2 2 0 0 0 1.7-3.1L14 9.2V3M7.5 15h9"/></symbol>
+  <symbol id="icon-external" viewBox="0 0 24 24"><path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/></symbol>
 </svg>
 <main>
   <header>
-    <img src="/stats/<!--KEY-->/logo-web.png" alt="">
-    <div>
-      <p class="eyebrow"><!--GAME--></p>
-      <h1>Release Summary</h1>
-      <p class="meta">Reflex tarafından düzenli aralıklarla güncellenir · Son güncelleme <strong><!--UPDATED--></strong></p>
-    </div>
-    <nav>
-      <a href="/releases/pa/">PA</a>
-      <a href="/releases/cs/">CS</a>
-      <a href="/stats/<!--KEY-->/">Stats <!--SHORT--></a>
-    </nav>
+    <a class="brand" href="/releases/<!--OTHER-->/" title="<!--OTHERGAME--> tablosuna geç" aria-label="<!--OTHERGAME--> tablosuna geç">
+      <img src="<!--LOGO-->" alt="">
+      <div>
+        <p class="eyebrow" lang="en"><!--GAME--></p>
+        <h1 lang="en">Release Summary</h1>
+        <p class="meta">Reflex tarafından düzenli aralıklarla güncellenir · Son güncelleme <strong><!--UPDATED--></strong></p>
+      </div>
+      <span class="brand-swap" aria-hidden="true">⇄</span>
+    </a>
   </header>
   <div class="legend">
     <span><span class="dot live"></span>Yayında</span>
     <span><span class="dot past"></span>Artık yayında değil</span>
-    <span><span class="dot test"></span>Test / Prod'a açılmadı</span>
+    <span><svg class="flask"><use href="#icon-flask"/></svg>Test / Prod'a açılmadı</span>
     <span><svg class="os apple"><use href="#icon-apple"/></svg>iOS</span>
     <span><svg class="os android"><use href="#icon-android"/></svg>Android</span>
     <span>👊🏻&nbsp;Forcelandı</span>
+    <span><svg class="ext" style="margin:0 6px 0 0;opacity:1"><use href="#icon-external"/></svg>Sürüm → Slack release postu</span>
   </div>
   <div class="card"><div class="scroll">
 <!--TABLE-->

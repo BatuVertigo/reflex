@@ -38,9 +38,10 @@ cs.te_lock = polygun.te_lock
 GAMES = {"/stats/pa": polygun, "/stats/cs": cs}
 OLD_PREFIXES = {"/polygun": "/stats/pa", "/cs": "/stats/cs"}
 
+# key: (name, md file, logo under Stats/icons, the other game's key — the header logo toggles between the two pages)
 RELEASES = {
-    "pa": ("Polygun Arena", "PA", os.path.join(ROOT, "Release Summary/pa_release_summary.md")),
-    "cs": ("Critical Strike", "CS", os.path.join(ROOT, "Release Summary/cs_release_summary.md")),
+    "pa": ("Polygun Arena", os.path.join(ROOT, "Release Summary/pa_release_summary.md"), "/icons/pa-logo.webp", "cs"),
+    "cs": ("Critical Strike", os.path.join(ROOT, "Release Summary/cs_release_summary.md"), "/icons/cs-logo.png", "pa"),
 }
 
 
@@ -73,11 +74,13 @@ OS_ICONS = {
     "🍎": '<svg class="os apple" role="img" aria-label="iOS"><use href="#icon-apple"/></svg>',
     "🤖": '<svg class="os android" role="img" aria-label="Android"><use href="#icon-android"/></svg>',
 }
-STATUS_DOTS = {"🟢": "live", "🔵": "past", "🧪": "test"}
+STATUS_DOTS = {"🟢": "live", "🔵": "past"}
+FLASK = '<svg class="flask" role="img" aria-label="Test"><use href="#icon-flask"/></svg>'
+EXTERNAL = '<svg class="ext" aria-hidden="true"><use href="#icon-external"/></svg>'
 
 
 def release_page(key):
-    title, short, path = RELEASES[key]
+    title, path, logo, other = RELEASES[key]
     with open(path, encoding="utf-8") as file:
         text = file.read()
     lines = text.splitlines()
@@ -88,12 +91,16 @@ def release_page(key):
         table = table.replace(emoji, svg)
     for emoji, kind in STATUS_DOTS.items():
         table = table.replace(emoji, f'<span class="dot {kind}" aria-hidden="true"></span>')
+    table = table.replace("🧪", FLASK)
+    # Version numbers link to the Slack release post; a small arrow says so.
+    table = re.sub(r'(<td><strong><a [^>]*>)([^<]*)(</a>)', lambda m: m.group(1) + m.group(2) + EXTERNAL + m.group(3), table)
     # Markdown renders no lists inside table cells, so the "- " the routine writes would show as text: one line per step is enough.
     table = re.sub(r"(<td>|<br ?/?>)- ", r"\1", table)
     with open(os.path.join(FOLDER, "release.html"), encoding="utf-8") as file:
         page = file.read()
     for marker, value in {
-        "<!--TITLE-->": heading, "<!--GAME-->": title, "<!--SHORT-->": short, "<!--KEY-->": key,
+        "<!--TITLE-->": heading, "<!--GAME-->": title, "<!--KEY-->": key, "<!--LOGO-->": logo,
+        "<!--OTHER-->": other, "<!--OTHERGAME-->": RELEASES[other][0],
         "<!--UPDATED-->": updated.group(1).strip() if updated else "", "<!--TABLE-->": table,
         "<!--APPLE-->": icon_path("apple"), "<!--ANDROID-->": icon_path("android"),
     }.items():
@@ -157,6 +164,9 @@ class Handler(SimpleHTTPRequestHandler):
         if path in ("/", "/index.html"):
             with open(os.path.join(FOLDER, "index.html"), "rb") as file:
                 self.send_html(file.read())
+            return
+        if path.startswith("/icons/"):
+            super().do_GET()  # Stats/icons: game logos and brand marks
             return
         self.send_error(HTTPStatus.NOT_FOUND)
 
