@@ -50,8 +50,9 @@ commit_owned() {
 push_log="$(mktemp)"
 push="skipped"
 if [ $exit_code -eq 0 ]; then
-  result="$(commit_owned "$REPO" "${owns[@]}")"
-  [ -n "$also_repo" ] && result="$result $(commit_owned "$also_repo" "${also_owns[@]}")"
+  # "${arr[@]+"${arr[@]}"}": an empty array under set -u is otherwise an "unbound variable" error on macOS bash 3.2.
+  result="$(commit_owned "$REPO" "${owns[@]+"${owns[@]}"}")"
+  [ -n "$also_repo" ] && result="$result $(commit_owned "$also_repo" "${also_owns[@]+"${also_owns[@]}"}")"
   result="$(echo $result)"
   [ -n "$result" ] && push="$result"
 fi
