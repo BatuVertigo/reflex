@@ -1,7 +1,7 @@
 # Reflex → Mac mini taşıma planı
 
 Durum: ONAYLANDI (Batuhan, 2026-10-16). Adım 1-3 tamam (commit `199e3b7`, branch `mac-mini`). Adım 4-5 büyük ölçüde
-tamam (16 Eki): mini'de `~/Documents/GitHub/reflex` (Batuhan: diğer repolar gibi; branch `mac-mini`, GitHub'a push yok; branch SSH ile itildi), `.venv`,
+tamam (16 Eki): mini'de `~/GitHub/reflex` (branch `mac-mini`, GitHub'a push yok; branch SSH ile itildi), `.venv`,
 `~/.claude-reflex` + mempalace-shared kaydı (bağlandı), deploy key `~/.ssh/reflex_deploy` (+ `github.com-reflex` alias,
 push URL ayarlı), `.env` (bot token boş), `reflex-stats` + `reflex-ops` ajanları çalışıyor; `http://productmacmini.local:3800`
 ve `:3900` Batuhan'ın Mac'inden açılıyor. Mini bulguları: FileVault kapalı, uyku zaten 0 (AI Tester kurulumu), 3800/3900
@@ -62,7 +62,7 @@ tek bir ops dashboard'u aç, Release Summary tablolarını Slack canvas yerine w
 
 - Mutlak `/Users/vertigo/Desktop/Code/Reflex/reflex/...` yolları kaldırılır; prompt "bu dosyanın bulunduğu klasör"
   üzerinden konuşur (headless çağrı prompt'un mutlak yolunu zaten veriyor). Böylece aynı prompt iki makinede de
-  çalışır. Skill Catalog'daki VertigoAI yolu `~/Documents/GitHub/VertigoAI` olur (`~` = o makinedeki HOME).
+  çalışır. Skill Catalog'daki VertigoAI yolu `~/GitHub/VertigoAI` olur (`~` = o makinedeki HOME).
 - Release Summary: "Slack canvas aynalama" bölümü silinir; md değiştiyse yapılacaklar listesinden canvas düşer.
 - Bug Watcher: geçiş testinde dry-run `true`, doğrulama sonrası `false`.
 - Prompt'lar git komutu çalıştırmaz (Skill Catalog'daki "sadece pull" kuralı kalır).
@@ -84,7 +84,7 @@ tek bir ops dashboard'u aç, Release Summary tablolarını Slack canvas yerine w
 - mempalace-shared: `mempalace-mcp` kurulumu, `~/.mempalace-shared/` palace dosyaları kopyası, MCP kaydı
   `~/.claude-reflex` içinde (DSN ve namespace env'leri Batuhan'ın Mac'indekiyle aynı; sırlar elle taşınır).
   Doğrulama: `mempalace_status`.
-- VertigoAI klonu `~/Documents/GitHub/VertigoAI` (mini'de zaten var) + prompt'un istediği pluginler `CLAUDE_CONFIG_DIR` altında kurulu.
+- VertigoAI klonu `~/GitHub/VertigoAI` (mini'de zaten var) + prompt'un istediği pluginler `CLAUDE_CONFIG_DIR` altında kurulu.
 - Reflex deploy key: mini'de `ssh-keygen` → public key GitHub'da repoya "write" deploy key; `git remote` SSH URL.
 - `.env` sıfırdan yazılır (geçersiz shell satırları temizlenir): Slack token'ları, `ASANA_PAT`, TE token'ları,
   `CLAUDE_CODE_OAUTH_TOKEN`, `STATS_URL`, `REFLEX_LOG_DIR`, `CLAUDE_FOLDER`.

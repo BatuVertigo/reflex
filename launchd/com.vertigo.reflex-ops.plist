@@ -6,11 +6,11 @@
 	<string>com.vertigo.reflex-ops</string>
 	<key>ProgramArguments</key>
 	<array>
-		<string>/Users/vertigoproduct/Documents/GitHub/reflex/.venv/bin/python</string>
+		<string>/Users/vertigoproduct/GitHub/reflex/.venv/bin/python</string>
 		<string>Ops/ops.py</string>
 	</array>
 	<key>WorkingDirectory</key>
-	<string>/Users/vertigoproduct/Documents/GitHub/reflex</string>
+	<string>/Users/vertigoproduct/GitHub/reflex</string>
 	<key>EnvironmentVariables</key>
 	<dict>
 		<key>REFLEX_LOG_DIR</key>

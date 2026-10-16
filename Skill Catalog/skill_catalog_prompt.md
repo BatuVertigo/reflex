@@ -4,7 +4,7 @@ Vertigo'nun skill kataloğunu tek kaynaktan senkron tut: VertigoAI reposundaki `
 
 ## Sabitler
 
-- **Repo:** `~/Documents/GitHub/VertigoAI` (branch: `main`; `~` = bu makinedeki HOME)
+- **Repo:** `~/GitHub/VertigoAI` (branch: `main`; `~` = bu makinedeki HOME)
 - **Katalog dosyası:** `docs/SKILL_CATALOG.md`
 - **Manifest:** `plugin-list.json` (marketplace + plugin listesi; tek doğruluk kaynağı)
 - **Vertigo skill kaynakları:** `plugins/vertigo-core-skills/skills/*/SKILL.md`, `plugins/vertigo-extra-skills/skills/*/SKILL.md` (ileride `plugins/vertigo-*-skills` deseninde yenileri gelebilir — hepsini tara)
