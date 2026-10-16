@@ -7,11 +7,11 @@
 	<key>ProgramArguments</key>
 	<array>
 		<string>/bin/bash</string>
-		<string>/Users/vertigoproduct/Reflex/reflex/launchd/run-routine.sh</string>
+		<string>/Users/vertigoproduct/Documents/GitHub/reflex/launchd/run-routine.sh</string>
 		<string>bug-watcher</string>
 	</array>
 	<key>WorkingDirectory</key>
-	<string>/Users/vertigoproduct/Reflex/reflex</string>
+	<string>/Users/vertigoproduct/Documents/GitHub/reflex</string>
 	<key>EnvironmentVariables</key>
 	<dict>
 		<key>REFLEX_LOG_DIR</key>

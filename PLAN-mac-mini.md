@@ -1,6 +1,13 @@
 # Reflex → Mac mini taşıma planı
 
-Durum: ONAYLANDI (Batuhan, 2026-10-16). Adım 1-3 tamam (worktree `../reflex-mini`, branch `mac-mini`); adım 4 Batuhan'ın `ssh-copy-id`'sini bekliyor.
+Durum: ONAYLANDI (Batuhan, 2026-10-16). Adım 1-3 tamam (commit `199e3b7`, branch `mac-mini`). Adım 4-5 büyük ölçüde
+tamam (16 Eki): mini'de `~/Documents/GitHub/reflex` (Batuhan: diğer repolar gibi; branch `mac-mini`, GitHub'a push yok; branch SSH ile itildi), `.venv`,
+`~/.claude-reflex` + mempalace-shared kaydı (bağlandı), deploy key `~/.ssh/reflex_deploy` (+ `github.com-reflex` alias,
+push URL ayarlı), `.env` (bot token boş), `reflex-stats` + `reflex-ops` ajanları çalışıyor; `http://productmacmini.local:3800`
+ve `:3900` Batuhan'ın Mac'inden açılıyor. Mini bulguları: FileVault kapalı, uyku zaten 0 (AI Tester kurulumu), 3800/3900
+boştu, `claude` CLI 2.1.299 ve mempalace-mcp zaten kuruluydu, otomatik giriş KAPALI (Batuhan açacak).
+Plan sapması: eski Mac'teki stats.py geçiş gününe kadar açık kaldı (Slack kısayolu hâlâ eski app.py'den eski IP'yi veriyor).
+Batuhan'a kalan: mini Terminal'inde kuru push testi, otomatik giriş, bot hesabıyla `claude login` + `setup-token` → `.env`.
 
 Routine modelleri (benim kararım, `launchd/run-routine.sh`): bug-watcher ve release-summary `opus`, skill-catalog `sonnet`.
 
@@ -20,7 +27,7 @@ tek bir ops dashboard'u aç, Release Summary tablolarını Slack canvas yerine w
 | Claude hesabı | Ayrı bot hesabı (Max). Slack connector'ı **bot hesabının kendi Slack kullanıcısıyla** zaten bağlı. Asana connector'ı: bot hesabında bağlı olduğu `[ASSUMED]`; adım 4'te doğrulanır. `ASANA_PAT` şimdilik Batuhan'ınki; bot'a Asana hesabı açılınca değişir. |
 | Routine motoru | Headless CLI: launchd takvim ajanı → `run-routine.sh` → `claude -p` + prompt dosyası. Spike doğrulandı (2026-10-16): headless `claude -p` claude.ai connector'larını (Slack, Asana), mempalace'i, Artifact araçlarını görüyor; gerçek `slack_search_channels` çağrısı başarılı. |
 | Kod dağıtımı | Repo **git** (`origin github.com/BatuVertigo/reflex`). Mini'ye `git clone`, güncelleme `git pull`. rsync yok. |
-| Routine çıktıları | Her routine run'ından sonra `run-routine.sh` o routine'in **kendi çıktı dosyalarını** commit + push eder (Release Summary: iki md; Skill Catalog: `skill_catalog_state.json`). Mini'de bu repoya yazma yetkili bir **deploy key** (Batuhan GitHub'da ekler). Prompt'lar git'e dokunmaz; iş deterministik, script'te. |
+| Routine çıktıları | Her routine run'ından sonra `run-routine.sh` o routine'in **kendi çıktı dosyalarını** commit + push eder (Release Summary: iki md; Skill Catalog: `skill_catalog_state.json`). Push kimliği **AITesterVertigo** GitHub hesabı: repoya write collaborator (Batuhan ekledi, 16 Eki), mini'de `gh auth login` yapıldı, `gh auth setup-git` git'in credential helper'ı. Token macOS keychain'de → sadece GUI oturumunda (launchd gui domain, otomatik giriş) çalışır; SSH oturumunda keychain kilitli ("User interaction is not allowed"). Yedek: `gh auth login --insecure-storage` (token dosyada). Commit'ler AITesterVertigo adına. Deploy key yolu kaldırıldı. Prompt'lar git'e dokunmaz; iş deterministik, script'te. |
 | Dashboard | Tek sayfa, ayrı süreç `Ops/ops.py`, port 3900. |
 | Release Summary yayını | `stats.py` 3800 portunda `/releases/pa/` ve `/releases/cs/`. Slack canvas aynalaması **hemen kaldırılır**; canvas'lara "Güncel tablo: <link>" notu düşülür; pins'e linki Batuhan ekler. mempalace aynalaması kalır. |
 | Adres | Slack Stats linki `http://productmacmini.local:3800` (+ IP ikinci satır). IT'den DHCP rezervasyonu istenir. |
@@ -55,7 +62,7 @@ tek bir ops dashboard'u aç, Release Summary tablolarını Slack canvas yerine w
 
 - Mutlak `/Users/vertigo/Desktop/Code/Reflex/reflex/...` yolları kaldırılır; prompt "bu dosyanın bulunduğu klasör"
   üzerinden konuşur (headless çağrı prompt'un mutlak yolunu zaten veriyor). Böylece aynı prompt iki makinede de
-  çalışır. Skill Catalog'daki VertigoAI yolu `~/GitHub/VertigoAI` olur (`~` = o makinedeki HOME).
+  çalışır. Skill Catalog'daki VertigoAI yolu `~/Documents/GitHub/VertigoAI` olur (`~` = o makinedeki HOME).
 - Release Summary: "Slack canvas aynalama" bölümü silinir; md değiştiyse yapılacaklar listesinden canvas düşer.
 - Bug Watcher: geçiş testinde dry-run `true`, doğrulama sonrası `false`.
 - Prompt'lar git komutu çalıştırmaz (Skill Catalog'daki "sadece pull" kuralı kalır).
@@ -77,7 +84,7 @@ tek bir ops dashboard'u aç, Release Summary tablolarını Slack canvas yerine w
 - mempalace-shared: `mempalace-mcp` kurulumu, `~/.mempalace-shared/` palace dosyaları kopyası, MCP kaydı
   `~/.claude-reflex` içinde (DSN ve namespace env'leri Batuhan'ın Mac'indekiyle aynı; sırlar elle taşınır).
   Doğrulama: `mempalace_status`.
-- VertigoAI klonu `~/GitHub/VertigoAI` + prompt'un istediği pluginler `CLAUDE_CONFIG_DIR` altında kurulu.
+- VertigoAI klonu `~/Documents/GitHub/VertigoAI` (mini'de zaten var) + prompt'un istediği pluginler `CLAUDE_CONFIG_DIR` altında kurulu.
 - Reflex deploy key: mini'de `ssh-keygen` → public key GitHub'da repoya "write" deploy key; `git remote` SSH URL.
 - `.env` sıfırdan yazılır (geçersiz shell satırları temizlenir): Slack token'ları, `ASANA_PAT`, TE token'ları,
   `CLAUDE_CODE_OAUTH_TOKEN`, `STATS_URL`, `REFLEX_LOG_DIR`, `CLAUDE_FOLDER`.

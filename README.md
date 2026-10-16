@@ -157,11 +157,11 @@ Bilinmesi gerekenler:
 
 ## 5. Mac mini'de 7/24 çalıştırma (launchd)
 
-Hedef: `vertigoproduct@productmacmini.local`, repo `~/Reflex/reflex`, Claude bot hesabı `~/.claude-reflex` altında.
+Hedef: `vertigoproduct@productmacmini.local`, repo `~/Documents/GitHub/reflex`, Claude bot hesabı `~/.claude-reflex` altında.
 Tam geçiş planı ve sırası: `PLAN-mac-mini.md`.
 
 ```bash
-cd ~/Reflex/reflex
+cd ~/Documents/GitHub/reflex
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
 CLAUDE_CONFIG_DIR=~/.claude-reflex claude login          # bot hesabı; connector'lar claude.ai'de bu hesapta bağlı olmalı
 CLAUDE_CONFIG_DIR=~/.claude-reflex claude setup-token    # çıktı → .env CLAUDE_CODE_OAUTH_TOKEN
