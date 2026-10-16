@@ -2,7 +2,8 @@
 (launchd state, the log files and job files under REFLEX_LOG_DIR, the routine run files) and changes nothing.
 No buttons: start and stop go through SSH (`launchctl kickstart -k gui/501/<label>`).
 
-Port 3900 unless OPS_PORT says otherwise. LAN only, no password: the logs hold no Slack text and no player IDs.
+Port 3900 unless OPS_PORT says otherwise. LAN only, no password: the logs hold no Slack text; Stats requests show what was
+searched (player names, PlayFab and match IDs).
 """
 
 import importlib.util
@@ -67,12 +68,16 @@ def requests_from(jobs):
         project = project_of(job["feature"])
         request = requests.setdefault(key, {
             "id": key, "project": project, "user": job["user"], "started": job["started"], "updated": job["updated"],
-            "status": "finished", "stages": [], "link": job.get("link", ""), "detail": "",
+            "status": "finished", "stages": [], "link": job.get("link", ""), "detail": "", "searched": [],
         })
         stage_name = job["feature"].split(" ", 1)[1] if project.startswith("Stats") else job["feature"]
         seconds = max(0, int((when(job["updated"]) - when(job["started"])).total_seconds()))
         request["stages"].append({"name": stage_name, "status": job["status"], "seconds": seconds, "progress": job["progress"]})
         request["updated"] = max(request["updated"], job["updated"])
+        # A search's stages repeat the PlayFab ID (career, then period): each word once, quoted names kept whole.
+        for word in re.findall(r'"[^"]*"|\S+', job.get("searched", "")):
+            if word not in request["searched"]:
+                request["searched"].append(word)
         if job.get("detail"):
             request["detail"] = job["detail"]
         if job.get("link"):

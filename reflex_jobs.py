@@ -2,7 +2,8 @@
 started → (progress) → finished / failed. Each process keeps its own JSON file under REFLEX_LOG_DIR
 (default ~/Library/Logs/Reflex), so two processes never write the same file.
 
-Nothing personal goes in here: Stats passes only the query kind, never a PlayFab ID or match ID.
+Stats jobs carry what was searched (player name, PlayFab ID, match ID, dates) in `searched`, for the LAN-only ops dashboard.
+Service logs still mask IDs.
 """
 
 import json
@@ -36,10 +37,12 @@ class Jobs:
                 job.update(status="failed", detail="process restarted", updated=now())
         self._save()
 
-    def start(self, feature, user="", detail="", link="", group=""):
-        """link: where the dashboard sends the reader (Slack thread, Asana task). group: id shared by the stages of one request."""
+    def start(self, feature, user="", detail="", link="", group="", searched=""):
+        """link: where the dashboard sends the reader (Slack thread, Asana task). group: id shared by the stages of one request.
+        searched: what a Stats search asked for."""
         job = {"id": uuid.uuid4().hex[:8], "feature": feature, "user": user, "started": now(), "updated": now(),
-               "status": "running", "progress": "", "detail": detail, "link": link, "group": group}
+               "status": "running", "progress": "", "detail": detail, "link": link, "group": group,
+               "searched": searched}
         with self.lock:
             self.jobs.append(job)
             del self.jobs[:-KEEP]

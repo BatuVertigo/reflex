@@ -30,11 +30,20 @@ main { width: min(1280px, 100%); margin: 0 auto; padding: 20px 20px 60px; displa
 .top img { width: 44px; height: 44px; border-radius: 12px; background: var(--surface); }
 .top h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
 .top .sub { margin: 0; color: var(--ink-2); font-size: 13px; }
-.top .live { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; font-family: var(--mono); }
+.top .live { margin-left: auto; white-space: nowrap; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; font-family: var(--mono); }
 .top .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px var(--ok-bg); }
 .top .live.off i { background: var(--bad); box-shadow: 0 0 0 4px var(--bad-bg); }
 
-h2 { margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+h2 { display: flex; align-items: center; gap: 7px; margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.ico { width: 15px; height: 15px; flex: none; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+.sechead { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 12px; }
+.sechead h2 { margin: 0; }
+.services { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(min(380px, 100%), 1fr)); }
+.svc .name .logos { display: inline-flex; align-items: center; gap: 10px; margin-right: auto; }
+.svc .name .logos img { width: 28px; height: 28px; border-radius: 8px; object-fit: cover; }
+.facts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 12px; padding-bottom: 14px; border-bottom: 1px solid var(--hairline); color: var(--ink-2); font-size: 12px; }
+.facts b { display: block; color: var(--ink); font-weight: 500; font-family: var(--mono); font-size: 12.5px; }
+.svc .tiles { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); padding: 14px 0 0; }
 .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
 .card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(15,20,27,.04); }
 .card .name { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 15px; }
@@ -51,7 +60,9 @@ h2 { margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em
 .banner { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; font-weight: 600; }
 .banner.ok { background: var(--ok-bg); color: var(--ok); } .banner.warn { background: var(--warn-bg); color: var(--warn); }
 
-.panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+/* Wide tables scroll inside their panel instead of widening the whole page on a phone. */
+main > *, section > * { min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden auto; }
 .panel .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--hairline); }
 .panel .head h2 { margin: 0; }
 table { width: 100%; border-collapse: collapse; }
@@ -59,6 +70,7 @@ th { padding: 9px 16px; text-align: left; font-size: 11.5px; font-weight: 600; l
 td { padding: 10px 16px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
 td.mono, .mono { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+.searched { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
 td.empty { color: var(--ink-3); text-align: center; padding: 22px; }
 .stages { display: flex; flex-wrap: wrap; gap: 5px; }
 .stage { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 6px; border-radius: 8px; font-size: 12px; font-family: var(--mono); background: var(--surface-2); color: var(--ink-2); }
@@ -80,6 +92,7 @@ a.ext:hover { text-decoration: underline; }
 .tile .n { margin-top: 4px; font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .tile .n small { font-size: 13px; font-weight: 500; color: var(--ink-3); margin-left: 4px; }
 .tile .m { margin-top: 8px; display: flex; gap: 10px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tile .m { flex-wrap: wrap; } .tile .m span { white-space: nowrap; }
 .tile .m .ok { color: var(--ok); } .tile .m .bad { color: var(--bad); }
 .bar { margin-top: 8px; height: 5px; border-radius: 3px; background: var(--hairline); overflow: hidden; }
 .bar i { display: block; height: 100%; background: var(--ok); }
@@ -102,6 +115,13 @@ pre { margin: 0; padding: 14px 18px; max-height: 440px; overflow: auto; backgrou
 </style>
 </head>
 <body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="i-activity" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></symbol>
+  <symbol id="i-server" viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="8" rx="2"/><rect x="2" y="14" width="20" height="8" rx="2"/><path d="M6 6h.01M6 18h.01"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></symbol>
+  <symbol id="i-terminal" viewBox="0 0 24 24"><path d="m4 17 6-6-6-6"/><path d="M12 19h8"/></symbol>
+</svg>
 <main>
   <header class="top">
     <img src="logo.webp" alt="">
@@ -113,39 +133,34 @@ pre { margin: 0; padding: 14px 18px; max-height: 440px; overflow: auto; backgrou
   </header>
 
   <section>
-    <h2>Services</h2>
-    <div class="grid" id="services"></div>
-  </section>
-
-  <section>
-    <h2>Routines</h2>
-    <div class="grid" id="routines"></div>
-  </section>
-
-  <section>
-    <h2>Active requests</h2>
+    <h2><svg class="ico"><use href="#i-activity"/></svg>Active requests</h2>
     <div id="banner" class="banner ok">…</div>
     <div class="panel" id="runningPanel" hidden style="margin-top:12px">
       <table><thead><tr><th>Project</th><th>User</th><th>Started</th><th>Stages</th><th>Progress</th><th>Took</th><th>Detail</th></tr></thead><tbody id="running"></tbody></table>
     </div>
   </section>
 
-  <section class="panel">
-    <div class="head">
-      <h2>Projects</h2>
+  <section>
+    <div class="sechead">
+      <h2><svg class="ico"><use href="#i-server"/></svg>Services</h2>
       <div class="seg" id="windows"><button data-w="24h" class="on">24 h</button><button data-w="7d">7 days</button><button data-w="30d">30 days</button></div>
     </div>
-    <div class="tiles" id="projects"></div>
+    <div class="services" id="services"></div>
+  </section>
+
+  <section>
+    <h2><svg class="ico"><use href="#i-clock"/></svg>Routines</h2>
+    <div class="grid" id="routines"></div>
   </section>
 
   <section class="panel">
-    <div class="head"><h2>Recent requests</h2><span class="mono" id="recentCount"></span></div>
+    <div class="head"><h2><svg class="ico"><use href="#i-history"/></svg>Recent requests</h2><span class="mono" id="recentCount"></span></div>
     <table><thead><tr><th>Started</th><th>Project</th><th>User</th><th>Status</th><th>Stages</th><th>Took</th><th>Detail</th></tr></thead><tbody id="recent"></tbody></table>
   </section>
 
   <section class="panel">
     <div class="head">
-      <h2>Logs</h2>
+      <h2><svg class="ico"><use href="#i-terminal"/></svg>Logs</h2>
       <div class="controls">
         <select id="logName">
           <option value="app">app.log</option><option value="stats">stats.log</option><option value="ops">ops.log</option>
@@ -172,7 +187,8 @@ const statusPill = status => status === "finished" ? pill("ok", "finished") : st
 const servicePill = s => s.state === "running" ? pill("ok", "running") : s.state === "not loaded" ? pill("bad", "not loaded") : pill("warn", s.state || "unknown");
 // A Slack job has no stages of its own (its single "stage" is the feature itself): leave the column empty.
 const stages = r => r.stages.length === 1 && r.stages[0].name === r.project ? "" : `<div class="stages">${r.stages.map(s => `<span class="stage ${esc(s.status)}" title="${esc(s.status)} · ${took(s.seconds)}"><i></i>${esc(s.name)}${s.progress ? " " + esc(s.progress) : ""}</span>`).join("")}</div>`;
-const link = r => r.link ? `<a class="ext" href="${esc(r.link)}" target="_blank" rel="noopener">${r.project === "Task Move" ? "Asana ↗" : "Slack thread ↗"}</a>${r.detail ? ` <span class="mono">${esc(r.detail)}</span>` : ""}` : esc(r.detail);
+const link = r => (r.searched && r.searched.length ? `<span class="searched">${esc(r.searched.join(" · "))}</span> ` : "") + linkOnly(r);
+const linkOnly = r => r.link ? `<a class="ext" href="${esc(r.link)}" target="_blank" rel="noopener">${r.project === "Task Move" ? "Asana ↗" : "Slack thread ↗"}</a>${r.detail ? ` <span class="mono">${esc(r.detail)}</span>` : ""}` : esc(r.detail);
 // Server stamps are "+0300"; Safari wants "+03:00".
 const parse = iso => new Date(iso.replace(/([+-]\d\d)(\d\d)$/, "$1:$2")).getTime();
 const rowTook = r => `<span class="took" data-start="${parse(r.started)}" ${r.status === "running" ? "" : `data-end="${parse(r.updated)}"`}>${tookText(r)}</span>`;
@@ -181,12 +197,23 @@ const tookText = r => took(Math.max(0, Math.round(((r.status === "running" ? Dat
 setInterval(() => {
   for (const cell of document.querySelectorAll(".took:not([data-end])")) cell.textContent = took(Math.max(0, Math.round((Date.now() - Number(cell.dataset.start)) / 1000)));
 }, 1000);
+// The dashboard runs on ops.py, so only the two services the team uses get a card; ops.log stays in the Logs picker.
+const SERVICE_CARDS = { app: ["logo.webp"], stats: ["stats-logo/pa.png", "stats-logo/cs.png"] };
+const serviceOf = projectName => projectName.startsWith("Stats") ? "stats" : "app";
+const longDate = stamp => `${Number(stamp.slice(8, 10))} ${MONTHS[Number(stamp.slice(5, 7)) - 1]} ${stamp.slice(0, 4)} ${stamp.slice(11)}`;
 let windowKey = "24h";
 let data = null;
 
-function renderProjects() {
+function renderServices() {
   if (!data) return;
-  document.getElementById("projects").innerHTML = data.projects.map(p => {
+  document.getElementById("services").innerHTML = data.services.filter(s => SERVICE_CARDS[s.name]).map(s =>
+    `<div class="card svc"><div class="name"><span class="logos">${SERVICE_CARDS[s.name].map(src => `<img src="${src}" alt="">`).join("")}${esc(s.name)}.py</span>${servicePill(s)}</div>
+     <div class="facts"><div>pid<b>${esc(s.pid ?? "–")}</b></div><div>last exit<b>${esc(s.last_exit ?? "–")}</b></div><div>last log write<b>${ago(s.log_age_s)}</b></div></div>
+     <div class="tiles">${projectTiles(s.name)}</div></div>`).join("");
+}
+
+function projectTiles(serviceName) {
+  return data.projects.filter(p => serviceOf(p.name) === serviceName).map(p => {
     const c = p.windows[windowKey];
     const done = c.ok + c.failed;
     const rate = done ? Math.round(100 * c.ok / done) : null;
@@ -206,13 +233,8 @@ async function refresh() {
     return;
   }
   document.getElementById("live").classList.remove("off");
-  document.getElementById("now").textContent = data.now;
+  document.getElementById("now").textContent = longDate(data.now);
   document.getElementById("sub").textContent = `${data.host} · ${data.log_dir}`;
-  document.getElementById("services").innerHTML = data.services.map(s =>
-    `<div class="card"><div class="name">${esc(s.name)}.py ${servicePill(s)}</div>
-     <div class="row"><span>pid</span><b>${esc(s.pid ?? "–")}</b></div>
-     <div class="row"><span>last exit</span><b>${esc(s.last_exit ?? "–")}</b></div>
-     <div class="row"><span>last log write</span><b>${ago(s.log_age_s)}</b></div></div>`).join("");
   document.getElementById("routines").innerHTML = data.routines.map(r => {
     const last = r.last;
     const ok = last && !last.is_error && last.exit_code === 0;
@@ -230,7 +252,7 @@ async function refresh() {
   document.getElementById("runningPanel").hidden = !running.length;
   document.getElementById("running").innerHTML = running.map(r =>
     `<tr><td>${project(r.project)}</td><td>${esc(r.user)}</td><td class="mono">${when(r.started)}</td><td>${stages(r)}</td><td class="mono">${esc(r.stages.map(s => s.progress).filter(Boolean).slice(-1)[0] || "")}</td><td class="mono">${rowTook(r)}</td><td>${link(r)}</td></tr>`).join("");
-  renderProjects();
+  renderServices();
   document.getElementById("recentCount").textContent = `last ${data.recent.length}`;
   document.getElementById("recent").innerHTML = data.recent.map(r =>
     `<tr><td class="mono">${when(r.started)}</td><td>${project(r.project)}</td><td>${esc(r.user)}</td><td>${statusPill(r.status)}</td><td>${stages(r)}</td><td class="mono">${rowTook(r)}</td><td>${link(r)}</td></tr>`).join("")
@@ -268,7 +290,7 @@ document.getElementById("windows").addEventListener("click", event => {
   if (!button) return;
   windowKey = button.dataset.w;
   for (const b of document.querySelectorAll("#windows button")) b.classList.toggle("on", b === button);
-  renderProjects();
+  renderServices();
 });
 for (const id of ["logName", "logFilter", "logLines"]) document.getElementById(id).addEventListener("input", refreshLog);
 refresh(); refreshLog();

@@ -1,14 +1,16 @@
 """Stats: Stats Polygun and Stats CS on one port. /stats/pa/ and /stats/cs/ are each game's own page and API, answered by
-that game's unchanged server module; / is a home page that opens the last game picked in this browser, or shows both.
-/stats shows the same home page (the address the Slack shortcut hands out).
+that game's unchanged server module; /stats is a picker that opens the last game picked in this browser, or shows both
+(the address the Slack shortcut hands out). / has no page until a shared hub page exists.
 /releases/pa/ and /releases/cs/ show the Release Summary tables (the md files the Release Summary routine keeps).
+/skill-catalog/ shows VertigoAI's docs/SKILL_CATALOG.md (the Skill Catalog routine keeps it).
 The old /polygun/ and /cs/ addresses redirect to /stats/pa/ and /stats/cs/.
 
 Runs on the office Mac mini (port 3800 unless STATS_PORT says otherwise), so the Slack shortcut link keeps working.
 Both games share one TE lock, so the shared TE account never sees more than 2 queries at once. PLAN.md has the design.
-Every search is recorded as a job for the ops dashboard (kind and outcome only, never an ID).
+Every search is recorded as a job for the ops dashboard: kind, outcome and what was searched.
 """
 
+import html
 import importlib.util
 import os
 import re
@@ -44,6 +46,9 @@ RELEASES = {
     "pa": ("Polygun Arena", os.path.join(ROOT, "Release Summary/pa_release_summary.md"), "/icons/pa-logo.webp", "cs"),
     "cs": ("Critical Strike", os.path.join(ROOT, "Release Summary/cs_release_summary.md"), "/icons/cs-logo.png", "pa"),
 }
+# The VertigoAI clone the Skill Catalog routine pulls and writes to.
+SKILL_CATALOG = os.path.join(os.path.expanduser(os.environ.get("VERTIGOAI_DIR") or "~/GitHub/VertigoAI"),
+                             "docs", "SKILL_CATALOG.md")
 
 
 def record_jobs(game_name, handler_class):
@@ -51,8 +56,9 @@ def record_jobs(game_name, handler_class):
     original = handler_class.stream_job
 
     def stream_job(self, job, what):
-        kind = what.split()[0]
-        job_id = jobs.start(f"{game_name} {kind}", self.client_address[0], group=self.headers.get("X-Search-Id") or "")
+        kind, _, searched = what.partition(" ")
+        job_id = jobs.start(f"{game_name} {kind}", self.client_address[0], group=self.headers.get("X-Search-Id") or "",
+                            searched=searched)
         status = original(self, job, what)
         # The status pill already says failed; the detail only adds the one thing it cannot: that the page went away.
         jobs.finish(job_id, "finished" if status == "OK" else "failed", "page closed" if status == "STOPPED" else "")
@@ -105,6 +111,38 @@ def release_page(key):
         "<!--OTHER-->": other, "<!--OTHERGAME-->": RELEASES[other][0],
         "<!--UPDATED-->": updated.group(1).strip() if updated else "", "<!--TABLE-->": table,
         "<!--APPLE-->": icon_path("apple"), "<!--ANDROID-->": icon_path("android"),
+    }.items():
+        page = page.replace(marker, value)
+    return page.encode()
+
+
+def skill_catalog_page():
+    try:
+        with open(SKILL_CATALOG, encoding="utf-8") as file:
+            text = file.read()
+    except FileNotFoundError:
+        text = ""
+    updated = re.search(r"Son güncelleme:\*\*\s*(.+)", text)
+    chips, sections, total = [], [], 0
+    # Each "## " heading is one plugin; its table rows are its skills.
+    for block in re.split(r"^## ", text, flags=re.MULTILINE)[1:]:
+        name, _, body = block.partition("\n")
+        name = name.strip()
+        rows = [line for line in body.splitlines() if line.startswith("|")]
+        count = max(len(rows) - 2, 0)  # minus the header and |---| lines
+        total += count
+        anchor = re.sub(r"[^a-z0-9]+", "-", name.lower()).strip("-")
+        table = markdown.markdown("\n".join(rows), extensions=["tables"])
+        chips.append(f'<a class="chip" href="#{anchor}" data-section="{anchor}">{html.escape(name)} <span>{count}</span></a>')
+        sections.append(f'<section id="{anchor}"><h2 lang="en">{html.escape(name)} <span class="count">{count}</span></h2>'
+                        f'<div class="card"><div class="scroll">{table}</div></div></section>')
+    if not sections:
+        sections.append(f'<p class="empty">Katalog dosyası okunamadı: <code>{html.escape(SKILL_CATALOG)}</code></p>')
+    with open(os.path.join(FOLDER, "skill_catalog.html"), encoding="utf-8") as file:
+        page = file.read()
+    for marker, value in {
+        "<!--UPDATED-->": updated.group(1).strip() if updated else "—", "<!--TOTAL-->": str(total),
+        "<!--CHIPS-->": "\n".join(chips), "<!--SECTIONS-->": "\n".join(sections),
     }.items():
         page = page.replace(marker, value)
     return page.encode()
@@ -163,7 +201,13 @@ class Handler(SimpleHTTPRequestHandler):
             if path == f"/releases/{key}/":
                 self.send_html(release_page(key))
                 return
-        if path in ("/", "/index.html", "/stats", "/stats/"):
+        if path == "/skill-catalog":
+            self.redirect("/skill-catalog/")
+            return
+        if path == "/skill-catalog/":
+            self.send_html(skill_catalog_page())
+            return
+        if path in ("/stats", "/stats/"):
             with open(os.path.join(FOLDER, "index.html"), "rb") as file:
                 self.send_html(file.read())
             return
@@ -189,7 +233,7 @@ def main():
     cs.initialize()
     server = ThreadingHTTPServer(("0.0.0.0", PORT), Handler)
     print(f"Stats is up: http://{lan_address()}:{PORT} (Polygun at /stats/pa/, Critical Strike at /stats/cs/, "
-          f"release tables at /releases/pa/ and /releases/cs/; Ctrl+C stops it)", flush=True)
+          f"release tables at /releases/pa/ and /releases/cs/, skill catalog at /skill-catalog/; Ctrl+C stops it)", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:
