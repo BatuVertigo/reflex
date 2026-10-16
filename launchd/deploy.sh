@@ -46,15 +46,15 @@ for agent in "$@"; do
   fi
   bash launchd/install.sh "$agent" | grep -E "^(loaded|removed)"
 done
-# stats.py opens its TE connection before it listens; give each port up to 30 s.
-for port in 3800 3900; do
+# stats.py opens its TE connection before it listens; give each page up to 30 s. Stats has no page at / (404 by design).
+for page in 3800/stats 3900/; do
   code=000
   for _ in $(seq 1 15); do
-    code="$(curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$port/" || true)"
+    code="$(curl -s -m 2 -o /dev/null -w '%{http_code}' "http://127.0.0.1:$page" || true)"
     [ "$code" = 200 ] && break
     sleep 2
   done
-  printf "port %s: HTTP %s\n" "$port" "$code"
+  printf "port %s: HTTP %s\n" "$page" "$code"
 done
 launchctl print "gui/$(id -u)/com.vertigo.reflex-app" | grep -m1 "state =" | sed 's/^[[:space:]]*/app: /'
 REMOTE
