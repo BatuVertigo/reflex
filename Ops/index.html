@@ -152,7 +152,7 @@ pre { margin: 0; padding: 14px 18px; max-height: 440px; overflow: auto; backgrou
 const esc = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 const when = iso => iso ? `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(11, 16)}` : "";
-const LOGOS = { "Stats PA": "icons/pa-logo.webp", "Stats CS": "icons/cs-logo.png" };
+const LOGOS = { "Stats PA": "stats-logo/pa.png", "Stats CS": "stats-logo/cs.png" };
 const project = name => `<span class="proj">${LOGOS[name] ? `<img class="plogo" src="${LOGOS[name]}" alt="">` : ""}${esc(name)}</span>`;
 const ago = seconds => seconds == null ? "no log yet" : seconds < 60 ? `${seconds} s ago` : seconds < 3600 ? `${Math.round(seconds / 60)} min ago` : `${Math.round(seconds / 3600)} h ago`;
 const took = seconds => seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} m ${seconds % 60} s`;

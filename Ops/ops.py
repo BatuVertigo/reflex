@@ -37,6 +37,11 @@ ROUTINES = ["bug-watcher", "release-summary", "skill-catalog"]
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
 # A "project" is what the team uses: the two Stats games (their calls are stages of one search) and each Slack feature.
 PROJECT_ORDER = ["Stats PA", "Stats CS", "Bug Details", "Task Move", "Version Check"]
+# The Stats apps' own logos, shown beside their projects.
+STATS_LOGOS = {
+    "/stats-logo/pa.png": os.path.join(ROOT, "Stats", "Stats Polygun", "static", "logo-web.png"),
+    "/stats-logo/cs.png": os.path.join(ROOT, "Stats", "Stats CS", "static", "logo-web.png"),
+}
 WINDOWS = {"24h": 1, "7d": 7, "30d": 30}
 
 
@@ -228,9 +233,9 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send(file.read(), "text/html; charset=utf-8")
         elif url.path == "/logo.webp":
             super().do_GET()
-        elif url.path.startswith("/icons/"):
-            self.directory = os.path.join(ROOT, "Stats")  # the game logos Stats already ships
-            super().do_GET()
+        elif url.path in STATS_LOGOS:
+            with open(STATS_LOGOS[url.path], "rb") as file:
+                self.send(file.read(), "image/png")
         else:
             self.send_error(HTTPStatus.NOT_FOUND)
 
