@@ -81,9 +81,19 @@ tek bir ops dashboard'u aç, Release Summary tablolarını Slack canvas yerine w
   `pip install -r requirements.txt`.
 - `claude` CLI kurulumu; `CLAUDE_CONFIG_DIR=~/.claude-reflex claude login` (bot hesabı); `claude setup-token` →
   `.env` `CLAUDE_CODE_OAUTH_TOKEN`.
-- mempalace-shared: `mempalace-mcp` kurulumu, `~/.mempalace-shared/` palace dosyaları kopyası, MCP kaydı
-  `~/.claude-reflex` içinde (DSN ve namespace env'leri Batuhan'ın Mac'indekiyle aynı; sırlar elle taşınır).
-  Doğrulama: `mempalace_status`.
+- mempalace-shared: MCP kaydı `~/.claude-reflex` içinde, `--palace /Users/vertigo/.mempalace-shared` (**tam bu yol**:
+  pgvector tablo adı `sha256(palace yolu)[:16]`, ekip havuzu bu yoldan açıldı; mini'de `/Users/vertigo/` klasörü
+  vertigo-setup ile zaten var). DSN/namespace env'leri mini'deki mevcut kayıttan alındı. Doğrulandı: 163 drawer,
+  `cs-release-summary` odası okunuyor (16 Eki).
+- **Claude kimliği iki ayrı yol:** claude.ai connector'ları (Slack, Asana) ve Artifact SADECE `claude login` oturumuyla
+  (keychain, GUI oturumu = launchd gui domain) görünür; `CLAUDE_CODE_OAUTH_TOKEN` ile `claude -p` çalışır ama
+  connector'sız. Bu yüzden `run-routine.sh` `.env`'i source ETMEZ, token'ı almaz; app.py ise token'la çalışır (connector
+  gerekmez). SSH oturumunda keychain kilitli → SSH'tan routine testi connector göremez, test launchd üzerinden yapılır
+  (`launchctl kickstart`). Doğrulandı 16 Eki: launchd'den koşan spike Slack `#reflex` ve Asana `get_me`'yi gördü.
+  Artifact aracı headless'ta yok (gerekmiyor).
+- Skill Catalog için `~/.claude-reflex`'e manifestteki 5 marketplace eklendi (vertigo: yerel klon `~/GitHub/VertigoAI`
+  üzerinden) ve 7 plugin kuruldu, sonra hepsi **disable** edildi: dosyalar ve `installed_plugins.json` sürümleri
+  katalog için yerinde, ama hook'ları (caveman, superpowers…) routine oturumlarına karışmaz.
 - VertigoAI klonu `~/GitHub/VertigoAI` (mini'de zaten var) + prompt'un istediği pluginler `CLAUDE_CONFIG_DIR` altında kurulu.
 - Reflex deploy key: mini'de `ssh-keygen` → public key GitHub'da repoya "write" deploy key; `git remote` SSH URL.
 - `.env` sıfırdan yazılır (geçersiz shell satırları temizlenir): Slack token'ları, `ASANA_PAT`, TE token'ları,

@@ -163,8 +163,8 @@ Tam geçiş planı ve sırası: `PLAN-mac-mini.md`.
 ```bash
 cd ~/GitHub/reflex
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
-CLAUDE_CONFIG_DIR=~/.claude-reflex claude login          # bot hesabı; connector'lar claude.ai'de bu hesapta bağlı olmalı
-CLAUDE_CONFIG_DIR=~/.claude-reflex claude setup-token    # çıktı → .env CLAUDE_CODE_OAUTH_TOKEN
+CLAUDE_CONFIG_DIR=~/.claude-reflex claude login          # bot hesabı; routine'ler bu oturumu kullanır (connector'lar yalnız böyle görünür)
+CLAUDE_CONFIG_DIR=~/.claude-reflex claude setup-token    # çıktı → .env CLAUDE_CODE_OAUTH_TOKEN (yalnız app.py için)
 # .env: .env.example'daki tüm anahtarlar (STATS_URL dahil)
 bash launchd/install.sh                                   # 3 servis + 3 routine ajanı; tekrar çalıştırmak güvenli
 ```
@@ -177,4 +177,8 @@ bash launchd/install.sh                                   # 3 servis + 3 routine
   `bash launchd/run-routine.sh release-summary`. Run bitince script, routine'in kendi çıktı dosyalarını commit + push eder
   (deploy key gerekir); her koşunun kaydı `~/Library/Logs/Reflex/routines/<ad>/`.
 - Kaldır: `bash launchd/install.sh --uninstall`.
-- Mini ayarları: uyku kapalı, `vertigoproduct` için otomatik giriş açık (LaunchAgent'lar oturum olmadan başlamaz).
+- Mini ayarları: uyku kapalı, `vertigoproduct` için otomatik giriş açık (LaunchAgent'lar oturum olmadan başlamaz;
+  `sudo sysadminctl -autologin set -userName vertigoproduct -password …`).
+- Repo `~/Documents` altında OLMAMALI: macOS launchd'den başlayan süreçlere Documents'ı kapatır (PermissionError).
+- Routine testi SSH'tan değil launchd'den: `launchctl kickstart gui/$(id -u)/com.vertigo.reflex-release-summary`
+  (SSH oturumunda keychain kilitli, claude.ai connector'ları görünmez).
