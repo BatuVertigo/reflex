@@ -21,7 +21,8 @@ commit'i oldu ama push "fetch first" ile düştü → `run-routine.sh` artık pu
 push hatasını run dosyasına (`push_error`) yazar; dashboard gösterir. Katalog metni kararı (Batuhan): dosya kaynak, canvas
 ezilir (prompt'un mevcut mantığı). Açık: canvas erişimi — Batuhan Slack'te canvas → Share'de AITester'ın "Can edit"
 olduğunu ve canvas bir kanala bağlıysa AITester'ın o kanalda üye olduğunu doğrulayacak; yarın 11:00 koşusu tekrar dener.
-Açık: DHCP rezervasyonu (IT);
+3. skill-catalog koşusu (14:42): prompt `git pull`'da "divergent branches" ile durdu; klon rebase edilip push edildi
+(VertigoAI `273ce70`), `pull.rebase true` ayarlandı. Açık: DHCP rezervasyonu (IT);
 pins'e `/releases/*` linkleri; eski scheduled task'lar 1 hafta sonra silinir.
 
 Routine modelleri (benim kararım, `launchd/run-routine.sh`): bug-watcher ve release-summary `opus`, skill-catalog `sonnet`.
@@ -109,7 +110,8 @@ tek bir ops dashboard'u aç, Release Summary tablolarını Slack canvas yerine w
 - Skill Catalog için `~/.claude-reflex`'e manifestteki 5 marketplace eklendi (vertigo: yerel klon `~/GitHub/VertigoAI`
   üzerinden) ve 7 plugin kuruldu, sonra hepsi **disable** edildi: dosyalar ve `installed_plugins.json` sürümleri
   katalog için yerinde, ama hook'ları (caveman, superpowers…) routine oturumlarına karışmaz.
-- VertigoAI klonu `~/GitHub/VertigoAI` (mini'de zaten var) + prompt'un istediği pluginler `CLAUDE_CONFIG_DIR` altında kurulu.
+- VertigoAI klonu `~/GitHub/VertigoAI` (Reflex'e ait; `git config pull.rebase true` — prompt'un `git pull`'u uzak ilerlediğinde
+  "divergent branches" ile durmasın) + prompt'un istediği pluginler `CLAUDE_CONFIG_DIR` altında kurulu (disable).
 - Reflex deploy key: mini'de `ssh-keygen` → public key GitHub'da repoya "write" deploy key; `git remote` SSH URL.
 - `.env` sıfırdan yazılır (geçersiz shell satırları temizlenir): Slack token'ları, `ASANA_PAT`, TE token'ları,
   `CLAUDE_CODE_OAUTH_TOKEN`, `STATS_URL`, `REFLEX_LOG_DIR`, `CLAUDE_FOLDER`.
