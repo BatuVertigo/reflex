@@ -52,11 +52,11 @@ main { width: min(1180px, 100%); margin: 0 auto; }
 
 header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
 /* The logo is the switch to the other game's table, like the Stats pages: hover shows the arrows. */
-a.brand { display: flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; padding: 4px 10px 4px 4px; border-radius: 16px; transition: background 120ms ease; }
+a.brand { display: inline-flex; align-items: center; gap: 14px; color: inherit; text-decoration: none; padding: 4px 10px 4px 4px; border-radius: 16px; transition: background 120ms ease; }
 a.brand:hover { background: var(--surface); }
 a.brand:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .brand img { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; box-shadow: 0 1px 2px rgba(15, 20, 27, 0.12); }
-.brand-swap { font-size: 22px; line-height: 1; color: var(--ink-3); align-self: center; }
+.brand-swap { font-family: var(--font-body); font-weight: 400; font-stretch: 100%; font-variation-settings: normal; font-size: 26px; line-height: 1; color: var(--ink-3); vertical-align: 4px; margin-left: 6px; }
 a.brand:hover .brand-swap { color: var(--accent); }
 header .eyebrow { margin: 0 0 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 header h1 { margin: 0; font-family: var(--font-display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 40px; line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; }
@@ -113,10 +113,9 @@ td:nth-child(1) a:hover .ext { opacity: 1; }
       <img src="<!--LOGO-->" alt="">
       <div>
         <p class="eyebrow" lang="en"><!--GAME--></p>
-        <h1 lang="en">Release Summary</h1>
+        <h1 lang="en">Release Summary <span class="brand-swap" aria-hidden="true">⇄</span></h1>
         <p class="meta">Reflex tarafından düzenli aralıklarla güncellenir · Son güncelleme <strong><!--UPDATED--></strong></p>
       </div>
-      <span class="brand-swap" aria-hidden="true">⇄</span>
     </a>
   </header>
   <div class="legend">
@@ -126,7 +125,6 @@ td:nth-child(1) a:hover .ext { opacity: 1; }
     <span><svg class="os apple"><use href="#icon-apple"/></svg>iOS</span>
     <span><svg class="os android"><use href="#icon-android"/></svg>Android</span>
     <span>👊🏻&nbsp;Forcelandı</span>
-    <span><svg class="ext" style="margin:0 6px 0 0;opacity:1"><use href="#icon-external"/></svg>Sürüm → Slack release postu</span>
   </div>
   <div class="card"><div class="scroll">
 <!--TABLE-->

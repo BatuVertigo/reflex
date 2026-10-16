@@ -620,7 +620,7 @@ def handle_stats_shortcut(ack, body, client):
     url = STATS_URL or (f"http://{address}:{STATS_PORT}" if address else None)
     if url:
         url = url.rstrip("/")
-        text = (f"*Stats Polygun:* <{url}/stats/pa/>\n*Stats CS:* <{url}/stats/cs/>\n\n"
+        text = (f"*Stats:* <{url}/stats>\n\n"
                 "Girebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin.")
     else:
         text = "Mac'in Wi-Fi adresi okunamadı. Mac ağa bağlı mı?"

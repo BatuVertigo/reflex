@@ -1,5 +1,6 @@
 """Stats: Stats Polygun and Stats CS on one port. /stats/pa/ and /stats/cs/ are each game's own page and API, answered by
 that game's unchanged server module; / is a home page that opens the last game picked in this browser, or shows both.
+/stats shows the same home page (the address the Slack shortcut hands out).
 /releases/pa/ and /releases/cs/ show the Release Summary tables (the md files the Release Summary routine keeps).
 The old /polygun/ and /cs/ addresses redirect to /stats/pa/ and /stats/cs/.
 
@@ -161,7 +162,7 @@ class Handler(SimpleHTTPRequestHandler):
             if path == f"/releases/{key}/":
                 self.send_html(release_page(key))
                 return
-        if path in ("/", "/index.html"):
+        if path in ("/", "/index.html", "/stats", "/stats/"):
             with open(os.path.join(FOLDER, "index.html"), "rb") as file:
                 self.send_html(file.read())
             return
