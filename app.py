@@ -274,13 +274,12 @@ def _display_name(client, uid: str | None) -> str:
         return "bilinmeyen"
     if uid in _user_names:
         return _user_names[uid]
-    name = uid
     try:
         prof = client.users_info(user=uid)["user"]
         p = prof.get("profile", {})
         name = p.get("display_name") or p.get("real_name") or prof.get("name") or uid
     except Exception:
-        pass
+        return uid  # not cached: a missing scope or a hiccup should not pin the ID for the process lifetime
     _user_names[uid] = name
     return name
 
