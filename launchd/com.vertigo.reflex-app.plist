@@ -29,8 +29,8 @@
 	<key>ThrottleInterval</key>
 	<integer>10</integer>
 	<key>StandardOutPath</key>
-	<string>/Users/vertigoproduct/Library/Logs/Reflex/app.log</string>
+	<string>/Users/vertigoproduct/Library/Logs/Reflex/app.launchd.log</string>
 	<key>StandardErrorPath</key>
-	<string>/Users/vertigoproduct/Library/Logs/Reflex/app.log</string>
+	<string>/Users/vertigoproduct/Library/Logs/Reflex/app.launchd.log</string>
 </dict>
 </plist>
