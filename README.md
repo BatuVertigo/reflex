@@ -23,18 +23,22 @@ subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrıs
 **7. Stats (Polygun + Critical Strike).** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. İki oyun tek sitede: `/polygun/` ve `/cs/`; üst bardaki seçiciyle geçilir, ana sayfa ilk ziyarette iki kart gösterir, sonra son seçilen oyunu açar. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
 (disk yok, cache yok, log'da ID yok). Aranan her oyuncu sayfada bir chip olarak kalır; chip'e tıklayınca yeniden sorgu
 atılmaz, aynı ID'yi tekrar yazmak veriyi tazeler, sayfa yenilenince chip'ler gider.
-Mac'in Wi-Fi adresi değişebildiği için Slack'te **Stats** kısayolu ("/" menüsü) güncel linki (`http://<Mac IP>:3800`)
-sadece çalıştırana görünen bir popup'ta verir.
+Slack'te **Stats** kısayolu ("/" menüsü) linki (`.env`'deki `STATS_URL`, ör. `http://productmacmini.local:3800`; yedek
+olarak anlık IP) sadece çalıştırana görünen bir popup'ta verir. Aynı site `/releases/pa/` ve `/releases/cs/` altında
+Release Summary tablolarını gösterir (md dosyalarını her açılışta okur).
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
 yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
 **Haiku**, Bug Details **Opus** kullanır; her iki çağrı da MCP'siz/araçsız izole
 çalışır. **Anthropic API anahtarı gerekmez.** Bug Watcher, Release Summary ve Skill Catalog ise
-zamanlanmış Claude Routine'leridir; davranışları
-kendi klasörlerindeki prompt dosyalarından yönetilir. Stats ayrı bir süreçtir
+zamanlanmış Claude routine'leridir: Mac mini'de launchd, saati gelince `launchd/run-routine.sh` ile headless
+`claude -p` çalıştırır; davranışları kendi klasörlerindeki prompt dosyalarından yönetilir. Stats ayrı bir süreçtir
 (`Stats/stats.py`, Python `http.server`, port 3800): iki oyunun sunucusunu (`Stats/Stats Polygun/stats_polygun.py`,
 `Stats/Stats CS/stats_cs.py`) tek portta açar, tek TE kilidiyle. Slack'e ve `app.py`'ye dokunmaz, TE'ye paylaşılan
 MCP token'ıyla bağlanır. Sayfalar `Stats/Stats Polygun/static/` ve `Stats/Stats CS/static/`, artifact önizlemesinin veri üreticisi `Stats/Stats Polygun/preview/` altındadır.
+`Ops/ops.py` (port 3900) tek sayfalık sağlık panelidir: launchd durumu, aktif işler, kullanım sayıları, routine son
+koşuları ve loglar. Her servis `REFLEX_LOG_DIR` (varsayılan `~/Library/Logs/Reflex`) altına log ve iş kaydı
+(`jobs-app.json`, `jobs-stats.json`; her istek başladı → ilerliyor → bitti) yazar; `reflex_jobs.py` ortak yardımcıdır.
 
 ---
 
@@ -150,3 +154,27 @@ Bilinmesi gerekenler:
 - 20.000 satırı aşan bir sorgu rapor yerine hata döner ("cut off"); o oyuncu için sorguyu aya bölmek gerekir.
 - Artifact önizlemesinin verisi `Stats/Stats Polygun/preview/build_preview_data.py` ile üretilir. `data-*.js` dosyaları oyuncu verisi
   içerir; `.gitignore`'dadır.
+
+## 5. Mac mini'de 7/24 çalıştırma (launchd)
+
+Hedef: `vertigoproduct@productmacmini.local`, repo `~/Reflex/reflex`, Claude bot hesabı `~/.claude-reflex` altında.
+Tam geçiş planı ve sırası: `PLAN-mac-mini.md`.
+
+```bash
+cd ~/Reflex/reflex
+python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
+CLAUDE_CONFIG_DIR=~/.claude-reflex claude login          # bot hesabı; connector'lar claude.ai'de bu hesapta bağlı olmalı
+CLAUDE_CONFIG_DIR=~/.claude-reflex claude setup-token    # çıktı → .env CLAUDE_CODE_OAUTH_TOKEN
+# .env: .env.example'daki tüm anahtarlar (STATS_URL dahil)
+bash launchd/install.sh                                   # 3 servis + 3 routine ajanı; tekrar çalıştırmak güvenli
+```
+
+- Servisler: `com.vertigo.reflex-app`, `-stats` (3800), `-ops` (3900); çökerse launchd yeniden başlatır.
+  Durdur/başlat: `launchctl kickstart -k gui/$(id -u)/com.vertigo.reflex-app` (yeniden başlat),
+  `launchctl bootout gui/$(id -u)/com.vertigo.reflex-app` (durdur). Durdurmadan önce `http://productmacmini.local:3900`
+  "Active jobs" boş mu bak.
+- Routine'ler: `-bug-watcher` (08:00 pzt–cum), `-release-summary` (08/14/20), `-skill-catalog` (11:00). Elle:
+  `bash launchd/run-routine.sh release-summary`. Run bitince script, routine'in kendi çıktı dosyalarını commit + push eder
+  (deploy key gerekir); her koşunun kaydı `~/Library/Logs/Reflex/routines/<ad>/`.
+- Kaldır: `bash launchd/install.sh --uninstall`.
+- Mini ayarları: uyku kapalı, `vertigoproduct` için otomatik giriş açık (LaunchAgent'lar oturum olmadan başlamaz).

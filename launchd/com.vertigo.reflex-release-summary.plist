@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.vertigo.reflex-release-summary</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/bin/bash</string>
+		<string>/Users/vertigoproduct/Reflex/reflex/launchd/run-routine.sh</string>
+		<string>release-summary</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Users/vertigoproduct/Reflex/reflex</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>REFLEX_LOG_DIR</key>
+		<string>/Users/vertigoproduct/Library/Logs/Reflex</string>
+		<key>CLAUDE_CONFIG_DIR</key>
+		<string>/Users/vertigoproduct/.claude-reflex</string>
+		<key>PATH</key>
+		<string>/Users/vertigoproduct/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+		<key>LANG</key>
+		<string>en_US.UTF-8</string>
+	</dict>
+	<key>StartCalendarInterval</key>
+	<array>
+		<dict>
+			<key>Hour</key>
+			<integer>8</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>14</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+		<dict>
+			<key>Hour</key>
+			<integer>20</integer>
+			<key>Minute</key>
+			<integer>0</integer>
+		</dict>
+	</array>
+	<key>StandardOutPath</key>
+	<string>/Users/vertigoproduct/Library/Logs/Reflex/routines.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/vertigoproduct/Library/Logs/Reflex/routines.log</string>
+</dict>
+</plist>

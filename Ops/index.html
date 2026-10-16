@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Reflex Ops</title>
+<style>
+:root {
+  color-scheme: light dark;
+  --ground: #f3f5f8; --surface: #fbfcfd; --ink: #10151c; --ink-2: #4a5360; --hairline: #e0e4ea; --focus: #2a78d6;
+  --ok: #1f9d55; --warn: #d08700; --bad: #d63a2a;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --ground: #0b0e12; --surface: #151920; --ink: #eef1f5; --ink-2: #b6bdc7; --hairline: #242a33; --focus: #3987e5; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 20px 16px 40px; background: var(--ground); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { width: min(1200px, 100%); margin: 0 auto; display: grid; gap: 18px; }
+header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
+h1 { margin: 0; font-size: 22px; }
+h2 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
+section { padding: 14px 16px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 6px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hairline); }
+th { font-weight: 600; color: var(--ink-2); font-size: 12px; }
+tr:last-child td { border-bottom: 0; }
+.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--warn); }
+.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
+.muted { color: var(--ink-2); }
+.safe { color: var(--ok); font-weight: 600; } .busy { color: var(--warn); font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
+.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+select, input { font: inherit; padding: 6px 8px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--ground); color: var(--ink); }
+input { flex: 1; min-width: 160px; }
+pre { margin: 0; padding: 10px; max-height: 420px; overflow: auto; background: var(--ground); border-radius: 8px; font: 12px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; }
+code { font: 12px ui-monospace, Menlo, monospace; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1>Reflex Ops</h1>
+    <span class="muted" id="now">…</span>
+  </header>
+
+  <div class="grid">
+    <section>
+      <h2>Services</h2>
+      <table><thead><tr><th>Service</th><th>launchd</th><th>PID</th><th>Last exit</th><th>Last log write</th></tr></thead><tbody id="services"></tbody></table>
+    </section>
+    <section>
+      <h2>Active jobs</h2>
+      <p id="safe"></p>
+      <table><thead><tr><th>Feature</th><th>User</th><th>Started</th><th>Progress</th><th>Detail</th></tr></thead><tbody id="running"></tbody></table>
+    </section>
+  </div>
+
+  <div class="grid">
+    <section>
+      <h2>Usage</h2>
+      <table><thead><tr><th>Feature</th><th>24 h</th><th>7 days</th></tr></thead><tbody id="usage"></tbody></table>
+    </section>
+    <section>
+      <h2>Routines</h2>
+      <table><thead><tr><th>Routine</th><th>Schedule</th><th>Last run</th><th>Result</th></tr></thead><tbody id="routines"></tbody></table>
+    </section>
+  </div>
+
+  <section>
+    <h2>Recent jobs</h2>
+    <table><thead><tr><th>Started</th><th>Feature</th><th>User</th><th>Status</th><th>Progress</th><th>Detail</th></tr></thead><tbody id="recent"></tbody></table>
+  </section>
+
+  <section>
+    <h2>Logs</h2>
+    <div class="controls">
+      <select id="logName">
+        <option value="app">app.log</option>
+        <option value="stats">stats.log</option>
+        <option value="ops">ops.log</option>
+        <option value="bug-watcher">bug-watcher (last run)</option>
+        <option value="release-summary">release-summary (last run)</option>
+        <option value="skill-catalog">skill-catalog (last run)</option>
+      </select>
+      <input id="logFilter" placeholder="filter text">
+      <select id="logLines"><option>200</option><option>500</option><option>2000</option></select>
+    </div>
+    <pre id="log">…</pre>
+  </section>
+</main>
+<script>
+const esc = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
+const when = iso => iso ? iso.slice(5, 16).replace("T", " ") : "";
+const age = seconds => seconds == null ? "no log yet" : seconds < 60 ? `${seconds} s ago` : seconds < 3600 ? `${Math.round(seconds / 60)} min ago` : `${Math.round(seconds / 3600)} h ago`;
+const dot = service => service.state === "running" ? "ok" : service.state === "not loaded" || service.state === "unknown" ? "bad" : "";
+
+async function refresh() {
+  let data;
+  try {
+    data = await (await fetch("api/status")).json();
+  } catch (error) {
+    document.getElementById("now").textContent = "ops.py is not answering";
+    return;
+  }
+  document.getElementById("now").textContent = `${data.now} · ${data.log_dir}`;
+  document.getElementById("services").innerHTML = data.services.map(s =>
+    `<tr><td><span class="dot ${dot(s)}"></span>${s.name}</td><td>${esc(s.state)}</td><td>${esc(s.pid ?? "")}</td><td>${esc(s.last_exit ?? "")}</td><td>${age(s.log_age_s)}</td></tr>`).join("");
+  document.getElementById("safe").innerHTML = data.running.length
+    ? `<span class="busy">${data.running.length} job(s) running — do not stop app.py now.</span>`
+    : `<span class="safe">No active jobs — safe to stop or restart.</span>`;
+  document.getElementById("running").innerHTML = data.running.map(j =>
+    `<tr><td>${esc(j.feature)}</td><td>${esc(j.user)}</td><td>${when(j.started)}</td><td>${esc(j.progress)}</td><td>${esc(j.detail)}</td></tr>`).join("");
+  document.getElementById("usage").innerHTML = Object.entries(data.usage).sort().map(([feature, n]) =>
+    `<tr><td>${esc(feature)}</td><td>${n.day}</td><td>${n.week}</td></tr>`).join("") || `<tr><td class="muted" colspan="3">no jobs yet</td></tr>`;
+  document.getElementById("routines").innerHTML = data.routines.map(r => {
+    const last = r.last;
+    const ok = last && !last.is_error && last.exit_code === 0;
+    const summary = !last ? `<span class="muted">never ran here</span>`
+      : `<span class="dot ${ok ? "ok" : "bad"}"></span>${ok ? "ok" : "failed"} · ${last.duration_s} s · push: ${esc(last.push ?? "-")}<br><span class="muted">${esc(last.result.split("\n")[0])}</span>`;
+    return `<tr><td>${esc(r.name)}<br><span class="muted">${esc(r.state)}</span></td><td>${esc(r.schedule)}</td><td>${last ? when(last.started) : ""}</td><td>${summary}</td></tr>`;
+  }).join("");
+  document.getElementById("recent").innerHTML = data.recent.map(j =>
+    `<tr><td>${when(j.started)}</td><td>${esc(j.feature)}</td><td>${esc(j.user)}</td><td>${esc(j.status)}</td><td>${esc(j.progress)}</td><td>${esc(j.detail)}</td></tr>`).join("") || `<tr><td class="muted" colspan="6">no jobs yet</td></tr>`;
+}
+
+async function refreshLog() {
+  const name = document.getElementById("logName").value;
+  const lines = document.getElementById("logLines").value;
+  const q = document.getElementById("logFilter").value;
+  try {
+    const found = await (await fetch(`api/log?name=${name}&lines=${lines}&q=${encodeURIComponent(q)}`)).json();
+    const pre = document.getElementById("log");
+    const stick = pre.scrollTop + pre.clientHeight >= pre.scrollHeight - 8;
+    pre.textContent = found.join("\n") || "(empty)";
+    if (stick) pre.scrollTop = pre.scrollHeight;
+  } catch (error) {
+    document.getElementById("log").textContent = "log not available";
+  }
+}
+
+for (const id of ["logName", "logFilter", "logLines"]) document.getElementById(id).addEventListener("input", refreshLog);
+refresh(); refreshLog();
+setInterval(refresh, 5000);
+setInterval(refreshLog, 5000);
+</script>
+</body>
+</html>

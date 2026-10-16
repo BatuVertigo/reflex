@@ -767,7 +767,13 @@ class Handler(SimpleHTTPRequestHandler):
             # The page closed or reloaded mid-search: nobody is left to answer, and the lock is already free.
             outcome = "STOPPED the page closed before the answer"
         status, _, detail = outcome.partition(" ")
-        print(f"{time.strftime('%H:%M:%S')}  {self.client_address[0]}  {what}  {status} {time.monotonic() - started:.1f} s  {detail}".rstrip(), flush=True)
+        # The kind of search only (career / period / match), and the searched ID masked in the error text: under launchd
+        # the console is a log file, and IDs stay out of logs.
+        kind, _, searched = what.partition(" ")
+        if searched:
+            detail = detail.replace(searched.split()[0], "<id>")
+        print(f"{time.strftime('%H:%M:%S')}  {self.client_address[0]}  {kind}  {status} {time.monotonic() - started:.1f} s  {detail}".rstrip(), flush=True)
+        return status
 
     def send_json(self, status, payload):
         body = json.dumps(payload, separators=(",", ":")).encode()

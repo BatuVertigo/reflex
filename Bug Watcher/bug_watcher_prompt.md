@@ -14,7 +14,7 @@
   2. **Yeni thread taraması** — §1'deki kanalların son 24 saatteki ana mesajlarını incele (aşağıdaki "Geriye bakış").
   3. **Gün sonu raporu** (§7) — backlog'un güncel halini #reflex kanalına raporla.
 - **Geriye bakış:** Kanala **son 24 saatte** atılmış ana mesajlara (top-level mesaj) bak; her birinin thread yanıtlarını da oku. **Pazartesi run'larında bu pencere 72 saattir** — routine hafta sonu çalışmadığı için cuma run'ından beri biriken mesajlar da kapsanır.
-- **Deneme modu (dry-run):** `false`
+- **Deneme modu (dry-run):** `true`
   - `true` olduğunda ajan tüm analizi yapar ama Slack'e **hiçbir yanıt yazmaz** —
     sadece ne yapacağını raporlar. Test ederken bunu `true` yapabilirsin.
 - **Araçlar:** Bu Routine, bağlı **Slack MCP** (mesaj/thread/reaction okuma, kullanıcı
@@ -37,8 +37,8 @@ bot token'ı** ile `chat.postMessage` üzerinden gönderilir; böylece mesajlar 
 **Reflex** adına görünür. Slack MCP connector'ının mesaj atma araçları
 (`slack_send_message` vb.) **asla kullanılmaz** — onlar kullanıcı adına atar.
 
-**Token:** `/Users/vertigo/Desktop/Code/Reflex/reflex/.env` içindeki
-`SLACK_BOT_TOKEN`. Token'ı **asla** ekrana, loga veya run çıktısına yazma; yalnızca
+**Token:** Reflex repo kökündeki `.env` içindeki `SLACK_BOT_TOKEN`. Repo kökü = bu prompt dosyasının
+bulunduğu klasörün bir üstü (bu dosyanın yolu sana verildi; ör. `<repo kökü>/Bug Watcher/bug_watcher_prompt.md`). Token'ı **asla** ekrana, loga veya run çıktısına yazma; yalnızca
 `Authorization` header'ında kullan.
 
 **Gönderim adımları:**
@@ -65,7 +65,7 @@ bot token'ı** ile `chat.postMessage` üzerinden gönderilir; böylece mesajlar 
 2. Gönder:
 
    ```bash
-   source /Users/vertigo/Desktop/Code/Reflex/reflex/.env
+   source "<repo kökü>/.env"
    curl -s -X POST https://slack.com/api/chat.postMessage \
      -H "Authorization: Bearer $SLACK_BOT_TOKEN" \
      -H "Content-type: application/json; charset=utf-8" \

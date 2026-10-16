@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.vertigo.reflex-app</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>/Users/vertigoproduct/Reflex/reflex/.venv/bin/python</string>
+		<string>app.py</string>
+	</array>
+	<key>WorkingDirectory</key>
+	<string>/Users/vertigoproduct/Reflex/reflex</string>
+	<key>EnvironmentVariables</key>
+	<dict>
+		<key>REFLEX_LOG_DIR</key>
+		<string>/Users/vertigoproduct/Library/Logs/Reflex</string>
+		<key>CLAUDE_CONFIG_DIR</key>
+		<string>/Users/vertigoproduct/.claude-reflex</string>
+		<key>PATH</key>
+		<string>/Users/vertigoproduct/.local/bin:/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
+		<key>LANG</key>
+		<string>en_US.UTF-8</string>
+	</dict>
+	<key>RunAtLoad</key>
+	<true/>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ThrottleInterval</key>
+	<integer>10</integer>
+	<key>StandardOutPath</key>
+	<string>/Users/vertigoproduct/Library/Logs/Reflex/app.log</string>
+	<key>StandardErrorPath</key>
+	<string>/Users/vertigoproduct/Library/Logs/Reflex/app.log</string>
+</dict>
+</plist>

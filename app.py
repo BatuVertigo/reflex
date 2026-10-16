@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import logging
+import logging.handlers
 import os
 import re
 import socket
@@ -27,6 +28,15 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger("reflex")
+
+# Job records + a rotating log file, both under REFLEX_LOG_DIR, read by Ops/ops.py.
+import reflex_jobs
+jobs = reflex_jobs.Jobs("app")
+_file_log = logging.handlers.RotatingFileHandler(
+    os.path.join(reflex_jobs.LOG_DIR, "app.log"), maxBytes=5_000_000, backupCount=5, encoding="utf-8",
+)
+_file_log.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s: %(message)s"))
+logging.getLogger().addHandler(_file_log)
 
 
 # =============================================================================
@@ -209,11 +219,14 @@ def handle_message(event, client):
     if ts in _replied:
         return
 
+    job = jobs.start("Version Check", event.get("user") or "", f"ts={ts}")
     try:
         result = check_version(text)
     except Exception:
         logger.exception("Version check failed (ts=%s)", ts)
+        jobs.finish(job, "failed", "exception")
         return
+    jobs.finish(job, "finished", "asked" if result and result.get("is_critical_bug") and result.get("missing") else "silent")
 
     if not result or not result.get("is_critical_bug"):
         return
@@ -375,6 +388,7 @@ def handle_bug_details(ack, shortcut, client):
         return
 
     # Read the thread → format with Opus → update the modal (view_id, no time limit).
+    job = jobs.start("Bug Details", shortcut["user"]["id"], f"thread_ts={thread_ts}")
     try:
         replies = client.conversations_replies(channel=channel, ts=thread_ts, limit=200)
         transcript = _build_transcript(client, replies.get("messages", []))
@@ -387,9 +401,11 @@ def handle_bug_details(ack, shortcut, client):
             ) or "Opus yanıtı alınamadı (loga bak)."
             # We append the Slack link ourselves, not the model (real permalink, never truncated).
             result = _with_slack_link(result, _thread_permalink(client, channel, thread_ts))
+        jobs.finish(job)
     except Exception:
         logger.exception("Bug details generation failed (thread_ts=%s)", thread_ts)
         result = "Bir hata oluştu, task üretilemedi. (Detay için loga bak.)"
+        jobs.finish(job, "failed", "exception")
 
     try:
         client.views_update(view_id=view_id, view=_result_view(result))
@@ -537,11 +553,14 @@ def handle_task_move_submit(ack, body, view, client):
     )
     view_id = body["view"]["id"]
 
+    # The ops dashboard shows this job while it runs, so the app is not stopped mid-move.
+    job = jobs.start("Task Move", body["user"]["id"], f"parent={parent_gid}")
     lines = []
     moved = 0
     try:
         # Bottom to up
-        for task_url in reversed(task_urls):
+        for index, task_url in enumerate(reversed(task_urls), 1):
+            jobs.update(job, progress=f"{index}/{len(task_urls)}")
             task_gid = _extract_task_gid(task_url)
             if not task_gid:
                 lines.append(f"SKIP (GID yok): {task_url}")
@@ -557,8 +576,10 @@ def handle_task_move_submit(ack, body, view, client):
                 lines.append(f":x: {task_gid}: {detail}")
             time.sleep(TASK_MOVE_REQUEST_INTERVAL)
         report = f"*Taşınan: {moved} / {len(task_urls)}*\n" + "\n".join(lines)
+        jobs.finish(job, "finished", f"moved {moved}/{len(task_urls)}")
     except Exception:
         logger.exception("Task move failed (parent=%s)", parent_gid)
+        jobs.finish(job, "failed", f"moved {moved}/{len(task_urls)}, then exception")
         report = (
             f"*Taşınan: {moved} / {len(task_urls)}* — beklenmedik hata, kalanlar "
             "taşınmadı (loga bak). Aynı listeyle tekrar denemek güvenli."
@@ -575,8 +596,10 @@ def handle_task_move_submit(ack, body, view, client):
 # FEATURE - STATS LINK (Stats Polygun + Stats CS on one site, Stats/stats.py)
 # =============================================================================
 
-# The page runs on this same Mac; its Wi-Fi address changes, so it is read on every call.
+# STATS_URL is the fixed name of the Mac that runs the page (e.g. http://productmacmini.local:3800).
+# The live IP is still read on every call and shown as a fallback for machines that cannot resolve the name.
 STATS_PORT = int(os.environ.get("STATS_PORT") or "3800")
+STATS_URL = os.environ.get("STATS_URL", "")
 
 
 def _lan_address() -> str | None:
@@ -594,9 +617,14 @@ def _lan_address() -> str | None:
 def handle_stats_shortcut(ack, body, client):
     ack()
     address = _lan_address()
-    if address:
-        url = f"http://{address}:{STATS_PORT}"
-        text = (f"*Stats CS ve Stats Polygun:*\n<{url}>\n\n"
+    ip_url = f"http://{address}:{STATS_PORT}" if address else None
+    if STATS_URL:
+        text = f"*Stats CS ve Stats Polygun:*\n<{STATS_URL}>\n"
+        if ip_url:
+            text += f"Bu adres açılmazsa (Windows): <{ip_url}>\n"
+        text += "\nGirebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin."
+    elif ip_url:
+        text = (f"*Stats CS ve Stats Polygun:*\n<{ip_url}>\n\n"
                 "Girebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin.")
     else:
         text = "Mac'in Wi-Fi adresi okunamadı. Mac ağa bağlı mı?"

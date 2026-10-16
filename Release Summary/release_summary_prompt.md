@@ -9,12 +9,16 @@ Görevin: iki Slack kanalını (`#pa-releasehistory` ve `#cs-releasehistory`) ok
 
 ## Hedef dosyalar (kanal → dosya eşlemesi)
 
-1. `#pa-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release Summary/pa_release_summary.md`
-2. `#cs-releasehistory` → `/Users/vertigo/Desktop/Code/Reflex/reflex/Release Summary/cs_release_summary.md`
+Bu prompt dosyasının yolunu çalıştıran sana verdi; hedef dosyalar **bu dosyayla aynı klasörde**:
 
-Her kanalı kendi dosyasına yaz. Tabloyu **bu dosyaların içinde** güncelle. Dosya değiştiyse ayrıca:
-- Mempalace shared memory'e aynala (aşağıdaki "Mempalace shared memory aynalama" bölümü).
-- Slack canvas'larına aynala (aşağıdaki "Slack canvas aynalama" bölümü)
+1. `#pa-releasehistory` → `pa_release_summary.md`
+2. `#cs-releasehistory` → `cs_release_summary.md`
+
+Tablolar ekibe web sayfası olarak sunulur (Stats sitesinde `/releases/pa/` ve `/releases/cs/`); sayfa md dosyasını
+her açılışta okur, senin ek bir şey yapman gerekmez. Dosyaların commit + push'u da routine'i çalıştıran script'in işi, sen git komutu çalıştırma.
+
+Her kanalı kendi dosyasına yaz. Tabloyu **bu dosyaların içinde** güncelle. Dosya değiştiyse ayrıca
+Mempalace shared memory'e aynala (aşağıdaki "Mempalace shared memory aynalama" bölümü).
 Bunlar dışında başka yere yazma; dosya olarak yalnızca iki md dosyasını Edit/Write ile değiştir.
 
 ## Kaynak
@@ -186,7 +190,7 @@ Aynalama adımları:
    - Bir boş satır, ardından **md dosyasının son halinin tamamı** ("Son güncelleme" satırı
      dahil, birebir).
 
-   Sunum notu yalnızca mempalace kopyasına eklenir; md dosyasına ve canvas'a EKLENMEZ.
+   Sunum notu yalnızca mempalace kopyasına eklenir; md dosyasına EKLENMEZ.
 
 Kurallar:
 
@@ -198,72 +202,11 @@ Kurallar:
 - `mempalace-shared` erişilemezse aynalamayı atla ve raporla; md güncellemesi yine de geçerlidir,
   geri alma.
 
-## Slack canvas aynalama
-
-İki tablonun birer kopyası ekip için Slack canvas'larında da tutuluyor (dosya → canvas eşlemesi):
-
-| Dosya | canvas_id | Canvas linki |
-|-------|-----------|--------------|
-| `pa_release_summary.md` | `F0BEWEFM201` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEWEFM201 |
-| `cs_release_summary.md` | `F0BEN9NU53M` | https://vertigohq.slack.com/docs/T1A4URVT2/F0BEN9NU53M |
-
-**Ne zaman aynala:** mempalace bölümündeki kuralın aynısı — (a) bu çalıştırmada md'yi
-değiştirdiysen, YA DA (b) canvas içeriğindeki (`slack_read_canvas`) `Son güncelleme` tarih-saat
-değeri md'dekinden farklıysa (satır biçimi canvas'ta değişmiş olabilir; satıra değil tarih-saat
-değerine bak). İki koşul da yoksa canvas'a dokunma.
-
-Aynalama adımları:
-
-1. md dosyasının **son halini oku**.
-2. İçerikten **en üstteki H1 satırını çıkar** (dosyanın ilk satırı, ör.
-   `# Polygun Arena (PA) Release Summary`); geri kalan her şeyi ("Son güncelleme"
-   blockquote'u + tablo) olduğu gibi al.
-3. İçerikteki **tüm 🤖 emojilerini `:android:` metnine çevir** (tablo başlığındaki `(🍎/🤖)`
-   dahil; Slack `:android:` kodunu Android logosu olarak render eder). Bu SALT bir metin
-   değişimidir — başka hiçbir şey ekleme/çıkarma (boşluk, satır sonu, `<br>` EKLEME); `🍎🤖`
-   aynı satırda bitişik `🍎:android:` olur. Bu dönüşüm YALNIZCA canvas kopyasında yapılır —
-   md dosyasında, mempalace kopyasında ve tablonun kendisinde 🤖 kalır.
-4. **Tek satırlık hücrelerde `- ` önekini kaldır:** "%100 / Force" kolonunda içinde `<br>`
-   OLMAYAN hücre `- ` ile başlıyorsa bu öneki canvas kopyasında sil
-   (`- 🍎:android: %100: …` → `🍎:android: %100: …`). Neden: Slack, hücredeki tek maddelik
-   listeyi bölüyor — bullet'ta yalnız 🍎 kalıyor, `:android:` ve sonrası ayrı satıra düşüyor.
-   Çok maddeli (`<br>`li) hücrelerde `- ` önekleri olduğu gibi kalır, onlarda sorun yok.
-5. `slack_read_canvas` ile güncel `section_id_mapping`'i al (H1 / blockquote / tablo).
-   Id'ler her update'te değişir; bayat id kullanma.
-6. **Tek** `slack_update_canvas` çağrısı; tüm op'lar aynı `sections` dizisinde:
-   - blockquote section'ı `replace` → yeni "Son güncelleme" (tek satır, `\n` koyma).
-   - tablo section'ına yeni tabloyu `append`, sonra **aynı** section'ı `delete`.
-   H1'e dokunma.
-
-Canvas API tuzakları (bunlara UYMA zorunlu — daha önce yaşandı):
-
-- **`section_id` olmadan `replace` çalışmıyor** (`missing_required_field:section_id`); tek yol
-  yukarıdaki section bazlı batch.
-- **Her update çağrısı H1 ile blockquote arasına görünmez bir boş satır ekliyor.** `read_canvas`
-  bunu göstermez, API'den silinemez; elle temizleniyor — kabul edilmiş durum. Sen düzeltmeye
-  çalışma: koşu başına 1 çağrı, hata alırsan tekrar deneme.
-- **H1'i content'e YAZMA** — başlık ikilenir.
-- **Tablo section'ını `replace` ETME:** hücreleri boşaltıp yeniyi ayrı section olarak ekler,
-  canvas'ta boş tablo iskeleti kalır. Her zaman `append`+`delete`.
-- Update sonrası elle ayarlanmış **kolon genişlikleri sıfırlanır** — normal, düzeltme.
-- Canvas, hücrelerdeki `- ` önekini `* ` yapabilir, çok satırlı blockquote'u birleştirebilir —
-  normaldir; canvas'ı okuyup "düzeltme" turuna girme (aynalama tek yönlüdür: md → canvas).
-- **Tek maddelik listeyi hücre içinde böler:** `- 🍎:android: %100: …` gibi tek satırlık bir
-  liste maddesi, "bullet'ta 🍎 + ayrı paragrafta gerisi" olarak ikiye ayrılır (6 Tem 2026'da
-  yaşandı). Çözüm 4. adımdaki önek kaldırmadır; boşluk eklemek işe yaramaz.
-
-Kurallar:
-
-- `slack_create_canvas` KULLANMA; canvas bulunamazsa ya da update hata verirse hiçbir şey
-  oluşturma, aynalamayı atla ve durumu çıktında raporla.
-- "Ne zaman aynala" koşullarının ikisi de yoksa canvas'a dokunma.
-- Canvas aynalaması mempalace aynalamasından bağımsızdır; biri hata verirse diğerini yine de yap.
-
 ## Notlar
 
-- Yerel dosya olarak sadece iki hedef md dosyasını düzenle; mempalace-shared ve Slack canvas aynalaması dışında başka
+- Yerel dosya olarak sadece iki hedef md dosyasını düzenle; mempalace-shared aynalaması dışında başka
   dosya/servise dokunma.
 - md dosyaları rutin dışında elle güncellenirse (format/kural değişikliği vb.) "Son güncelleme"
-  satırı da güncellenmelidir — aynalamalar elle yapılan değişiklikleri bu değerin farkından yakalar.
+  satırı da güncellenmelidir — aynalama elle yapılan değişiklikleri bu değerin farkından yakalar.
 - Emin olmadığın veri için satırı bozma; mevcut değeri koru ve gerekirse hücrede kısa not bırak.
 - Tabloyu geçerli bir Markdown tablosu olarak tut (hücre içi satır sonu gerekiyorsa `<br>`).

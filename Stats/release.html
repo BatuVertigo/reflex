@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><!--TITLE--></title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<style>
+:root {
+  color-scheme: light;
+  --ground: #f3f5f8;
+  --surface: #fbfcfd;
+  --ink: #10151c;
+  --ink-2: #4a5360;
+  --hairline: #e0e4ea;
+  --focus: #2a78d6;
+  --font-display: "Archivo", "Arial Narrow", "Roboto Condensed", sans-serif;
+  --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --ground: #0b0e12;
+    --surface: #151920;
+    --ink: #eef1f5;
+    --ink-2: #b6bdc7;
+    --hairline: #242a33;
+    --focus: #3987e5;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --ground: #0b0e12;
+  --surface: #151920;
+  --ink: #eef1f5;
+  --ink-2: #b6bdc7;
+  --hairline: #242a33;
+  --focus: #3987e5;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: 24px 16px 48px; background: var(--ground); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
+main { width: min(1100px, 100%); margin: 0 auto; }
+h1 { margin: 0 0 12px; font-family: var(--font-display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 36px; text-transform: uppercase; letter-spacing: 0.02em; }
+blockquote { margin: 0 0 20px; padding: 10px 14px; border-left: 3px solid var(--focus); color: var(--ink-2); background: var(--surface); border-radius: 0 8px 8px 0; }
+blockquote p { margin: 0; }
+a { color: var(--focus); }
+table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
+th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hairline); }
+th { font-family: var(--font-display); font-weight: 800; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-2); }
+tr:last-child td { border-bottom: 0; }
+td:nth-child(2) { white-space: nowrap; }
+@media (max-width: 720px) { body { font-size: 13px; } th, td { padding: 8px; } }
+</style>
+</head>
+<body>
+<main>
+<!--BODY-->
+</main>
+</body>
+</html>

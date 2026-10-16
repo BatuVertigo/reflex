@@ -4,11 +4,11 @@ Vertigo'nun skill kataloğunu tek kaynaktan senkron tut: VertigoAI reposundaki `
 
 ## Sabitler
 
-- **Repo:** `/Users/vertigo/Desktop/Code/GitHub/VertigoAI` (branch: `main`)
+- **Repo:** `~/GitHub/VertigoAI` (branch: `main`; `~` = bu makinedeki HOME)
 - **Katalog dosyası:** `docs/SKILL_CATALOG.md`
 - **Manifest:** `plugin-list.json` (marketplace + plugin listesi; tek doğruluk kaynağı)
 - **Vertigo skill kaynakları:** `plugins/vertigo-core-skills/skills/*/SKILL.md`, `plugins/vertigo-extra-skills/skills/*/SKILL.md` (ileride `plugins/vertigo-*-skills` deseninde yenileri gelebilir — hepsini tara)
-- **Harici pluginler:** kataloglanacak plugin listesi DOĞRUDAN `plugin-list.json`'ın `plugins` alanından gelir (vertigo marketplace'inden olmayanlar). Her birinin skill adı/açıklaması için kurulu kopyasına bak: `installPath` = `~/.claude/plugins/installed_plugins.json`; önce `.claude-plugin/plugin.json` içindeki `skills` alanı, yoksa `skills/` + `commands/` klasörleri (caveman'in `caveman-init`'i bir command'dir ve kataloğa dahildir). Manifest'te olup makinede kurulu olmayan plugin varsa önce `claude plugin install <plugin> --scope user` ile kur, sonra katalogla.
+- **Harici pluginler:** kataloglanacak plugin listesi DOĞRUDAN `plugin-list.json`'ın `plugins` alanından gelir (vertigo marketplace'inden olmayanlar). Her birinin skill adı/açıklaması için kurulu kopyasına bak: `installPath` = `$CLAUDE_CONFIG_DIR/plugins/installed_plugins.json` (`CLAUDE_CONFIG_DIR` boşsa `~/.claude`); önce `.claude-plugin/plugin.json` içindeki `skills` alanı, yoksa `skills/` + `commands/` klasörleri (caveman'in `caveman-init`'i bir command'dir ve kataloğa dahildir). Manifest'te olup makinede kurulu olmayan plugin varsa önce `claude plugin install <plugin> --scope user` ile kur, sonra katalogla.
 - **Slack canvas:** ID `F0BK9DRSMA9` (https://vertigohq.slack.com/docs/T1A4URVT2/F0BK9DRSMA9)
 - **State dosyası:** bu prompt'un yanındaki `skill_catalog_state.json` — son senkronun izi
 

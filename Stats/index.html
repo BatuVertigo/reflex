@@ -60,6 +60,7 @@ body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding
 main { width: min(720px, 100%); display: grid; gap: 28px; justify-items: center; }
 h1 { margin: 0; font-family: var(--font-display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 44px; text-transform: uppercase; letter-spacing: 0.02em; }
 p { margin: 0; color: var(--ink-2); }
+.releases a { color: var(--focus); }
 .games { width: 100%; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
 .game { display: grid; justify-items: center; gap: 14px; padding: 28px 20px 24px; background: var(--surface); border: 1px solid var(--hairline); border-top: 4px solid var(--accent); border-radius: 14px; color: var(--ink); text-decoration: none; transition: transform 120ms ease, box-shadow 120ms ease; }
 .game:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(16, 21, 28, 0.12); }
@@ -79,6 +80,7 @@ p { margin: 0; color: var(--ink-2); }
     <a class="game polygun" href="polygun/"><img src="polygun/logo-web.png" alt=""><strong>Polygun<br>Arena</strong></a>
     <a class="game cs" href="cs/"><img src="cs/logo-web.png" alt=""><strong>Critical<br>Strike</strong></a>
   </div>
+  <p class="releases">Release tables: <a href="releases/pa/">Polygun Arena</a> · <a href="releases/cs/">Critical Strike</a></p>
 </main>
 </body>
 </html>
