@@ -228,6 +228,9 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send(file.read(), "text/html; charset=utf-8")
         elif url.path == "/logo.webp":
             super().do_GET()
+        elif url.path.startswith("/icons/"):
+            self.directory = os.path.join(ROOT, "Stats")  # the game logos Stats already ships
+            super().do_GET()
         else:
             self.send_error(HTTPStatus.NOT_FOUND)
 

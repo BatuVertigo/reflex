@@ -75,6 +75,8 @@ a.ext:hover { text-decoration: underline; }
 .tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); padding: 14px 18px 18px; }
 .tile { padding: 14px 16px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-2); }
 .tile .t { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.proj { display: inline-flex; align-items: center; gap: 7px; white-space: nowrap; }
+.plogo { width: 20px; height: 20px; border-radius: 6px; object-fit: cover; }
 .tile .n { margin-top: 4px; font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
 .tile .n small { font-size: 13px; font-weight: 500; color: var(--ink-3); margin-left: 4px; }
 .tile .m { margin-top: 8px; display: flex; gap: 10px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
@@ -148,7 +150,10 @@ pre { margin: 0; padding: 14px 18px; max-height: 440px; overflow: auto; backgrou
 </main>
 <script>
 const esc = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
-const when = iso => iso ? iso.slice(5, 16).replace("T", " ") : "";
+const MONTHS = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+const when = iso => iso ? `${Number(iso.slice(8, 10))} ${MONTHS[Number(iso.slice(5, 7)) - 1]} ${iso.slice(11, 16)}` : "";
+const LOGOS = { "Stats PA": "icons/pa-logo.webp", "Stats CS": "icons/cs-logo.png" };
+const project = name => `<span class="proj">${LOGOS[name] ? `<img class="plogo" src="${LOGOS[name]}" alt="">` : ""}${esc(name)}</span>`;
 const ago = seconds => seconds == null ? "no log yet" : seconds < 60 ? `${seconds} s ago` : seconds < 3600 ? `${Math.round(seconds / 60)} min ago` : `${Math.round(seconds / 3600)} h ago`;
 const took = seconds => seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} m ${seconds % 60} s`;
 const pill = (kind, text) => `<span class="pill ${kind}"><i></i>${esc(text)}</span>`;
@@ -166,7 +171,7 @@ function renderProjects() {
     const c = p.windows[windowKey];
     const done = c.ok + c.failed;
     const rate = done ? Math.round(100 * c.ok / done) : null;
-    return `<div class="tile"><div class="t">${esc(p.name)}</div>
+    return `<div class="tile"><div class="t">${project(p.name)}</div>
       <div class="n">${c.requests}<small>request${c.requests === 1 ? "" : "s"}</small></div>
       <div class="m"><span class="ok">${c.ok} ok</span><span class="bad">${c.failed} failed</span>${c.running ? `<span>${c.running} running</span>` : ""}<span style="margin-left:auto">${rate == null ? "–" : rate + " %"}</span></div>
       <div class="bar"><i style="width:${rate ?? 0}%"></i></div></div>`;
@@ -205,11 +210,11 @@ async function refresh() {
   banner.innerHTML = running.length ? `${pill("warn", running.length + " running")} Do not stop app.py or stats.py right now.` : `${pill("ok", "idle")} No active requests — safe to stop or restart.`;
   document.getElementById("runningPanel").hidden = !running.length;
   document.getElementById("running").innerHTML = running.map(r =>
-    `<tr><td>${esc(r.project)}</td><td>${esc(r.user)}</td><td class="mono">${when(r.started)}</td><td>${stages(r)}</td><td class="mono">${esc(r.stages.map(s => s.progress).filter(Boolean).slice(-1)[0] || "")}</td><td>${link(r)}</td></tr>`).join("");
+    `<tr><td>${project(r.project)}</td><td>${esc(r.user)}</td><td class="mono">${when(r.started)}</td><td>${stages(r)}</td><td class="mono">${esc(r.stages.map(s => s.progress).filter(Boolean).slice(-1)[0] || "")}</td><td>${link(r)}</td></tr>`).join("");
   renderProjects();
   document.getElementById("recentCount").textContent = `last ${data.recent.length}`;
   document.getElementById("recent").innerHTML = data.recent.map(r =>
-    `<tr><td class="mono">${when(r.started)}</td><td>${esc(r.project)}</td><td>${esc(r.user)}</td><td>${statusPill(r.status)}</td><td>${stages(r)}</td><td class="mono">${rowTook(r)}</td><td>${link(r)}</td></tr>`).join("")
+    `<tr><td class="mono">${when(r.started)}</td><td>${project(r.project)}</td><td>${esc(r.user)}</td><td>${statusPill(r.status)}</td><td>${stages(r)}</td><td class="mono">${rowTook(r)}</td><td>${link(r)}</td></tr>`).join("")
     || `<tr><td class="empty" colspan="7">no requests yet</td></tr>`;
 }
 
