@@ -224,3 +224,13 @@ Buton yok; başlat/durdur SSH ile (`launchctl kickstart -k gui/501/<label>`).
   isteğin aşamaları olarak gösterir. Slack işleri: kullanıcı adı (`_display_name`), thread/Asana linki.
 - `ops.py`: işler → istekler (`requests_from`), proje bazlı sayılar 24h/7d/30d (`project_stats`; projeler Stats PA, Stats CS,
   Bug Details, Task Move, Version Check), `host`, `/logo.webp`.
+
+## Olay ve yeniden başlatma (16 Eki 18:00–18:25)
+
+- 18:00:04'te bug-watcher ve release-summary planlanmamış koştu. Kök neden: GUI oturumunun `UserEventAgent-Aqua`'sı 14 Eki
+  10:53'te başlamış, `/etc/localtime` 10:55'te Europe/Istanbul'a çevrilmiş → launchd takvimi eski dilimde (PDT) sayıyordu
+  (08:00 PDT = 18:00). Bug Watcher'ın 4 mesajı (#reflex raporu, #qa-polygunarena, C04L92H8QLA ×2) bot token ile `chat.delete`.
+- Mini 18:12'de yeniden başlatıldı (Batuhan, diğer developer'a haber verildi): otomatik giriş çalıştı, 6 ajan kendiliğinden
+  kalktı, app Slack'e bağlandı, UserEventAgent yeni dilimle başladı. Yeniden başlatma testi böylece yapılmış oldu.
+- IP değişti: `192.168.30.124` → `192.168.31.63` (DHCP). Her yerde `productmacmini.local` kullanılır; `deploy.sh` varsayılanı
+  da ad oldu. IT'den DHCP rezervasyonu hâlâ bekliyor (MAC `c8:80:6d:55:47:b8`).

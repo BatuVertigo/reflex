@@ -8,7 +8,7 @@
 #   bash launchd/deploy.sh app --force     # reload app.py even while a job is running
 set -euo pipefail
 
-HOST="${REFLEX_MINI:-vertigoproduct@192.168.30.124}"
+HOST="${REFLEX_MINI:-vertigoproduct@productmacmini.local}"
 force=0
 agents=()
 for arg in "$@"; do
