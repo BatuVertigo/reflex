@@ -7,7 +7,7 @@ Product ekibinin işini kolaylaştıran bir bot. Yedi özelliği var: altısı S
 **2. Release Summary.** Her gün belirli aralıklarla çalışan bir routine. `#pa-releasehistory` ve `#cs-releasehistory` kanallarındaki release postlarını okuyup her oyunun release
 history tablosunu güncel tutar.
 
-**3. Skill Catalog.** Zamanlanmış bir routine. VertigoAI reposundaki plugin/skill kaynaklarını (`plugin-list.json` + `SKILL.md` dosyaları) tarar; değişiklik varsa `docs/SKILL_CATALOG.md`'yi ve ekibin Slack canvasındaki Skill Catalog bölümünü senkron tutar. Değişiklik yoksa hiçbir şeye dokunmadan çıkar.
+**3. Skill Catalog.** Zamanlanmış bir routine. VertigoAI reposundaki plugin/skill kaynaklarını (`plugin-list.json` + `SKILL.md` dosyaları) tarar; değişiklik varsa `docs/SKILL_CATALOG.md`'yi günceller. Ekip kataloğu Stats sitesinde `/skill-catalog/` altında görür (sayfa dosyayı her açılışta okur; Slack canvasına artık yazılmaz). Değişiklik yoksa hiçbir şeye dokunmadan çıkar.
 
 **4. Bug Details.** Bir bug thread'indeki bir mesajın **"..."** menüsünden
 **Bug Details** kısayolu çalıştırılır → bot thread'in tamamını okur → Claude Opus ile
@@ -20,12 +20,12 @@ kanalın product grubunu (@pa-product / @cs-product; eşleşme yoksa mesajı yaz
 kullanılarak **Move Asana tasks** açılır. Bot her task'ı Asana API'siyle parent'ın altına
 subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
 
-**7. Stats (Polygun + Critical Strike).** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. İki oyun tek sitede: `/stats/pa/` ve `/stats/cs/` (eski `/polygun/`, `/cs/` yönlenir); üst bardaki seçiciyle geçilir, ana sayfa ilk ziyarette iki kart gösterir, sonra son seçilen oyunu açar. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
+**7. Stats (Polygun + Critical Strike).** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. İki oyun tek sitede: `/stats/pa/` ve `/stats/cs/` (eski `/polygun/`, `/cs/` yönlenir); üst bardaki seçiciyle geçilir, `/stats` ilk ziyarette iki kart gösterir, sonra son seçilen oyunu açar. `/` boş (404); ortak bir giriş sayfası sonra gelecek. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
 (disk yok, cache yok, log'da ID yok). Aranan her oyuncu sayfada bir chip olarak kalır; chip'e tıklayınca yeniden sorgu
 atılmaz, aynı ID'yi tekrar yazmak veriyi tazeler, sayfa yenilenince chip'ler gider.
 Slack'te **Stats** kısayolu ("/" menüsü) linki (`.env`'deki `STATS_URL`, ör. `http://productmacmini.local:3800`)
 sadece çalıştırana görünen bir popup'ta verir. Aynı site `/releases/pa/` ve `/releases/cs/` altında
-Release Summary tablolarını gösterir (md dosyalarını her açılışta okur).
+Release Summary tablolarını, `/skill-catalog/` altında Skill Catalog'u gösterir (md dosyalarını her açılışta okur). Bu sayfalara şimdilik yalnız doğrudan adresle girilir.
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
 yerel **`claude` CLI** (Max aboneliği) motoruyla çalışır (`app.py`). Version Check
