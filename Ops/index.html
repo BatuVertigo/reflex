@@ -4,86 +4,144 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Reflex Ops</title>
+<link rel="icon" href="logo.webp">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&display=swap">
 <style>
 :root {
-  color-scheme: light dark;
-  --ground: #f3f5f8; --surface: #fbfcfd; --ink: #10151c; --ink-2: #4a5360; --hairline: #e0e4ea; --focus: #2a78d6;
-  --ok: #1f9d55; --warn: #d08700; --bad: #d63a2a;
+  color-scheme: light;
+  --ground: #eef1f5; --surface: #ffffff; --surface-2: #f5f7fa; --ink: #0f141b; --ink-2: #5b6573; --ink-3: #8a94a3;
+  --hairline: #e3e7ee; --focus: #2a78d6; --brand: #1b3a5c; --brand-2: #1c9c92;
+  --ok: #1f9d55; --ok-bg: #e6f6ec; --warn: #b7791f; --warn-bg: #fbf1dc; --bad: #d63a2a; --bad-bg: #fde8e5; --info: #3b82f6; --info-bg: #e7f0fe;
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif; --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
-  :root { --ground: #0b0e12; --surface: #151920; --ink: #eef1f5; --ink-2: #b6bdc7; --hairline: #242a33; --focus: #3987e5; }
+  :root { color-scheme: dark; --ground: #0b0e12; --surface: #141920; --surface-2: #1a2029; --ink: #eef1f5; --ink-2: #aab3c0; --ink-3: #6f7a88;
+    --hairline: #242b35; --focus: #3987e5; --brand: #9fc4ea; --brand-2: #4cc8bd;
+    --ok: #34c272; --ok-bg: #11301f; --warn: #e0a94a; --warn-bg: #33270f; --bad: #f06a5c; --bad-bg: #3a1713; --info: #60a5fa; --info-bg: #122543; }
 }
 * { box-sizing: border-box; }
-body { margin: 0; padding: 20px 16px 40px; background: var(--ground); color: var(--ink); font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
-main { width: min(1200px, 100%); margin: 0 auto; display: grid; gap: 18px; }
-header { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 8px; }
-h1 { margin: 0; font-size: 22px; }
-h2 { margin: 0 0 10px; font-size: 15px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-2); }
-section { padding: 14px 16px; background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; }
+main { width: min(1280px, 100%); margin: 0 auto; padding: 20px 20px 60px; display: grid; gap: 20px; }
+
+.top { display: flex; align-items: center; gap: 14px; }
+.top img { width: 44px; height: 44px; border-radius: 12px; background: var(--surface); }
+.top h1 { margin: 0; font-size: 20px; font-weight: 700; letter-spacing: -0.01em; }
+.top .sub { margin: 0; color: var(--ink-2); font-size: 13px; }
+.top .live { margin-left: auto; display: inline-flex; align-items: center; gap: 8px; color: var(--ink-2); font-size: 13px; font-family: var(--mono); }
+.top .live i { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 4px var(--ok-bg); }
+.top .live.off i { background: var(--bad); box-shadow: 0 0 0 4px var(--bad-bg); }
+
+h2 { margin: 0 0 12px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-2); }
+.grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+.card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; padding: 16px 18px; box-shadow: 0 1px 2px rgba(15,20,27,.04); }
+.card .name { display: flex; align-items: center; justify-content: space-between; gap: 10px; font-weight: 600; font-size: 15px; }
+.card .row { display: flex; justify-content: space-between; gap: 10px; margin-top: 8px; color: var(--ink-2); font-size: 13px; }
+.card .row b { color: var(--ink); font-weight: 500; font-family: var(--mono); font-size: 12.5px; }
+.card .line { margin-top: 10px; color: var(--ink-2); font-size: 13px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 9px 3px 7px; border-radius: 999px; font-size: 12px; font-weight: 600; white-space: nowrap; }
+.pill i { width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.pill.ok { color: var(--ok); background: var(--ok-bg); } .pill.bad { color: var(--bad); background: var(--bad-bg); }
+.pill.warn { color: var(--warn); background: var(--warn-bg); } .pill.info { color: var(--info); background: var(--info-bg); }
+.pill.muted { color: var(--ink-2); background: var(--surface-2); }
+
+.banner { display: flex; align-items: center; gap: 12px; padding: 12px 16px; border-radius: 12px; font-weight: 600; }
+.banner.ok { background: var(--ok-bg); color: var(--ok); } .banner.warn { background: var(--warn-bg); color: var(--warn); }
+
+.panel { background: var(--surface); border: 1px solid var(--hairline); border-radius: 14px; overflow: hidden; }
+.panel .head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px 18px; border-bottom: 1px solid var(--hairline); }
+.panel .head h2 { margin: 0; }
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 6px 8px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hairline); }
-th { font-weight: 600; color: var(--ink-2); font-size: 12px; }
+th { padding: 9px 16px; text-align: left; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-3); background: var(--surface-2); border-bottom: 1px solid var(--hairline); white-space: nowrap; }
+td { padding: 10px 16px; border-bottom: 1px solid var(--hairline); vertical-align: top; }
 tr:last-child td { border-bottom: 0; }
-.dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; margin-right: 6px; vertical-align: -1px; background: var(--warn); }
-.dot.ok { background: var(--ok); } .dot.bad { background: var(--bad); }
-.muted { color: var(--ink-2); }
-.safe { color: var(--ok); font-weight: 600; } .busy { color: var(--warn); font-weight: 600; }
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 18px; }
-.controls { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
-select, input { font: inherit; padding: 6px 8px; border: 1px solid var(--hairline); border-radius: 8px; background: var(--ground); color: var(--ink); }
+td.mono, .mono { font-family: var(--mono); font-size: 12.5px; color: var(--ink-2); white-space: nowrap; }
+td.empty { color: var(--ink-3); text-align: center; padding: 22px; }
+.stages { display: flex; flex-wrap: wrap; gap: 5px; }
+.stage { display: inline-flex; align-items: center; gap: 5px; padding: 2px 8px 2px 6px; border-radius: 8px; font-size: 12px; font-family: var(--mono); background: var(--surface-2); color: var(--ink-2); }
+.stage i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); }
+.stage.finished i { background: var(--ok); } .stage.failed i { background: var(--bad); } .stage.running i { background: var(--info); }
+.stage.failed { color: var(--bad); }
+a.ext { color: var(--focus); text-decoration: none; font-weight: 500; white-space: nowrap; }
+a.ext:hover { text-decoration: underline; }
+
+.seg { display: inline-flex; border: 1px solid var(--hairline); border-radius: 9px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); color: var(--ink-2); font: 600 12px var(--font); padding: 5px 11px; cursor: pointer; }
+.seg button + button { border-left: 1px solid var(--hairline); }
+.seg button.on { background: var(--ink); color: var(--surface); }
+.tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); padding: 14px 18px 18px; }
+.tile { padding: 14px 16px; border: 1px solid var(--hairline); border-radius: 12px; background: var(--surface-2); }
+.tile .t { font-size: 12.5px; font-weight: 600; color: var(--ink-2); }
+.tile .n { margin-top: 4px; font-size: 30px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .n small { font-size: 13px; font-weight: 500; color: var(--ink-3); margin-left: 4px; }
+.tile .m { margin-top: 8px; display: flex; gap: 10px; font-size: 12.5px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.tile .m .ok { color: var(--ok); } .tile .m .bad { color: var(--bad); }
+.bar { margin-top: 8px; height: 5px; border-radius: 3px; background: var(--hairline); overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--ok); }
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+select, input { font: inherit; font-size: 13px; padding: 6px 9px; border: 1px solid var(--hairline); border-radius: 9px; background: var(--surface-2); color: var(--ink); }
 input { flex: 1; min-width: 160px; }
-pre { margin: 0; padding: 10px; max-height: 420px; overflow: auto; background: var(--ground); border-radius: 8px; font: 12px/1.4 ui-monospace, Menlo, monospace; white-space: pre-wrap; word-break: break-all; }
-code { font: 12px ui-monospace, Menlo, monospace; }
+pre { margin: 0; padding: 14px 18px; max-height: 440px; overflow: auto; background: var(--surface); font: 12px/1.5 var(--mono); color: var(--ink-2); white-space: pre-wrap; word-break: break-all; }
+@media (max-width: 720px) { main { padding: 14px 12px 40px; } th, td { padding: 8px 10px; } .top .sub { display: none; } }
 </style>
 </head>
 <body>
 <main>
-  <header>
-    <h1>Reflex Ops</h1>
-    <span class="muted" id="now">…</span>
+  <header class="top">
+    <img src="logo.webp" alt="">
+    <div>
+      <h1>Reflex Ops</h1>
+      <p class="sub" id="sub">…</p>
+    </div>
+    <span class="live" id="live"><i></i><span id="now">connecting</span></span>
   </header>
 
-  <div class="grid">
-    <section>
-      <h2>Services</h2>
-      <table><thead><tr><th>Service</th><th>launchd</th><th>PID</th><th>Last exit</th><th>Last log write</th></tr></thead><tbody id="services"></tbody></table>
-    </section>
-    <section>
-      <h2>Active jobs</h2>
-      <p id="safe"></p>
-      <table><thead><tr><th>Feature</th><th>User</th><th>Started</th><th>Progress</th><th>Detail</th></tr></thead><tbody id="running"></tbody></table>
-    </section>
-  </div>
-
-  <div class="grid">
-    <section>
-      <h2>Usage</h2>
-      <table><thead><tr><th>Feature</th><th>24 h</th><th>7 days</th></tr></thead><tbody id="usage"></tbody></table>
-    </section>
-    <section>
-      <h2>Routines</h2>
-      <table><thead><tr><th>Routine</th><th>Schedule</th><th>Last run</th><th>Result</th></tr></thead><tbody id="routines"></tbody></table>
-    </section>
-  </div>
-
   <section>
-    <h2>Recent jobs</h2>
-    <table><thead><tr><th>Started</th><th>Feature</th><th>User</th><th>Status</th><th>Progress</th><th>Detail</th></tr></thead><tbody id="recent"></tbody></table>
+    <h2>Services</h2>
+    <div class="grid" id="services"></div>
   </section>
 
   <section>
-    <h2>Logs</h2>
-    <div class="controls">
-      <select id="logName">
-        <option value="app">app.log</option>
-        <option value="stats">stats.log</option>
-        <option value="ops">ops.log</option>
-        <option value="bug-watcher">bug-watcher (last run)</option>
-        <option value="release-summary">release-summary (last run)</option>
-        <option value="skill-catalog">skill-catalog (last run)</option>
-      </select>
-      <input id="logFilter" placeholder="filter text">
-      <select id="logLines"><option>200</option><option>500</option><option>2000</option></select>
+    <h2>Routines</h2>
+    <div class="grid" id="routines"></div>
+  </section>
+
+  <section>
+    <h2>Active requests</h2>
+    <div id="banner" class="banner ok">…</div>
+    <div class="panel" id="runningPanel" hidden style="margin-top:12px">
+      <table><thead><tr><th>Project</th><th>User</th><th>Started</th><th>Stages</th><th>Progress</th><th>Detail</th></tr></thead><tbody id="running"></tbody></table>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="head">
+      <h2>Projects</h2>
+      <div class="seg" id="windows"><button data-w="24h" class="on">24 h</button><button data-w="7d">7 days</button><button data-w="30d">30 days</button></div>
+    </div>
+    <div class="tiles" id="projects"></div>
+  </section>
+
+  <section class="panel">
+    <div class="head"><h2>Recent requests</h2><span class="mono" id="recentCount"></span></div>
+    <table><thead><tr><th>Started</th><th>Project</th><th>User</th><th>Status</th><th>Stages</th><th>Took</th><th>Detail</th></tr></thead><tbody id="recent"></tbody></table>
+  </section>
+
+  <section class="panel">
+    <div class="head">
+      <h2>Logs</h2>
+      <div class="controls">
+        <select id="logName">
+          <option value="app">app.log</option><option value="stats">stats.log</option><option value="ops">ops.log</option>
+          <option value="bug-watcher">bug-watcher (last run)</option><option value="release-summary">release-summary (last run)</option><option value="skill-catalog">skill-catalog (last run)</option>
+        </select>
+        <input id="logFilter" placeholder="filter text">
+        <select id="logLines"><option>200</option><option>500</option><option>2000</option></select>
+      </div>
     </div>
     <pre id="log">…</pre>
   </section>
@@ -91,36 +149,68 @@ code { font: 12px ui-monospace, Menlo, monospace; }
 <script>
 const esc = text => String(text ?? "").replace(/[&<>"]/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;"}[c]));
 const when = iso => iso ? iso.slice(5, 16).replace("T", " ") : "";
-const age = seconds => seconds == null ? "no log yet" : seconds < 60 ? `${seconds} s ago` : seconds < 3600 ? `${Math.round(seconds / 60)} min ago` : `${Math.round(seconds / 3600)} h ago`;
-const dot = service => service.state === "running" ? "ok" : service.state === "not loaded" || service.state === "unknown" ? "bad" : "";
+const ago = seconds => seconds == null ? "no log yet" : seconds < 60 ? `${seconds} s ago` : seconds < 3600 ? `${Math.round(seconds / 60)} min ago` : `${Math.round(seconds / 3600)} h ago`;
+const took = seconds => seconds < 60 ? `${seconds} s` : `${Math.floor(seconds / 60)} m ${seconds % 60} s`;
+const pill = (kind, text) => `<span class="pill ${kind}"><i></i>${esc(text)}</span>`;
+const statusPill = status => status === "finished" ? pill("ok", "finished") : status === "failed" ? pill("bad", "failed") : pill("info", "running");
+const servicePill = s => s.state === "running" ? pill("ok", "running") : s.state === "not loaded" ? pill("bad", "not loaded") : pill("warn", s.state || "unknown");
+const stages = r => `<div class="stages">${r.stages.map(s => `<span class="stage ${esc(s.status)}" title="${esc(s.status)} · ${took(s.seconds)}"><i></i>${esc(s.name)}${s.progress ? " " + esc(s.progress) : ""}</span>`).join("")}</div>`;
+const link = r => r.link ? `<a class="ext" href="${esc(r.link)}" target="_blank" rel="noopener">${r.project === "Task Move" ? "Asana ↗" : "Slack thread ↗"}</a>${r.detail ? ` <span class="mono">${esc(r.detail)}</span>` : ""}` : esc(r.detail);
+const rowTook = r => took(Math.max(0, Math.round((new Date(r.updated) - new Date(r.started)) / 1000)));
+let windowKey = "24h";
+let data = null;
+
+function renderProjects() {
+  if (!data) return;
+  document.getElementById("projects").innerHTML = data.projects.map(p => {
+    const c = p.windows[windowKey];
+    const done = c.ok + c.failed;
+    const rate = done ? Math.round(100 * c.ok / done) : null;
+    return `<div class="tile"><div class="t">${esc(p.name)}</div>
+      <div class="n">${c.requests}<small>request${c.requests === 1 ? "" : "s"}</small></div>
+      <div class="m"><span class="ok">${c.ok} ok</span><span class="bad">${c.failed} failed</span>${c.running ? `<span>${c.running} running</span>` : ""}<span style="margin-left:auto">${rate == null ? "–" : rate + " %"}</span></div>
+      <div class="bar"><i style="width:${rate ?? 0}%"></i></div></div>`;
+  }).join("");
+}
 
 async function refresh() {
-  let data;
   try {
     data = await (await fetch("api/status")).json();
   } catch (error) {
-    document.getElementById("now").textContent = "ops.py is not answering";
+    document.getElementById("live").classList.add("off");
+    document.getElementById("now").textContent = "ops.py not answering";
     return;
   }
-  document.getElementById("now").textContent = `${data.now} · ${data.log_dir}`;
+  document.getElementById("live").classList.remove("off");
+  document.getElementById("now").textContent = data.now;
+  document.getElementById("sub").textContent = `${data.host} · ${data.log_dir}`;
   document.getElementById("services").innerHTML = data.services.map(s =>
-    `<tr><td><span class="dot ${dot(s)}"></span>${s.name}</td><td>${esc(s.state)}</td><td>${esc(s.pid ?? "")}</td><td>${esc(s.last_exit ?? "")}</td><td>${age(s.log_age_s)}</td></tr>`).join("");
-  document.getElementById("safe").innerHTML = data.running.length
-    ? `<span class="busy">${data.running.length} job(s) running — do not stop app.py now.</span>`
-    : `<span class="safe">No active jobs — safe to stop or restart.</span>`;
-  document.getElementById("running").innerHTML = data.running.map(j =>
-    `<tr><td>${esc(j.feature)}</td><td>${esc(j.user)}</td><td>${when(j.started)}</td><td>${esc(j.progress)}</td><td>${esc(j.detail)}</td></tr>`).join("");
-  document.getElementById("usage").innerHTML = Object.entries(data.usage).sort().map(([feature, n]) =>
-    `<tr><td>${esc(feature)}</td><td>${n.day}</td><td>${n.week}</td></tr>`).join("") || `<tr><td class="muted" colspan="3">no jobs yet</td></tr>`;
+    `<div class="card"><div class="name">${esc(s.name)}.py ${servicePill(s)}</div>
+     <div class="row"><span>pid</span><b>${esc(s.pid ?? "–")}</b></div>
+     <div class="row"><span>last exit</span><b>${esc(s.last_exit ?? "–")}</b></div>
+     <div class="row"><span>last log write</span><b>${ago(s.log_age_s)}</b></div></div>`).join("");
   document.getElementById("routines").innerHTML = data.routines.map(r => {
     const last = r.last;
     const ok = last && !last.is_error && last.exit_code === 0;
-    const summary = !last ? `<span class="muted">never ran here</span>`
-      : `<span class="dot ${ok ? "ok" : "bad"}"></span>${ok ? "ok" : "failed"} · ${last.duration_s} s · push: ${esc(last.push ?? "-")}${last.push_error ? ` <span class="muted">(${esc(last.push_error.trim().split("\n").slice(-1)[0])})</span>` : ""}<br><span class="muted">${esc(last.result.split("\n")[0])}</span>`;
-    return `<tr><td>${esc(r.name)}<br><span class="muted">${esc(r.state)}</span></td><td>${esc(r.schedule)}</td><td>${last ? when(last.started) : ""}</td><td>${summary}</td></tr>`;
+    const state = !last ? pill("muted", "never ran") : ok ? pill("ok", "ok") : pill("bad", "failed");
+    return `<div class="card"><div class="name">${esc(r.name)} ${state}</div>
+      <div class="row"><span>schedule</span><b>${esc(r.schedule)}</b></div>
+      <div class="row"><span>last run</span><b>${last ? when(last.started) + " · " + took(last.duration_s) : "–"}</b></div>
+      <div class="row"><span>push</span><b>${esc(last ? last.push ?? "–" : "–")}${last && last.push_error ? ` <span title="${esc(last.push_error)}">⚠︎</span>` : ""}</b></div>
+      ${last && last.result ? `<div class="line" title="${esc(last.result)}">${esc(last.result.split("\n")[0])}</div>` : ""}</div>`;
   }).join("");
-  document.getElementById("recent").innerHTML = data.recent.map(j =>
-    `<tr><td>${when(j.started)}</td><td>${esc(j.feature)}</td><td>${esc(j.user)}</td><td>${esc(j.status)}</td><td>${esc(j.progress)}</td><td>${esc(j.detail)}</td></tr>`).join("") || `<tr><td class="muted" colspan="6">no jobs yet</td></tr>`;
+  const running = data.running;
+  const banner = document.getElementById("banner");
+  banner.className = `banner ${running.length ? "warn" : "ok"}`;
+  banner.innerHTML = running.length ? `${pill("warn", running.length + " running")} Do not stop app.py or stats.py right now.` : `${pill("ok", "idle")} No active requests — safe to stop or restart.`;
+  document.getElementById("runningPanel").hidden = !running.length;
+  document.getElementById("running").innerHTML = running.map(r =>
+    `<tr><td>${esc(r.project)}</td><td>${esc(r.user)}</td><td class="mono">${when(r.started)}</td><td>${stages(r)}</td><td class="mono">${esc(r.stages.map(s => s.progress).filter(Boolean).slice(-1)[0] || "")}</td><td>${link(r)}</td></tr>`).join("");
+  renderProjects();
+  document.getElementById("recentCount").textContent = `last ${data.recent.length}`;
+  document.getElementById("recent").innerHTML = data.recent.map(r =>
+    `<tr><td class="mono">${when(r.started)}</td><td>${esc(r.project)}</td><td>${esc(r.user)}</td><td>${statusPill(r.status)}</td><td>${stages(r)}</td><td class="mono">${rowTook(r)}</td><td>${link(r)}</td></tr>`).join("")
+    || `<tr><td class="empty" colspan="7">no requests yet</td></tr>`;
 }
 
 async function refreshLog() {
@@ -138,6 +228,13 @@ async function refreshLog() {
   }
 }
 
+document.getElementById("windows").addEventListener("click", event => {
+  const button = event.target.closest("button");
+  if (!button) return;
+  windowKey = button.dataset.w;
+  for (const b of document.querySelectorAll("#windows button")) b.classList.toggle("on", b === button);
+  renderProjects();
+});
 for (const id of ["logName", "logFilter", "logLines"]) document.getElementById(id).addEventListener("input", refreshLog);
 refresh(); refreshLog();
 setInterval(refresh, 5000);

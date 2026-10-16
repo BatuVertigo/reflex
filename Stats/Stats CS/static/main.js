@@ -417,6 +417,7 @@
 
   form.addEventListener("submit", event => {
     event.preventDefault();
+    SP.source.begin();
     search(input.value);
   });
 

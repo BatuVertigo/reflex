@@ -52,9 +52,10 @@ def record_jobs(game_name, handler_class):
 
     def stream_job(self, job, what):
         kind = what.split()[0]
-        job_id = jobs.start(f"{game_name} {kind}", self.client_address[0])
+        job_id = jobs.start(f"{game_name} {kind}", self.client_address[0], group=self.headers.get("X-Search-Id") or "")
         status = original(self, job, what)
-        jobs.finish(job_id, "finished" if status == "OK" else "failed", status.lower())
+        # The status pill already says failed; the detail only adds the one thing it cannot: that the page went away.
+        jobs.finish(job_id, "finished" if status == "OK" else "failed", "page closed" if status == "STOPPED" else "")
         return status
 
     handler_class.stream_job = stream_job

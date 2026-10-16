@@ -219,7 +219,7 @@ def handle_message(event, client):
     if ts in _replied:
         return
 
-    job = jobs.start("Version Check", event.get("user") or "", f"ts={ts}")
+    job = jobs.start("Version Check", _display_name(client, event.get("user")), link=_thread_permalink(client, channel, ts) or "")
     try:
         result = check_version(text)
     except Exception:
@@ -388,7 +388,8 @@ def handle_bug_details(ack, shortcut, client):
         return
 
     # Read the thread → format with Opus → update the modal (view_id, no time limit).
-    job = jobs.start("Bug Details", shortcut["user"]["id"], f"thread_ts={thread_ts}")
+    permalink = _thread_permalink(client, channel, thread_ts)
+    job = jobs.start("Bug Details", _display_name(client, shortcut["user"]["id"]), link=permalink or "")
     try:
         replies = client.conversations_replies(channel=channel, ts=thread_ts, limit=200)
         transcript = _build_transcript(client, replies.get("messages", []))
@@ -400,7 +401,7 @@ def handle_bug_details(ack, shortcut, client):
                 BUG_DETAILS_TIMEOUT, BUG_DETAILS_EFFORT,
             ) or "Opus yanıtı alınamadı (loga bak)."
             # We append the Slack link ourselves, not the model (real permalink, never truncated).
-            result = _with_slack_link(result, _thread_permalink(client, channel, thread_ts))
+            result = _with_slack_link(result, permalink)
         jobs.finish(job)
     except Exception:
         logger.exception("Bug details generation failed (thread_ts=%s)", thread_ts)
@@ -554,7 +555,8 @@ def handle_task_move_submit(ack, body, view, client):
     view_id = body["view"]["id"]
 
     # The ops dashboard shows this job while it runs, so the app is not stopped mid-move.
-    job = jobs.start("Task Move", body["user"]["id"], f"parent={parent_gid}")
+    job = jobs.start("Task Move", _display_name(client, body["user"]["id"]), f"{len(task_urls)} task",
+                     link=f"https://app.asana.com/0/0/{parent_gid}")
     lines = []
     moved = 0
     try:

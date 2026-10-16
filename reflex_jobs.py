@@ -12,7 +12,7 @@ import time
 import uuid
 
 LOG_DIR = os.path.expanduser(os.environ.get("REFLEX_LOG_DIR") or "~/Library/Logs/Reflex")
-KEEP = 500
+KEEP = 5000
 
 
 def now():
@@ -36,9 +36,10 @@ class Jobs:
                 job.update(status="failed", detail="process restarted", updated=now())
         self._save()
 
-    def start(self, feature, user="", detail=""):
+    def start(self, feature, user="", detail="", link="", group=""):
+        """link: where the dashboard sends the reader (Slack thread, Asana task). group: id shared by the stages of one request."""
         job = {"id": uuid.uuid4().hex[:8], "feature": feature, "user": user, "started": now(), "updated": now(),
-               "status": "running", "progress": "", "detail": detail}
+               "status": "running", "progress": "", "detail": detail, "link": link, "group": group}
         with self.lock:
             self.jobs.append(job)
             del self.jobs[:-KEEP]

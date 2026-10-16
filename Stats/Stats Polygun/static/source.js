@@ -7,10 +7,13 @@
 
   // The server answers with one JSON line per event: {waiting}, {done, total} after each TE query, then {result} or {error}.
   // onProgress gets every event before the last one.
+  // One id per search (set by begin() on submit): the ops dashboard groups the calls of a search as its stages.
+  let searchId = "";
+
   async function call(path, onProgress) {
     let response;
     try {
-      response = await fetch(path, { cache: "no-store" });
+      response = await fetch(path, { cache: "no-store", headers: { "X-Search-Id": searchId } });
     } catch (error) {
       throw new Error(UNREACHABLE);
     }
@@ -44,6 +47,7 @@
   }
 
   SP.source = {
+    begin: () => { searchId = Math.random().toString(36).slice(2, 10); },
     find: (name, onProgress) => call(`api/find?name=${encodeURIComponent(name)}`, onProgress),
     allTime: (playfabId, onProgress) => call(`api/player/${playfabId}`, onProgress),
     period: (playfabId, from, to, withMatches, onProgress) => call(`api/player/${playfabId}/period?from=${from}&to=${to}&matches=${withMatches ? 1 : 0}`, onProgress),

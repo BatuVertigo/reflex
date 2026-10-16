@@ -215,3 +215,12 @@ Buton yok; başlat/durdur SSH ile (`launchctl kickstart -k gui/501/<label>`).
   oyuna geçiş toggle'ı (⇄, Stats'taki gibi), Stats'a buton yok, 🧪 yerine çizgi flask ikonu, sürüm linklerinde ↗ ikonu,
   başlıklar `lang="en"` (CRİTİCAL → CRITICAL). Slack Stats metni `/stats/pa/` ve `/stats/cs/` linklerini verir.
   `.env.example`: tüm anahtarlar normal satır, gruplu.
+
+## Tur 3 (16 Eki) — Ops dashboard
+
+- Yeni tasarım (Inter + Plex Mono, kartlar, durum pill'leri: renk + metin), Reflex logosu (`Ops/logo.webp`).
+- İş kayıtlarına `link` ve `group` alanları (`reflex_jobs.py`, KEEP 5000). Stats sayfaları her aramaya `X-Search-Id` başlığı
+  gönderir (`source.js` begin(), `main.js` submit); `stats.py` bunu `group` olarak yazar → dashboard find/career/period'u tek
+  isteğin aşamaları olarak gösterir. Slack işleri: kullanıcı adı (`_display_name`), thread/Asana linki.
+- `ops.py`: işler → istekler (`requests_from`), proje bazlı sayılar 24h/7d/30d (`project_stats`; projeler Stats PA, Stats CS,
+  Bug Details, Task Move, Version Check), `host`, `/logo.webp`.

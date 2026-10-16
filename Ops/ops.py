@@ -10,9 +10,10 @@ import json
 import os
 import plistlib
 import re
+import socket
 import subprocess
 import time
-from datetime import datetime, timedelta
+from datetime import datetime
 from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
@@ -34,6 +35,60 @@ LOG_DIR = load("reflex_jobs", os.path.join(ROOT, "reflex_jobs.py")).LOG_DIR
 SERVICES = ["app", "stats", "ops"]
 ROUTINES = ["bug-watcher", "release-summary", "skill-catalog"]
 DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+# A "project" is what the team uses: the two Stats games (their calls are stages of one search) and each Slack feature.
+PROJECT_ORDER = ["Stats PA", "Stats CS", "Bug Details", "Task Move", "Version Check"]
+WINDOWS = {"24h": 1, "7d": 7, "30d": 30}
+
+
+def project_of(feature):
+    if feature.startswith("pa "):
+        return "Stats PA"
+    if feature.startswith("cs "):
+        return "Stats CS"
+    return feature
+
+
+def when(stamp):
+    return datetime.strptime(stamp, "%Y-%m-%dT%H:%M:%S%z")
+
+
+def requests_from(jobs):
+    """Jobs → requests: the stages of one Stats search (same group id) fold into one row; a Slack job is a row by itself."""
+    requests = {}
+    for job in sorted(jobs, key=lambda job: job["started"]):
+        key = job.get("group") or job["id"]
+        project = project_of(job["feature"])
+        request = requests.setdefault(key, {
+            "id": key, "project": project, "user": job["user"], "started": job["started"], "updated": job["updated"],
+            "status": "finished", "stages": [], "link": job.get("link", ""), "detail": "",
+        })
+        stage_name = job["feature"].split(" ", 1)[1] if project.startswith("Stats") else job["feature"]
+        seconds = max(0, int((when(job["updated"]) - when(job["started"])).total_seconds()))
+        request["stages"].append({"name": stage_name, "status": job["status"], "seconds": seconds, "progress": job["progress"]})
+        request["updated"] = max(request["updated"], job["updated"])
+        if job.get("detail"):
+            request["detail"] = job["detail"]
+        if job.get("link"):
+            request["link"] = job["link"]
+        if job["status"] == "running" or request["status"] == "running":
+            request["status"] = "running"
+        elif job["status"] == "failed":
+            request["status"] = "failed"
+    return sorted(requests.values(), key=lambda request: request["started"], reverse=True)
+
+
+def project_stats(requests):
+    now_ = datetime.now().astimezone()
+    names = PROJECT_ORDER + sorted({request["project"] for request in requests} - set(PROJECT_ORDER))
+    table = {name: {window: {"requests": 0, "ok": 0, "failed": 0, "running": 0} for window in WINDOWS} for name in names}
+    for request in requests:
+        age_days = (now_ - when(request["started"])).total_seconds() / 86400
+        for window, days in WINDOWS.items():
+            if age_days <= days:
+                counts = table[request["project"]][window]
+                counts["requests"] += 1
+                counts["ok" if request["status"] == "finished" else "failed" if request["status"] == "failed" else "running"] += 1
+    return [{"name": name, "windows": table[name]} for name in names]
 
 
 def launchd_state(label):
@@ -106,23 +161,16 @@ def latest_run(name):
 
 
 def status():
-    since_day = (datetime.now().astimezone() - timedelta(days=1)).strftime("%Y-%m-%dT%H:%M:%S%z")
-    since_week = (datetime.now().astimezone() - timedelta(days=7)).strftime("%Y-%m-%dT%H:%M:%S%z")
-    jobs = read_jobs("app") + read_jobs("stats")
-    usage = {}
-    for job in jobs:
-        counts = usage.setdefault(job["feature"], {"day": 0, "week": 0})
-        counts["week"] += job["started"] >= since_week
-        counts["day"] += job["started"] >= since_day
-    jobs.sort(key=lambda job: job["started"])
+    requests = requests_from(read_jobs("app") + read_jobs("stats"))
     return {
         "now": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "host": socket.gethostname(),
         "log_dir": LOG_DIR,
         "services": [{"name": name, "label": f"com.vertigo.reflex-{name}", "log_age_s": file_age(os.path.join(LOG_DIR, f"{name}.log")),
                       **launchd_state(f"com.vertigo.reflex-{name}")} for name in SERVICES],
-        "running": [job for job in jobs if job["status"] == "running"],
-        "recent": jobs[-30:][::-1],
-        "usage": usage,
+        "running": [request for request in requests if request["status"] == "running"],
+        "recent": requests[:40],
+        "projects": project_stats(requests),
         "routines": [{"name": name, "label": f"com.vertigo.reflex-{name}", "schedule": schedule_text(f"com.vertigo.reflex-{name}"),
                       **launchd_state(f"com.vertigo.reflex-{name}"), "last": latest_run(name)} for name in ROUTINES],
     }
@@ -178,6 +226,8 @@ class Handler(SimpleHTTPRequestHandler):
         elif url.path in ("/", "/index.html"):
             with open(os.path.join(FOLDER, "index.html"), "rb") as file:
                 self.send(file.read(), "text/html; charset=utf-8")
+        elif url.path == "/logo.webp":
+            super().do_GET()
         else:
             self.send_error(HTTPStatus.NOT_FOUND)
 
