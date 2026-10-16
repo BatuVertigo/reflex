@@ -20,11 +20,11 @@ kanalın product grubunu (@pa-product / @cs-product; eşleşme yoksa mesajı yaz
 kullanılarak **Move Asana tasks** açılır. Bot her task'ı Asana API'siyle parent'ın altına
 subtask olarak taşır, sonucu raporlar. Tamamen deterministik: Claude çağrısı yok, saf Asana REST.
 
-**7. Stats (Polygun + Critical Strike).** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. İki oyun tek sitede: `/polygun/` ve `/cs/`; üst bardaki seçiciyle geçilir, ana sayfa ilk ziyarette iki kart gösterir, sonra son seçilen oyunu açar. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
+**7. Stats (Polygun + Critical Strike).** Ofis Wi-Fi'ındaki ekip arkadaşlarının PlayFab ID yapıştırıp oyuncu raporu, ya da match_id yapıştırıp maç raporu açtığı web sayfası. İki oyun tek sitede: `/stats/pa/` ve `/stats/cs/` (eski `/polygun/`, `/cs/` yönlenir); üst bardaki seçiciyle geçilir, ana sayfa ilk ziyarette iki kart gösterir, sonra son seçilen oyunu açar. ThinkingData'ya sabit SQL sorguları atar, Claude çağrısı yok, hiçbir şey saklamaz
 (disk yok, cache yok, log'da ID yok). Aranan her oyuncu sayfada bir chip olarak kalır; chip'e tıklayınca yeniden sorgu
 atılmaz, aynı ID'yi tekrar yazmak veriyi tazeler, sayfa yenilenince chip'ler gider.
-Slack'te **Stats** kısayolu ("/" menüsü) linki (`.env`'deki `STATS_URL`, ör. `http://productmacmini.local:3800`; yedek
-olarak anlık IP) sadece çalıştırana görünen bir popup'ta verir. Aynı site `/releases/pa/` ve `/releases/cs/` altında
+Slack'te **Stats** kısayolu ("/" menüsü) linki (`.env`'deki `STATS_URL`, ör. `http://productmacmini.local:3800`)
+sadece çalıştırana görünen bir popup'ta verir. Aynı site `/releases/pa/` ve `/releases/cs/` altında
 Release Summary tablolarını gösterir (md dosyalarını her açılışta okur).
 
 **Mimari:** Version Check ve Bug Details, Slack **Socket Mode** (public endpoint yok) +
@@ -137,7 +137,7 @@ task'lar Asana'da parent'ın altında subtask olarak görünmeli.
 ```bash
 cd reflex
 source .venv/bin/activate
-python Stats/stats.py     # "Stats is up: http://192.168.x.x:3800 (Polygun at /polygun/, Critical Strike at /cs/; ...)"
+python Stats/stats.py     # "Stats is up: http://192.168.x.x:3800 (Polygun at /stats/pa/, Critical Strike at /stats/cs/, ...)"
 ```
 
 Ekip arkadaşı aynı Wi-Fi'da `http://<Mac'in adresi>:3800` açar, oyunu seçer, PlayFab ID yapıştırır, 5–15 sn bekler.

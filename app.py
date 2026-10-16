@@ -596,8 +596,8 @@ def handle_task_move_submit(ack, body, view, client):
 # FEATURE - STATS LINK (Stats Polygun + Stats CS on one site, Stats/stats.py)
 # =============================================================================
 
-# STATS_URL is the fixed name of the Mac that runs the page (e.g. http://productmacmini.local:3800).
-# The live IP is still read on every call and shown as a fallback for machines that cannot resolve the name.
+# STATS_URL is the fixed name of the Mac that runs the page (e.g. http://productmacmini.local:3800);
+# without it the live IP of this Mac is used.
 STATS_PORT = int(os.environ.get("STATS_PORT") or "3800")
 STATS_URL = os.environ.get("STATS_URL", "")
 
@@ -617,14 +617,9 @@ def _lan_address() -> str | None:
 def handle_stats_shortcut(ack, body, client):
     ack()
     address = _lan_address()
-    ip_url = f"http://{address}:{STATS_PORT}" if address else None
-    if STATS_URL:
-        text = f"*Stats CS ve Stats Polygun:*\n<{STATS_URL}>\n"
-        if ip_url:
-            text += f"Bu adres açılmazsa (Windows): <{ip_url}>\n"
-        text += "\nGirebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin."
-    elif ip_url:
-        text = (f"*Stats CS ve Stats Polygun:*\n<{ip_url}>\n\n"
+    url = STATS_URL or (f"http://{address}:{STATS_PORT}" if address else None)
+    if url:
+        text = (f"*Stats CS ve Stats Polygun:*\n<{url}>\n\n"
                 "Girebilmek için ofis WiFi'ına bağlı olmalısınız. Chrome'da açılmazsa Safari deneyin.")
     else:
         text = "Mac'in Wi-Fi adresi okunamadı. Mac ağa bağlı mı?"

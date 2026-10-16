@@ -4,60 +4,127 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title><!--TITLE--></title>
+<link rel="icon" href="/stats/<!--KEY-->/logo-web.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,700..900&display=swap">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@500;600&display=swap">
 <style>
 :root {
   color-scheme: light;
-  --ground: #f3f5f8;
-  --surface: #fbfcfd;
-  --ink: #10151c;
-  --ink-2: #4a5360;
-  --hairline: #e0e4ea;
+  --ground: #eef1f5;
+  --surface: #ffffff;
+  --surface-2: #f6f8fb;
+  --ink: #0f141b;
+  --ink-2: #5b6573;
+  --ink-3: #8a94a3;
+  --hairline: #e3e7ee;
   --focus: #2a78d6;
+  --live: #1f9d55;
+  --past: #3b82f6;
+  --test: #b7791f;
+  --android: #3ddc84;
+  --accent: #4a3aa7;
   --font-display: "Archivo", "Arial Narrow", "Roboto Condensed", sans-serif;
-  --font-body: "Hanken Grotesk", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --ground: #0b0e12;
-    --surface: #151920;
-    --ink: #eef1f5;
-    --ink-2: #b6bdc7;
-    --hairline: #242a33;
-    --focus: #3987e5;
+    --ground: #0b0e12; --surface: #141920; --surface-2: #1a2029; --ink: #eef1f5; --ink-2: #aab3c0; --ink-3: #6f7a88;
+    --hairline: #242b35; --focus: #3987e5; --live: #34c272; --past: #60a5fa; --test: #e0a94a; --accent: #9085e9;
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --ground: #0b0e12;
-  --surface: #151920;
-  --ink: #eef1f5;
-  --ink-2: #b6bdc7;
-  --hairline: #242a33;
-  --focus: #3987e5;
+  --ground: #0b0e12; --surface: #141920; --surface-2: #1a2029; --ink: #eef1f5; --ink-2: #aab3c0; --ink-3: #6f7a88;
+  --hairline: #242b35; --focus: #3987e5; --live: #34c272; --past: #60a5fa; --test: #e0a94a; --accent: #9085e9;
 }
+body[data-game="cs"] { --accent: #9a6b00; }
+@media (prefers-color-scheme: dark) { body[data-game="cs"] { --accent: #e8b53c; } }
+
 * { box-sizing: border-box; }
-body { margin: 0; padding: 24px 16px 48px; background: var(--ground); color: var(--ink); font-family: var(--font-body); font-size: 15px; line-height: 1.45; }
-main { width: min(1100px, 100%); margin: 0 auto; }
-h1 { margin: 0 0 12px; font-family: var(--font-display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 36px; text-transform: uppercase; letter-spacing: 0.02em; }
-blockquote { margin: 0 0 20px; padding: 10px 14px; border-left: 3px solid var(--focus); color: var(--ink-2); background: var(--surface); border-radius: 0 8px 8px 0; }
-blockquote p { margin: 0; }
-a { color: var(--focus); }
-table { width: 100%; border-collapse: collapse; background: var(--surface); border: 1px solid var(--hairline); border-radius: 12px; overflow: hidden; }
-th, td { padding: 10px 12px; text-align: left; vertical-align: top; border-bottom: 1px solid var(--hairline); }
-th { font-family: var(--font-display); font-weight: 800; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 15px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-2); }
-tr:last-child td { border-bottom: 0; }
-td:nth-child(2) { white-space: nowrap; }
-@media (max-width: 720px) { body { font-size: 13px; } th, td { padding: 8px; } }
+html { background: var(--ground); }
+body { margin: 0; padding: 28px 20px 56px; background: var(--ground); color: var(--ink); font-family: var(--font-body); font-size: 14.5px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+main { width: min(1180px, 100%); margin: 0 auto; }
+
+header { display: flex; align-items: center; gap: 18px; margin-bottom: 22px; }
+header img { width: 64px; height: 64px; border-radius: 16px; background: var(--surface); box-shadow: 0 1px 2px rgba(15, 20, 27, 0.08); }
+header .eyebrow { margin: 0 0 2px; font-size: 12px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+header h1 { margin: 0; font-family: var(--font-display); font-weight: 900; font-stretch: 62%; font-variation-settings: "wdth" 62; font-size: 40px; line-height: 1; letter-spacing: 0.01em; text-transform: uppercase; }
+header .meta { margin: 6px 0 0; color: var(--ink-2); font-size: 13px; }
+header .meta strong { color: var(--ink); font-weight: 600; }
+header nav { margin-left: auto; display: flex; gap: 8px; }
+header nav a { padding: 8px 12px; border: 1px solid var(--hairline); border-radius: 10px; background: var(--surface); color: var(--ink-2); font-size: 13px; font-weight: 500; text-decoration: none; }
+header nav a:hover { color: var(--ink); border-color: var(--ink-3); }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px 22px; margin: 0 0 14px; padding: 0 4px; color: var(--ink-2); font-size: 12.5px; }
+.legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+.card { background: var(--surface); border: 1px solid var(--hairline); border-radius: 16px; box-shadow: 0 1px 2px rgba(15, 20, 27, 0.05), 0 12px 32px -24px rgba(15, 20, 27, 0.25); overflow: hidden; }
+.scroll { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; min-width: 720px; }
+thead th { white-space: nowrap; position: sticky; top: 0; background: var(--surface-2); padding: 12px 16px; text-align: left; font-size: 11.5px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); border-bottom: 1px solid var(--hairline); }
+tbody td { padding: 12px 16px; vertical-align: top; border-bottom: 1px solid var(--hairline); }
+tbody tr:last-child td { border-bottom: 0; }
+tbody tr:hover td { background: var(--surface-2); }
+td:nth-child(1) { white-space: nowrap; }
+td:nth-child(1) a { color: var(--ink); font-weight: 700; text-decoration: none; border-bottom: 1px solid transparent; }
+td:nth-child(1) a:hover { color: var(--focus); border-bottom-color: var(--focus); }
+td:nth-child(2) { font-family: var(--font-mono); font-size: 13px; font-weight: 500; white-space: nowrap; color: var(--ink-2); }
+td:nth-child(3) { color: var(--ink-2); font-size: 13.5px; white-space: nowrap; }
+td:nth-child(4) { font-weight: 500; }
+td strong { font-weight: 700; }
+td a { color: var(--focus); }
+
+.os { width: 14px; height: 14px; vertical-align: -2px; margin-right: 1px; }
+.os.apple { fill: var(--ink); }
+.os.android { fill: var(--android); }
+.os + .os { margin-left: 3px; }
+.dot { display: inline-block; width: 10px; height: 10px; margin-right: 7px; border-radius: 50%; vertical-align: 0; box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent); }
+.dot.live { background: var(--live); color: var(--live); }
+.dot.past { background: var(--past); color: var(--past); }
+.dot.test { background: var(--test); color: var(--test); }
+
+@media (max-width: 720px) {
+  body { padding: 18px 12px 40px; font-size: 13.5px; }
+  header { gap: 12px; } header img { width: 48px; height: 48px; } header h1 { font-size: 30px; } header nav { display: none; }
+  thead th, tbody td { padding: 10px 12px; }
+}
 </style>
 </head>
-<body>
+<body data-game="<!--KEY-->">
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <symbol id="icon-apple" viewBox="0 0 24 24"><path d="<!--APPLE-->"/></symbol>
+  <symbol id="icon-android" viewBox="0 0 24 24"><path d="<!--ANDROID-->"/></symbol>
+</svg>
 <main>
-<!--BODY-->
+  <header>
+    <img src="/stats/<!--KEY-->/logo-web.png" alt="">
+    <div>
+      <p class="eyebrow"><!--GAME--></p>
+      <h1>Release Summary</h1>
+      <p class="meta">Reflex tarafından düzenli aralıklarla güncellenir · Son güncelleme <strong><!--UPDATED--></strong></p>
+    </div>
+    <nav>
+      <a href="/releases/pa/">PA</a>
+      <a href="/releases/cs/">CS</a>
+      <a href="/stats/<!--KEY-->/">Stats <!--SHORT--></a>
+    </nav>
+  </header>
+  <div class="legend">
+    <span><span class="dot live"></span>Yayında</span>
+    <span><span class="dot past"></span>Artık yayında değil</span>
+    <span><span class="dot test"></span>Test / Prod'a açılmadı</span>
+    <span><svg class="os apple"><use href="#icon-apple"/></svg>iOS</span>
+    <span><svg class="os android"><use href="#icon-android"/></svg>Android</span>
+    <span>👊🏻&nbsp;Forcelandı</span>
+  </div>
+  <div class="card"><div class="scroll">
+<!--TABLE-->
+  </div></div>
 </main>
 </body>
 </html>

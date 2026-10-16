@@ -198,3 +198,16 @@ Buton yok; başlat/durdur SSH ile (`launchctl kickstart -k gui/501/<label>`).
 - Routine'ler için `--allowedTools` beyaz listesi → `bypassPermissions` yerine.
 - Dashboard'a parola / IP kısıtı.
 - Release Summary için Claude Artifact kopyası (ofis dışı erişim).
+
+## Tur 2 (16 Eki, Batuhan'ın istekleri)
+
+- Adresler: oyun sayfaları `/stats/pa/`, `/stats/cs/` (eski `/polygun/`, `/cs/` ve alt yolları 301 ile yönlenir); tablolar
+  `/releases/pa/`, `/releases/cs/` kaldı. Tarayıcıda hatırlanan oyun adları (`stats-game`: polygun/cs) değişmedi.
+- Release Summary sayfası yeniden tasarlandı: oyun logosu + başlık, "Son güncelleme" meta satırı, lejant, kart içinde tablo;
+  🍎/🤖 yerine gerçek Apple/Android logoları (Simple Icons SVG, CC0, `Stats/icons/`), 🟢/🔵/🧪 yerine renkli durum noktaları,
+  hücre içi `- ` liste işaretleri kaldırıldı. Fontlar: Archivo (başlık) + Inter (gövde) + IBM Plex Mono (build).
+  md dosyaları değişmedi; dönüşüm sunum anında (`stats.py release_page`).
+- `.env.example` sadeleştirildi (tek tırnaklı değerler, isteğe bağlılar yorumda). `TE_MCP_URL/TOKEN` kalıyor: Stats sorguları
+  ThinkingData MCP HTTP ucuna doğrudan JSON-RPC atar (ae-cli değil). ae-cli'ye geçiş ayrı iş.
+- Slack **Stats** metninden Windows/IP satırı kaldırıldı.
+- `ASANA_PAT` AITester hesabının token'ı ile değiştirilecek (Batuhan mini'de `.env`'e girer, `deploy.sh app`).

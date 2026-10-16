@@ -8,7 +8,8 @@
   // A returning visitor goes straight to the last game picked here (each game page saves it); a first visit sees the cards.
   try {
     const game = localStorage.getItem("stats-game");
-    if (game === "polygun" || game === "cs") location.replace(`${game}/`);
+    const paths = { polygun: "stats/pa/", cs: "stats/cs/" };
+    if (paths[game]) location.replace(paths[game]);
   } catch (error) {
     // Storage blocked: show the cards.
   }
@@ -77,8 +78,8 @@ p { margin: 0; color: var(--ink-2); }
   <h1>Stats</h1>
   <p>Pick a game. The page remembers it for next time; click the logo to switch.</p>
   <div class="games">
-    <a class="game polygun" href="polygun/"><img src="polygun/logo-web.png" alt=""><strong>Polygun<br>Arena</strong></a>
-    <a class="game cs" href="cs/"><img src="cs/logo-web.png" alt=""><strong>Critical<br>Strike</strong></a>
+    <a class="game polygun" href="stats/pa/"><img src="stats/pa/logo-web.png" alt=""><strong>Polygun<br>Arena</strong></a>
+    <a class="game cs" href="stats/cs/"><img src="stats/cs/logo-web.png" alt=""><strong>Critical<br>Strike</strong></a>
   </div>
   <p class="releases">Release tables: <a href="releases/pa/">Polygun Arena</a> · <a href="releases/cs/">Critical Strike</a></p>
 </main>
