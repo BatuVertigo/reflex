@@ -178,6 +178,13 @@ bash launchd/install.sh                                   # 3 servis + 3 routine
   (Release Summary md'leri, Skill Catalog state'i ve VertigoAI'daki `docs/SKILL_CATALOG.md`; git kimliği `gh auth login`,
   AITesterVertigo); her koşunun kaydı `~/Library/Logs/Reflex/routines/<ad>/`.
 - Kaldır: `bash launchd/install.sh --uninstall`.
+- **Yeni kodu mini'ye almak (Batuhan'ın Mac'inden):** değişikliği burada yap, test et (`STATS_PORT=3850 OPS_PORT=3950` ile
+  yerelde), commit + push, sonra:
+  ```bash
+  bash launchd/deploy.sh stats ops      # pull + yalnız bu ajanları yeniden yükle; `app` aktif iş varsa dokunulmaz (--force)
+  bash launchd/deploy.sh                # sadece pull: prompt ve tablo değişiklikleri için yeterli
+  ```
+  Routine'ler `main`'e kendileri push ettiği için burada çalışmaya başlamadan önce `git pull`.
 - Mini ayarları: uyku kapalı, `vertigoproduct` için otomatik giriş açık (LaunchAgent'lar oturum olmadan başlamaz;
   `sudo sysadminctl -autologin set -userName vertigoproduct -password …`).
 - Repo `~/Documents` altında OLMAMALI: macOS launchd'den başlayan süreçlere Documents'ı kapatır (PermissionError).
