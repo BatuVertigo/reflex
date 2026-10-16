@@ -7,7 +7,7 @@ push URL ayarlı), `.env` (bot token boş), `reflex-stats` + `reflex-ops` ajanla
 ve `:3900` Batuhan'ın Mac'inden açılıyor. Mini bulguları: FileVault kapalı, uyku zaten 0 (AI Tester kurulumu), 3800/3900
 boştu, `claude` CLI 2.1.299 ve mempalace-mcp zaten kuruluydu, otomatik giriş KAPALI (Batuhan açacak).
 Plan sapması: eski Mac'teki stats.py geçiş gününe kadar açık kaldı (Slack kısayolu hâlâ eski app.py'den eski IP'yi veriyor).
-Batuhan'a kalan: mini Terminal'inde kuru push testi, otomatik giriş, bot hesabıyla `claude login` + `setup-token` → `.env`.
+Adım 4-5 TAMAM (16 Eki): push testi GUI'de geçti, otomatik giriş açık (`sysadminctl -autologin`), bot hesabı login + token `.env`'de, launchd spike Slack/Asana/mempalace-shared gördü. Sıradaki: adım 6-7 geçiş günü (Batuhan zamanı seçer).
 
 Routine modelleri (benim kararım, `launchd/run-routine.sh`): bug-watcher ve release-summary `opus`, skill-catalog `sonnet`.
 
