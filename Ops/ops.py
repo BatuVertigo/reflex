@@ -18,6 +18,8 @@ from http import HTTPStatus
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
+import markdown
+
 FOLDER = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.dirname(FOLDER)
 PORT = int(os.environ.get("OPS_PORT") or "3900")
@@ -181,13 +183,26 @@ def status():
     }
 
 
+def run_view(name):
+    """The latest run of a routine as something a person can read: its facts plus the routine's own report rendered from markdown."""
+    run = latest_run(name)
+    if not run:
+        return {"meta": {}, "html": "<p>never ran here</p>"}
+    with open(os.path.join(LOG_DIR, "routines", name, run["file"]), encoding="utf-8") as file:
+        full = json.load(file)
+    claude = full.get("claude") or {}
+    parts = [markdown.markdown(claude.get("result") or "(no result)", extensions=["tables", "fenced_code"])]
+    for title, text in (("push error", full.get("push_error")), ("stderr", full.get("stderr"))):
+        if text and text.strip():
+            parts.append(f"<h3>{title}</h3><pre>{text.strip().replace('<', '&lt;')}</pre>")
+    meta = {"file": run["file"], "started": run["started"], "ended": run["ended"], "exit_code": run["exit_code"], "push": run["push"],
+            "duration_s": run["duration_s"], "turns": claude.get("num_turns"), "is_error": claude.get("is_error")}
+    return {"meta": meta, "html": "\n".join(parts)}
+
+
 def tail(name, lines, needle):
     """Last `lines` lines of a service log (or a routine's latest run file) that contain `needle`."""
-    if name in ROUTINES:
-        run = latest_run(name)
-        path = os.path.join(LOG_DIR, "routines", name, run["file"]) if run else ""
-    else:
-        path = os.path.join(LOG_DIR, f"{name}.log") if name in SERVICES else ""
+    path = os.path.join(LOG_DIR, f"{name}.log") if name in SERVICES else ""
     try:
         with open(path, "rb") as file:
             file.seek(0, os.SEEK_END)
@@ -226,8 +241,12 @@ class Handler(SimpleHTTPRequestHandler):
             self.send(json.dumps(status(), ensure_ascii=False).encode(), "application/json; charset=utf-8")
         elif url.path == "/api/log":
             query = parse_qs(url.query)
-            lines = tail(query.get("name", ["app"])[0], min(int(query.get("lines", ["200"])[0]), 2000), query.get("q", [""])[0])
-            self.send(json.dumps(lines, ensure_ascii=False).encode(), "application/json; charset=utf-8")
+            name = query.get("name", ["app"])[0]
+            if name in ROUTINES:
+                payload = run_view(name)
+            else:
+                payload = tail(name, min(int(query.get("lines", ["200"])[0]), 2000), query.get("q", [""])[0])
+            self.send(json.dumps(payload, ensure_ascii=False).encode(), "application/json; charset=utf-8")
         elif url.path in ("/", "/index.html"):
             with open(os.path.join(FOLDER, "index.html"), "rb") as file:
                 self.send(file.read(), "text/html; charset=utf-8")
